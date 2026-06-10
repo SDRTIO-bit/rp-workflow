@@ -666,6 +666,37 @@ const server = createServer(async (request, response) => {
       return;
     }
 
+    const pluginActionMatch = pathname.match(/^\/api\/plugins\/([^/]+)\/(enable|disable)$/);
+    if (pluginActionMatch && request.method === "POST") {
+      const [, pluginId, action] = pluginActionMatch;
+
+      const plugin = plugins.find((p) => p.manifest.id === pluginId);
+      if (!plugin) {
+        sendJson(response, 404, { error: `Plugin not found: ${pluginId}` });
+        return;
+      }
+
+      const nextEnabled = action === "enable";
+      pluginState[pluginId] = {
+        ...(pluginState[pluginId] ?? {}),
+        enabled: nextEnabled,
+        updatedAt: new Date().toISOString(),
+      };
+
+      await savePluginState(pluginState);
+      await reloadPluginRuntime();
+
+      const updated = plugins.find((p) => p.manifest.id === pluginId);
+      sendJson(response, 200, {
+        id: pluginId,
+        enabled: nextEnabled,
+        manifestEnabled: plugin.manifest.enabled !== false,
+        stateSource: "user",
+        nodeTypes: updated ? updated.manifest.nodes.map((n) => n.type) : [],
+      });
+      return;
+    }
+
     if (request.method === "GET" && pathname === "/api/nodes") {
       sendJson(response, 200, {
         nodes: Object.values(runtimeNodeCatalog),
