@@ -61,6 +61,7 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       en: "Context + optional instruction -> draft result.",
     },
     quickAdd: true,
+    panelLayout: "agent",
     defaultConfig: {
       model: "deepseek-v4-flash",
       systemPrompt: "根据上游信息完成当前 Agent 任务。",
@@ -101,6 +102,7 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       zh: "接收草稿并输出 final_text。",
       en: "Receives draft and emits final_text.",
     },
+    panelLayout: "output",
     ports: [input("text", "Text", "draft"), output("final", "Final", "final_text")],
   },
   debugLog: {
@@ -180,6 +182,7 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       zh: "用户查询 → 排序后的世界书 search_result。",
       en: "User query -> ranked worldbook search_result.",
     },
+    panelLayout: "worldbook",
     defaultConfig: { query: "", limit: 4 },
     configFields: [
       { key: "query", label: { zh: "检索词", en: "Query" }, kind: "text" },
@@ -204,6 +207,7 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       zh: "玩家回合 → 排序后的记忆上下文。",
       en: "Player turn -> ranked memory context.",
     },
+    panelLayout: "memory",
     defaultConfig: { query: "", limit: 4, scope: "玩家偏好、角色关系、历史互动" },
     configFields: [
       { key: "query", label: { zh: "检索词", en: "Query" }, kind: "text" },
@@ -369,6 +373,7 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       en: "Accepts any data type and renders text, JSON, or a structured summary.",
     },
     quickAdd: true,
+    panelLayout: "preview",
     defaultConfig: { displayMode: "auto" },
     configFields: [
       {
@@ -505,6 +510,7 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       zh: "角色 + 场景 + 玩家回合 → 角色扮演草稿。",
       en: "Character + scene + player turn -> in-character draft.",
     },
+    panelLayout: "agent",
     defaultConfig: {
       style: "沉浸式中文 RP",
       replyRules: "只扮演 NPC 和环境；保留玩家行动选择；每轮推进一个清晰变化。",
@@ -540,6 +546,7 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       zh: "RP 草稿 + 场景状态 → 连续性分析。",
       en: "RP draft + scene state -> continuity analysis.",
     },
+    panelLayout: "agent",
     defaultConfig: { strictness: "medium" },
     configFields: [
       {

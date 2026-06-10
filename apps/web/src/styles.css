@@ -1200,6 +1200,69 @@ code {
   color: var(--text-muted);
 }
 
+/* Panel type summary */
+.panel-type-summary {
+  margin-bottom: 8px;
+}
+
+.type-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--hover);
+}
+
+.panel-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 7px;
+  border-radius: 3px;
+}
+
+.agent-panel-badge {
+  background: #2563eb22;
+  color: #2563eb;
+}
+
+.worldbook-panel-badge {
+  background: #7c3aed22;
+  color: #7c3aed;
+}
+
+.memory-panel-badge {
+  background: #0e749022;
+  color: #0e7490;
+}
+
+.output-panel-badge {
+  background: #b4530922;
+  color: #b45309;
+}
+
+.preview-panel-badge {
+  background: #0d948822;
+  color: #0d9488;
+}
+
+.type-chip {
+  font-size: 11px;
+  color: var(--text);
+  background: var(--panel-bg);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .plugin-card-list {
   display: flex;
   flex-direction: column;

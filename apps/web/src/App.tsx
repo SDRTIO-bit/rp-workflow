@@ -918,6 +918,106 @@ export function App() {
     ) : null;
   };
 
+  const renderPanelTypeSummary = (node: WorkflowNode) => {
+    const definition = getRuntimeNodeDefinition(node.type);
+    const layout = definition?.panelLayout;
+
+    if (!layout || layout === "generic") return null;
+
+    return (
+      <section className="panel-type-summary">
+        {layout === "agent" ? (
+          <div className="type-summary agent-summary-panel">
+            <span className="panel-badge agent-panel-badge">
+              {language === "zh" ? "Agent" : "Agent"}
+            </span>
+            {node.config.model !== undefined ? (
+              <span className="type-chip">
+                {language === "zh" ? "模型: " : "Model: "}
+                {String(node.config.model)}
+              </span>
+            ) : null}
+            {Array.isArray(node.config.skills) && node.config.skills.length > 0 ? (
+              <span className="type-chip">
+                {language === "zh" ? "Skill: " : "Skills: "}
+                {node.config.skills.length}
+              </span>
+            ) : null}
+            {Array.isArray(node.config.plugins) && node.config.plugins.length > 0 ? (
+              <span className="type-chip">
+                {language === "zh" ? "插件: " : "Plugins: "}
+                {node.config.plugins.length}
+              </span>
+            ) : null}
+          </div>
+        ) : layout === "worldbook" ? (
+          <div className="type-summary worldbook-summary-panel">
+            <span className="panel-badge worldbook-panel-badge">
+              {language === "zh" ? "世界书检索" : "Worldbook Search"}
+            </span>
+            {node.config.limit !== undefined ? (
+              <span className="type-chip">
+                {language === "zh" ? "上限: " : "Limit: "}
+                {String(node.config.limit)}
+              </span>
+            ) : null}
+          </div>
+        ) : layout === "memory" ? (
+          <div className="type-summary memory-summary-panel">
+            <span className="panel-badge memory-panel-badge">
+              {language === "zh" ? "记忆" : "Memory"}
+            </span>
+            {node.config.limit !== undefined ? (
+              <span className="type-chip">
+                {language === "zh" ? "上限: " : "Limit: "}
+                {String(node.config.limit)}
+              </span>
+            ) : null}
+            {node.config.scope !== undefined ? (
+              <span className="type-chip">
+                {language === "zh" ? "范围: " : "Scope: "}
+                {String(node.config.scope)}
+              </span>
+            ) : null}
+          </div>
+        ) : layout === "output" ? (
+          <div className="type-summary output-summary-panel">
+            <span className="panel-badge output-panel-badge">
+              {language === "zh" ? "输出" : "Output"}
+            </span>
+            {node.config.destination !== undefined ? (
+              <span className="type-chip">
+                {String(node.config.destination === "user"
+                  ? language === "zh"
+                    ? "发送给用户"
+                    : "Send to User"
+                  : node.config.destination === "export"
+                    ? language === "zh"
+                      ? "导出为文件"
+                      : "Export as File"
+                    : language === "zh"
+                      ? "仅预览"
+                      : "Preview Only")}
+              </span>
+            ) : null}
+          </div>
+        ) : layout === "preview" ? (
+          <div className="type-summary preview-summary-panel">
+            <span className="panel-badge preview-panel-badge">
+              {language === "zh" ? "预览" : "Preview"}
+            </span>
+            {node.config.displayMode !== undefined ? (
+              <span className="type-chip">
+                {language === "zh" ? "模式: " : "Mode: "}
+                {String(node.config.displayMode)}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
+    );
+  };
+
   const addNode = (type: string, position?: Point) => {
     setWorkflow((current) => {
       const node = createDefaultNode(type, current.nodes.length, getRuntimeNodeDefinition(type));
@@ -1713,6 +1813,7 @@ export function App() {
                     text.externalNodeHint}
                 </span>
               </section>
+              {renderPanelTypeSummary(selectedNode)}
               {(() => {
                 const definition = getRuntimeNodeDefinition(selectedNode.type);
                 const presets = definition?.presets;

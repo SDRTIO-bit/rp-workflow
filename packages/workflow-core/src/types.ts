@@ -87,6 +87,7 @@ export type NodeDefinition = {
   defaultConfig?: Record<string, unknown>;
   configFields?: NodeConfigField[];
   quickAdd?: boolean;
+  panelLayout?: "agent" | "worldbook" | "memory" | "output" | "preview" | "generic";
   presets?: NodeConfigPreset[];
   ports: PortDefinition[];
 };
