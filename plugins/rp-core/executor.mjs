@@ -12,6 +12,29 @@ export const createExecutors = async (context) => ({
         pluginId: "awp.rp-core",
         matchedWorldbookIds: results.map((entry) => entry.id),
         matchedWorldbookTitles: results.map((entry) => entry.title),
+        views: [
+          {
+            id: "worldbook_hits",
+            kind: "entry-list",
+            title: "命中世界书条目",
+            items: results.map((entry) => ({
+              id: entry.id,
+              title: entry.title,
+              summary: String(entry.content ?? "").slice(0, 120),
+              tags: entry.tags,
+            })),
+          },
+          {
+            id: "search_stats",
+            kind: "stats",
+            title: "检索统计",
+            pairs: [
+              { label: "检索词", value: query || "(空)" },
+              { label: "命中数", value: results.length },
+              { label: "条目总数", value: entries.length },
+            ],
+          },
+        ],
       },
     };
   },
@@ -29,6 +52,29 @@ export const createExecutors = async (context) => ({
         pluginId: "awp.rp-core",
         matchedMemoryIds: results.map((entry) => entry.id),
         matchedMemoryTitles: results.map((entry) => entry.title),
+        views: [
+          {
+            id: "memory_hits",
+            kind: "entry-list",
+            title: "命中记忆条目",
+            items: results.map((entry) => ({
+              id: entry.id,
+              title: entry.title,
+              summary: String(entry.content ?? "").slice(0, 120),
+              tags: entry.tags,
+            })),
+          },
+          {
+            id: "memory_stats",
+            kind: "stats",
+            title: "检索统计",
+            pairs: [
+              { label: "检索词", value: query || "(空)" },
+              { label: "命中数", value: results.length },
+              { label: "记忆总数", value: entries.length },
+            ],
+          },
+        ],
       },
     };
   },
