@@ -1,6 +1,6 @@
 ﻿import { createDeepSeekAdapter, executeAgentNode } from "@awp/agent-runtime";
 import { rankMemories } from "@awp/memory-core";
-import { validateNodePluginManifest } from "@awp/plugin-sdk";
+import { validateNodePluginManifest, validateSkillPluginManifest } from "@awp/plugin-sdk";
 import {
   createExecutionBatches,
   nodeRegistry,
@@ -209,6 +209,51 @@ const loadNodePlugins = async () => {
   return plugins;
 };
 
+const loadSkillPlugins = async () => {
+  let entries = [];
+  try {
+    entries = await readdir(pluginsDir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const skills = [];
+
+  for (const entry of entries.filter((candidate) => candidate.isDirectory())) {
+    const manifestPath = join(pluginsDir, entry.name, "skill.plugin.json");
+    try {
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+      const issues = validateSkillPluginManifest(manifest);
+
+      if (issues.length > 0) {
+        console.warn(`Skipped skill plugin ${entry.name}: ${issues.join("; ")}`);
+        continue;
+      }
+
+      if (manifest.enabled === false) {
+        continue;
+      }
+
+      for (const skill of manifest.skills) {
+        skills.push({
+          ...skill,
+          pluginId: manifest.id,
+        });
+      }
+    } catch (error) {
+      if (error.code !== "ENOENT") {
+        console.warn(
+          `Skipped skill plugin ${entry.name}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+  }
+
+  return skills;
+};
+
+let skillCatalog = [];
+
 const createPluginCatalog = (plugins) =>
   Object.fromEntries(
     plugins.flatMap((plugin) => plugin.manifest.nodes.map((node) => [node.type, node])),
@@ -343,6 +388,8 @@ let runtimeNodeCatalog = {
   ...pluginCatalog,
 };
 
+skillCatalog = await loadSkillPlugins();
+
 const reloadPluginRuntime = async () => {
   pluginState = await loadPluginState();
   plugins = await loadNodePlugins();
@@ -359,6 +406,8 @@ const reloadPluginRuntime = async () => {
     ...nodeRegistry,
     ...pluginCatalog,
   };
+
+  skillCatalog = await loadSkillPlugins();
 };
 
 const createExecutors = async (workflow, onToken) => {
@@ -725,6 +774,15 @@ const server = createServer(async (request, response) => {
   const pathname = requestUrl.pathname;
 
   try {
+    if (request.method === "GET" && pathname === "/api/skills") {
+      const categories = [...new Set(skillCatalog.map((s) => s.category).filter(Boolean))];
+      sendJson(response, 200, {
+        skills: skillCatalog,
+        categories,
+      });
+      return;
+    }
+
     if (request.method === "GET" && pathname === "/api/plugins") {
       const pluginList = plugins.map((plugin) => {
         const state = pluginState[plugin.manifest.id];
@@ -747,6 +805,36 @@ const server = createServer(async (request, response) => {
           nodeTypes: plugin.manifest.nodes.map((node) => node.type),
         };
       });
+
+      // Also add skill plugin entries
+      try {
+        const skillDirs = await readdir(pluginsDir, { withFileTypes: true });
+        for (const dirEntry of skillDirs.filter((c) => c.isDirectory())) {
+          const skillManifestPath = join(pluginsDir, dirEntry.name, "skill.plugin.json");
+          try {
+            const skillManifest = JSON.parse(await readFile(skillManifestPath, "utf8"));
+            if (validateSkillPluginManifest(skillManifest).length > 0) continue;
+            const state = pluginState[skillManifest.id];
+            const manifestEnabled = skillManifest.enabled !== false;
+            const userOverride = state && typeof state.enabled === "boolean";
+            pluginList.push({
+              id: skillManifest.id,
+              label: skillManifest.label,
+              version: skillManifest.version,
+              description: skillManifest.description ?? "",
+              author: skillManifest.author,
+              kind: "skill-plugin",
+              manifestEnabled,
+              enabled: userOverride ? state.enabled : manifestEnabled,
+              stateSource: userOverride ? "user" : "manifest",
+              permissions: [],
+              dependencies: [],
+              compatibility: skillManifest.compatibility ?? null,
+              skillCount: skillManifest.skills.length,
+            });
+          } catch { /* no skill.plugin.json in this directory */ }
+        }
+      } catch { /* ignore readdir errors */ }
 
       sendJson(response, 200, { plugins: pluginList });
       return;
