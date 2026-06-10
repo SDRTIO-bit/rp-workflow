@@ -14,37 +14,7 @@ import { createServer } from "node:http";
 import { dirname, extname, join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const sampleSkills = [
-  { id: "world_context", label: "World Context", content: "Extract stable setting facts." },
-  { id: "prose", label: "Prose Writing", content: "Write vivid, restrained prose." },
-  { id: "consistency", label: "Consistency", content: "Check contradictions and missing facts." },
-  {
-    id: "rp_persona",
-    label: "RP Persona",
-    content:
-      "Stay in character. Preserve the character card's persona, voice, relationship stance, secrets, and boundaries.",
-  },
-  {
-    id: "rp_player_agency",
-    label: "RP Player Agency",
-    content:
-      "Never decide the player's action, emotion, speech, or intention. Describe NPCs and environment, then leave a clear hook.",
-  },
-  {
-    id: "rp_continuity",
-    label: "RP Continuity",
-    content:
-      "Use worldbook facts and long-term memory as canon. Avoid contradictions, sudden relationship jumps, and unexplained reveals.",
-  },
-  {
-    id: "rp_slow_burn",
-    label: "RP Slow Burn",
-    content:
-      "For mystery roleplay, reveal one meaningful detail per turn. Keep tension, atmosphere, and unanswered questions alive.",
-  },
-];
-
-const samplePlugins = [
+const agentToolDescriptions = [
   {
     id: "mock_search",
     label: "Mock Search",
@@ -438,8 +408,8 @@ const createExecutors = async (workflow, onToken) => {
             model: selectedModel,
           },
           inputs,
-          availableSkills: sampleSkills,
-          availablePlugins: samplePlugins,
+          availableSkills: skillCatalog,
+          availablePlugins: agentToolDescriptions,
         },
         adapter,
         {
@@ -549,8 +519,8 @@ const createExecutors = async (workflow, onToken) => {
             outputType: "draft",
           },
           inputs,
-          availableSkills: sampleSkills,
-          availablePlugins: samplePlugins,
+          availableSkills: skillCatalog,
+          availablePlugins: agentToolDescriptions,
         },
         adapter,
         {
@@ -578,8 +548,8 @@ const createExecutors = async (workflow, onToken) => {
           outputType: "analysis",
         },
         inputs,
-        availableSkills: sampleSkills,
-        availablePlugins: samplePlugins,
+        availableSkills: skillCatalog,
+        availablePlugins: agentToolDescriptions,
       });
 
       return {
@@ -608,8 +578,8 @@ const createExecutors = async (workflow, onToken) => {
               tags: memory.tags,
             })),
           },
-          availableSkills: sampleSkills,
-          availablePlugins: samplePlugins,
+          availableSkills: skillCatalog,
+          availablePlugins: agentToolDescriptions,
         },
         adapter,
         {
