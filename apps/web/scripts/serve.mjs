@@ -170,9 +170,11 @@ const loadNodePlugins = async () => {
         baseDir: dirname(manifestPath),
       });
     } catch (error) {
-      console.warn(
-        `Skipped node plugin ${entry.name}: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      if (error.code !== "ENOENT") {
+        console.warn(
+          `Skipped node plugin ${entry.name}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
     }
   }
 
