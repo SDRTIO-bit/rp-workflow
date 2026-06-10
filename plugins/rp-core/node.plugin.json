@@ -53,6 +53,46 @@
       ]
     },
     {
+      "type": "rpContextAssembler",
+      "label": "RP Context Assembler",
+      "labelI18n": { "zh": "RP 上下文组装", "en": "RP Context Assembler" },
+      "category": "roleplay",
+      "description": "Assemble character, scene, worldbook, memory, and parsed input into a structured RP context.",
+      "descriptionI18n": {
+        "zh": "将角色卡、场景、世界书、记忆和解析后的玩家输入组装成结构化 RP 上下文。",
+        "en": "Assemble character card, scene state, worldbook hits, memory recall, and parsed input into structured RP context."
+      },
+      "color": "#d97706",
+      "preview": "Outputs assembled RP context string from all upstream sources.",
+      "defaultConfig": {
+        "assemblyTemplate": "【角色设定】\n{character}\n\n【当前场景】\n{scene}\n\n【世界书设定】\n{worldbook}\n\n【相关记忆】\n{memory}\n\n【玩家输入解析】\n{parsed}\n\n请基于以上上下文进行角色扮演。",
+        "maxTokens": 2000
+      },
+      "configFields": [
+        {
+          "key": "assemblyTemplate",
+          "label": { "zh": "组装模板", "en": "Assembly template" },
+          "kind": "textarea"
+        },
+        {
+          "key": "maxTokens",
+          "label": { "zh": "Token 上限", "en": "Max tokens" },
+          "kind": "number",
+          "min": 500,
+          "max": 4000
+        }
+      ],
+      "quickAdd": true,
+      "ports": [
+        { "id": "parsed", "label": "Parsed", "direction": "input", "dataType": "json" },
+        { "id": "character", "label": "Character", "direction": "input", "dataType": "character_profile" },
+        { "id": "scene", "label": "Scene", "direction": "input", "dataType": "scene_state" },
+        { "id": "worldbook", "label": "Worldbook", "direction": "input", "dataType": "context" },
+        { "id": "memory", "label": "Memory", "direction": "input", "dataType": "context" },
+        { "id": "context", "label": "Context", "direction": "output", "dataType": "context" }
+      ]
+    },
+    {
       "type": "worldbookSearch",
       "label": "Worldbook Search",
       "labelI18n": { "zh": "世界书检索", "en": "Worldbook Search" },

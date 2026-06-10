@@ -60,6 +60,37 @@ export const createExecutors = async (context) => ({
     }
   },
 
+  rpContextAssembler: async ({ node, inputs }) => {
+    const template = String(node.config.assemblyTemplate ?? "{character}\n\n{scene}\n\n{worldbook}\n\n{memory}\n\n{parsed}");
+
+    const formatValue = (key, value) => {
+      if (value === undefined || value === null || value === "") return `[${key} 暂未提供]`;
+      if (typeof value === "object") return JSON.stringify(value, null, 2);
+      return String(value);
+    };
+
+    const context = template
+      .replace(/\{character\}/g, formatValue("角色卡", inputs.character))
+      .replace(/\{scene\}/g, formatValue("场景", inputs.scene))
+      .replace(/\{worldbook\}/g, formatValue("世界书", inputs.worldbook))
+      .replace(/\{memory\}/g, formatValue("记忆", inputs.memory))
+      .replace(/\{parsed\}/g, formatValue("解析输入", inputs.parsed));
+
+    const maxTokens = Number(node.config.maxTokens ?? 2000);
+    const truncated = context.length > maxTokens * 4
+      ? context.slice(0, maxTokens * 4) + "\n\n[上下文已截断]"
+      : context;
+
+    return {
+      outputs: { context: truncated },
+      metadata: {
+        pluginId: "awp.rp-core",
+        contextLength: context.length,
+        truncated: context.length > maxTokens * 4,
+      },
+    };
+  },
+
   worldbookSearch: async ({ node, inputs }) => {
     const entries = await context.readWorldbook();
     const query = String(inputs.query ?? node.config.query ?? "");
