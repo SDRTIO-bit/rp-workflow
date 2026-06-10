@@ -1255,3 +1255,152 @@ code {
   display: flex;
   gap: 8px;
 }
+
+.metadata-view {
+  margin-top: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.metadata-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.copy-button {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 1px 6px;
+}
+
+.metadata-view-body {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.entry-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.entry-list li {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.entry-list li:last-child {
+  border-bottom: none;
+}
+
+.entry-summary {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.entry-tags {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  display: block;
+}
+
+.code-block {
+  background: var(--code-bg);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.stats-table {
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+.stats-table td {
+  padding: 3px 6px;
+}
+
+.stats-table td:first-child {
+  font-weight: 600;
+  width: 40%;
+}
+
+.tone-success td:last-child {
+  color: #16a34a;
+}
+
+.tone-warning td:last-child {
+  color: #d97706;
+}
+
+.tone-danger td:last-child {
+  color: #dc2626;
+}
+
+.text-block {
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+}
+
+.trace-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.trace-step {
+  padding: 2px 0;
+  font-size: 0.82rem;
+}
+
+.trace-success { color: #16a34a; }
+.trace-error { color: #dc2626; }
+.trace-skipped { color: var(--text-muted); }
+
+.trace-detail {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.trace-duration {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 6px;
+}
+
+.run-timing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: var(--code-bg);
+  border-radius: 4px;
+}
+
+.run-status-badge {
+  font-weight: 700;
+  width: 20px;
+  text-align: center;
+}
+
+.run-duration {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}

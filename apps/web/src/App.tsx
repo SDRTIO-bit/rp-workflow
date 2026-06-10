@@ -1471,6 +1471,17 @@ export function App() {
               {selectedNodeRun ? (
                 <section className="node-run-details">
                   <strong>{text.nodeRunDetails}</strong>
+                  <div className="run-timing">
+                    <span className={`run-status-badge run-${selectedNodeRun.status}`}>
+                      {selectedNodeRun.status === "success" ? "✓" : selectedNodeRun.status === "error" ? "✕" : "⊘"}
+                    </span>
+                    <span>
+                      {language === "zh" ? "耗时 " : "Duration "}
+                      {Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt) < 1000
+                        ? `${Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt)}ms`
+                        : `${((selectedNodeRun.endedAt - selectedNodeRun.startedAt) / 1000).toFixed(1)}s`}
+                    </span>
+                  </div>
                   <SnapshotBlock title={text.runInputs} value={selectedNodeRun.inputs} />
                   <SnapshotBlock title={text.runOutputs} value={selectedNodeRun.outputs} />
                   <SnapshotBlock title={text.runMetadata} value={selectedNodeRun.metadata ?? {}} />
@@ -1559,6 +1570,11 @@ export function App() {
               >
                 <strong>{run.nodeId}</strong>
                 <span>{run.status}</span>
+                <span className="run-duration">
+                  {Math.max(0, run.endedAt - run.startedAt) < 1000
+                    ? `${Math.max(0, run.endedAt - run.startedAt)}ms`
+                    : `${((run.endedAt - run.startedAt) / 1000).toFixed(1)}s`}
+                </span>
                 <code>{String(run.metadata?.cacheablePrefixHash ?? text.noCacheHash)}</code>
               </button>
             ))
@@ -1646,11 +1662,132 @@ export function App() {
 }
 
 function SnapshotBlock({ title, value }: { title: string; value: unknown }) {
+  const isObject = typeof value === "object" && value !== null && !Array.isArray(value);
+  const views = isObject && "views" in value && Array.isArray((value as Record<string, unknown>).views)
+    ? (value as { views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }> }).views
+    : undefined;
+
   return (
     <details className="snapshot-block">
       <summary>{title}</summary>
-      <pre>{stringifySnapshot(value)}</pre>
+      {views ? (
+        <MetadataViews views={views} />
+      ) : (
+        <pre>{stringifySnapshot(value)}</pre>
+      )}
     </details>
+  );
+}
+
+function MetadataViews({ views }: { views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }> }) {
+  const [copiedId, setCopiedId] = useState<string>();
+
+  const copyViewContent = async (view: { id: string; kind: string; title: string; [key: string]: unknown }) => {
+    let text: string;
+    switch (view.kind) {
+      case "entry-list":
+        text = (view.items as Array<{ title: string; summary?: string }>)
+          .map((item) => `${item.title}${item.summary ? `: ${item.summary}` : ""}`)
+          .join("\n");
+        break;
+      case "code":
+      case "text":
+        text = String(view.content ?? "");
+        break;
+      case "stats":
+        text = (view.pairs as Array<{ label: string; value: unknown }>)
+          .map((pair) => `${pair.label}: ${String(pair.value)}`)
+          .join("\n");
+        break;
+      case "object":
+        text = JSON.stringify(view.value, null, 2);
+        break;
+      case "trace":
+        text = (view.steps as Array<{ label: string; status?: string; detail?: string }>)
+          .map((step) => `[${step.status ?? "-"}] ${step.label}${step.detail ? ` — ${step.detail}` : ""}`)
+          .join("\n");
+        break;
+      default:
+        text = JSON.stringify(view, null, 2);
+    }
+
+    await navigator.clipboard.writeText(text);
+    setCopiedId(view.id);
+    setTimeout(() => setCopiedId(undefined), 1500);
+  };
+
+  return (
+    <>
+      {views.map((view) => (
+        <details key={view.id} className="metadata-view" open>
+          <summary className="metadata-view-header">
+            <span>{view.title}</span>
+            <button
+              className="copy-button"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void copyViewContent(view);
+              }}
+            >
+              {copiedId === view.id ? "✓" : "📋"}
+            </button>
+          </summary>
+          <div className="metadata-view-body">
+            {view.kind === "entry-list" && (
+              <ul className="entry-list">
+                {(view.items as Array<{ id: string; title: string; summary?: string; tags?: string[] }>).map((item) => (
+                  <li key={item.id}>
+                    <strong>{item.title}</strong>
+                    {item.summary ? <span className="entry-summary">{item.summary}</span> : null}
+                    {item.tags?.length ? (
+                      <span className="entry-tags">{item.tags.join(", ")}</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {view.kind === "code" && (
+              <pre className="code-block">
+                <code>{String(view.content)}</code>
+              </pre>
+            )}
+            {view.kind === "stats" && (
+              <table className="stats-table">
+                <tbody>
+                  {(view.pairs as Array<{ label: string; value: unknown; tone?: string }>).map((pair, i) => (
+                    <tr key={i} className={pair.tone ? `tone-${pair.tone}` : ""}>
+                      <td>{pair.label}</td>
+                      <td>{String(pair.value)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {view.kind === "text" && <p className="text-block">{String(view.content)}</p>}
+            {view.kind === "object" && (
+              <pre className="code-block">
+                <code>{JSON.stringify(view.value, null, 2)}</code>
+              </pre>
+            )}
+            {view.kind === "trace" && (
+              <ol className="trace-list">
+                {(view.steps as Array<{ label: string; status?: string; detail?: string; durationMs?: number }>).map((step, i) => (
+                  <li key={i} className={`trace-step trace-${step.status ?? "default"}`}>
+                    <span>{step.label}</span>
+                    {step.detail ? <span className="trace-detail">{step.detail}</span> : null}
+                    {step.durationMs !== undefined ? (
+                      <span className="trace-duration">{step.durationMs}ms</span>
+                    ) : null}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
+        </details>
+      ))}
+    </>
   );
 }
 
