@@ -397,7 +397,9 @@ export const areTypesCompatible = (sourceType: DataType, targetType: DataType): 
 
   const compatible = new Set([
     "user_input:text",
+    "user_input:json",
     "user_input:context",
+    "draft:json",
     "text:context",
     "search_result:context",
     "analysis:context",
