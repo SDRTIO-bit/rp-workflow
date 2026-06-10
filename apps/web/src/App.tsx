@@ -58,6 +58,7 @@ import {
   workflowTemplates,
 } from "./state/sampleWorkflows";
 import { exportWorkflowToJson, importWorkflowFromJson } from "./workflowFile";
+import { isFieldVisible, validateNodeConfigField } from "./nodeConfigValidation";
 import { loadWorkflowFromStorage, saveWorkflowToStorage } from "./workflowStorage";
 import {
   addWorldbookEntryViaServer,
@@ -709,67 +710,177 @@ export function App() {
     const label = field.label[language];
     const value = node.config[field.key];
     const update = (nextValue: unknown) => updateSelectedConfig(field.key, nextValue);
+    const issues = validateNodeConfigField(field, value, node.config);
+    const help = field.help?.[language];
+
+    const wrapper = (inner: React.ReactNode) => (
+      <label key={field.key} className={issues.length > 0 ? "field-error" : ""}>
+        <span className="field-label">
+          {label}
+          {field.required ? <span className="required-mark">*</span> : null}
+        </span>
+        {help ? <span className="field-help">{help}</span> : null}
+        {inner}
+        {issues.map((issue, i) => (
+          <span key={i} className="field-issue">{issue}</span>
+        ))}
+      </label>
+    );
+
+    if (field.kind === "boolean") {
+      return wrapper(
+        <div className="boolean-field">
+          <input
+            type="checkbox"
+            checked={Boolean(value)}
+            onChange={(event) => update(event.target.checked)}
+          />
+          <span className="boolean-label">{label}</span>
+        </div>,
+      );
+    }
+
+    if (field.kind === "multiselect") {
+      const options: { label: string; value: string }[] = Array.isArray(field.options)
+        ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+        : [];
+      const selected: string[] = Array.isArray(value) ? value.map(String) : [];
+
+      return wrapper(
+        <div className="multiselect-field">
+          {options.map((opt) => (
+            <label key={opt.value} className="multiselect-option">
+              <input
+                type="checkbox"
+                checked={selected.includes(opt.value)}
+                onChange={(e) => {
+                  update(
+                    e.target.checked
+                      ? [...selected, opt.value]
+                      : selected.filter((v) => v !== opt.value),
+                  );
+                }}
+              />
+              {opt.label}
+            </label>
+          ))}
+        </div>,
+      );
+    }
+
+    if (field.kind === "json") {
+      const textValue =
+        value !== undefined && value !== null
+          ? JSON.stringify(value, null, 2)
+          : "";
+      return wrapper(
+        <div className="json-field">
+          <textarea
+            value={textValue}
+            onChange={(e) => {
+              try {
+                const parsed = JSON.parse(e.target.value);
+                update(parsed);
+              } catch {
+                update(e.target.value);
+              }
+            }}
+          />
+          <button
+            className="tiny-button"
+            type="button"
+            onClick={() => {
+              try {
+                const parsed = JSON.parse(
+                  typeof value === "string" ? value : JSON.stringify(value ?? {}),
+                );
+                update(JSON.stringify(parsed, null, 2));
+              } catch {
+                // Already invalid, skip format
+              }
+            }}
+          >
+            {language === "zh" ? "格式化" : "Format"}
+          </button>
+        </div>,
+      );
+    }
+
+    if (field.kind === "secret") {
+      return wrapper(
+        <input
+          type="password"
+          autoComplete="off"
+          value={String(value ?? "")}
+          onChange={(event) => update(event.target.value)}
+        />,
+      );
+    }
+
+    if (field.kind === "model") {
+      const options: { label: string; value: string }[] = Array.isArray(field.options)
+        ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+        : [
+            { label: "DeepSeek V4 Flash", value: "deepseek-v4-flash" },
+            { label: "DeepSeek V4 Pro", value: "deepseek-v4-pro" },
+            { label: "DeepSeek Reasoner", value: "deepseek-reasoner" },
+          ];
+
+      return wrapper(
+        <select value={String(value ?? "")} onChange={(event) => update(event.target.value)}>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>,
+      );
+    }
 
     if (field.kind === "textarea") {
-      return (
-        <label key={field.key}>
-          {label}
-          <textarea value={String(value ?? "")} onChange={(event) => update(event.target.value)} />
-        </label>
+      return wrapper(
+        <textarea value={String(value ?? "")} onChange={(event) => update(event.target.value)} />,
       );
     }
 
     if (field.kind === "number") {
-      return (
-        <label key={field.key}>
-          {label}
-          <input
-            type="number"
-            min={field.min}
-            max={field.max}
-            value={String(value ?? "")}
-            onChange={(event) => update(Number(event.target.value))}
-          />
-        </label>
+      return wrapper(
+        <input
+          type="number"
+          min={field.min}
+          max={field.max}
+          value={String(value ?? "")}
+          onChange={(event) => update(Number(event.target.value))}
+        />,
       );
     }
 
     if (field.kind === "select") {
-      return (
-        <label key={field.key}>
-          {label}
-          <select value={String(value ?? "")} onChange={(event) => update(event.target.value)}>
-            {(field.options ?? []).map((option) => {
-              const optValue = typeof option === "string" ? option : option.value;
-              const optLabel = typeof option === "string" ? option : option.label.en;
-              return (
-                <option key={optValue} value={optValue}>
-                  {optLabel}
-                </option>
-              );
-            })}
-          </select>
-        </label>
+      const options: { label: string; value: string }[] = Array.isArray(field.options)
+        ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+        : [];
+      return wrapper(
+        <select value={String(value ?? "")} onChange={(event) => update(event.target.value)}>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>,
       );
     }
 
     if (field.kind === "tags") {
-      return (
-        <label key={field.key}>
-          {label}
-          <input
-            value={Array.isArray(value) ? value.map(String).join(", ") : String(value ?? "")}
-            onChange={(event) => update(toTags(event.target.value))}
-          />
-        </label>
+      return wrapper(
+        <input
+          value={Array.isArray(value) ? value.map(String).join(", ") : String(value ?? "")}
+          onChange={(event) => update(toTags(event.target.value))}
+        />,
       );
     }
 
-    return (
-      <label key={field.key}>
-        {label}
-        <input value={String(value ?? "")} onChange={(event) => update(event.target.value)} />
-      </label>
+    return wrapper(
+      <input value={String(value ?? "")} onChange={(event) => update(event.target.value)} />,
     );
   };
 
@@ -1469,9 +1580,63 @@ export function App() {
                   {getRuntimeNodeDefinition(selectedNode.type)?.preview ?? text.externalNodeHint}
                 </span>
               </section>
-              {getRuntimeNodeConfigFields(selectedNode.type).map((field) =>
-                renderConfigField(field, selectedNode),
-              )}
+              {(() => {
+                const definition = getRuntimeNodeDefinition(selectedNode.type);
+                const presets = definition?.presets;
+                const allFields = getRuntimeNodeConfigFields(selectedNode.type);
+                const visibleFields = allFields.filter((f) => isFieldVisible(f, selectedNode.config));
+                const basicFields = visibleFields.filter((f) => !f.advanced);
+                const advancedFields = visibleFields.filter((f) => f.advanced);
+
+                // Group advanced fields by group
+                const advancedGroups = new Map<string, NodeConfigField[]>();
+                for (const f of advancedFields) {
+                  const g = f.group ?? "";
+                  advancedGroups.set(g, [...(advancedGroups.get(g) ?? []), f]);
+                }
+
+                return (
+                  <>
+                    {presets?.length ? (
+                      <div className="preset-bar">
+                        {presets.map((preset) => (
+                          <button
+                            key={preset.id}
+                            className="preset-button"
+                            type="button"
+                            title={preset.description?.[language]}
+                            onClick={() => {
+                              for (const [k, v] of Object.entries(preset.config)) {
+                                updateSelectedConfig(k, v);
+                              }
+                            }}
+                          >
+                            {preset.label[language]}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                    {basicFields.map((field) => renderConfigField(field, selectedNode))}
+                    {advancedFields.length > 0 ? (
+                      <details className="advanced-params">
+                        <summary>
+                          {language === "zh" ? "高级参数" : "Advanced"} ({advancedFields.length})
+                        </summary>
+                        {Array.from(advancedGroups.entries()).map(([group, fields]) => (
+                          <div key={group} className="advanced-group">
+                            {group ? (
+                              <h4 className="advanced-group-title">
+                                {fields[0]?.groupLabel?.[language] ?? group}
+                              </h4>
+                            ) : null}
+                            {fields.map((field) => renderConfigField(field, selectedNode))}
+                          </div>
+                        ))}
+                      </details>
+                    ) : null}
+                  </>
+                );
+              })()}
               {selectedNodeRun ? (
                 <section className="node-run-details">
                   <strong>{text.nodeRunDetails}</strong>
