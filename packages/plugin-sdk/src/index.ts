@@ -78,6 +78,35 @@ export type NodePluginRuntimeContext = {
   onToken?: (event: { nodeId: string; token: string }) => void;
 };
 
+export type MetadataEntryItem = {
+  id: string;
+  title: string;
+  summary?: string;
+  tags?: string[];
+  metadata?: Record<string, string>;
+};
+
+export type MetadataStatPair = {
+  label: string;
+  value: string | number | boolean;
+  tone?: "default" | "success" | "warning" | "danger";
+};
+
+export type MetadataTraceStep = {
+  label: string;
+  status?: "success" | "error" | "skipped";
+  detail?: string;
+  durationMs?: number;
+};
+
+export type NodeRunMetadataView =
+  | { id: string; kind: "entry-list"; title: string; items: MetadataEntryItem[] }
+  | { id: string; kind: "code"; title: string; content: string; language?: string }
+  | { id: string; kind: "stats"; title: string; pairs: MetadataStatPair[] }
+  | { id: string; kind: "text"; title: string; content: string }
+  | { id: string; kind: "object"; title: string; value: Record<string, unknown> }
+  | { id: string; kind: "trace"; title: string; steps: MetadataTraceStep[] };
+
 export type NodeExecutorFactory = (
   context: NodePluginRuntimeContext,
 ) => Promise<Record<string, NodeExecutor>> | Record<string, NodeExecutor>;
