@@ -51,7 +51,11 @@ export const validateNodeConfigField = (
     }
   }
 
-  if ((field.kind === "select" || field.kind === "model") && field.options && typeof value === "string") {
+  if (
+    (field.kind === "select" || field.kind === "model") &&
+    field.options &&
+    typeof value === "string"
+  ) {
     const optionValues = Array.isArray(field.options)
       ? field.options.map((o) => (typeof o === "string" ? o : o.value))
       : [];

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isFieldVisible, validateNodeConfigField, validateNodeConfig } from "./nodeConfigValidation";
+import {
+  isFieldVisible,
+  validateNodeConfigField,
+  validateNodeConfig,
+} from "./nodeConfigValidation";
 import type { NodeConfigField } from "@awp/workflow-core";
 
 describe("isFieldVisible", () => {
@@ -45,12 +49,23 @@ describe("isFieldVisible", () => {
 
 describe("validateNodeConfigField", () => {
   it("flags missing required fields", () => {
-    const field: NodeConfigField = { key: "name", label: { zh: "名称", en: "Name" }, kind: "text", required: true };
+    const field: NodeConfigField = {
+      key: "name",
+      label: { zh: "名称", en: "Name" },
+      kind: "text",
+      required: true,
+    };
     expect(validateNodeConfigField(field, "", {})).toContain("名称 为必填项");
   });
 
   it("flags number out of range", () => {
-    const field: NodeConfigField = { key: "count", label: { zh: "数量", en: "Count" }, kind: "number", min: 1, max: 10 };
+    const field: NodeConfigField = {
+      key: "count",
+      label: { zh: "数量", en: "Count" },
+      kind: "number",
+      min: 1,
+      max: 10,
+    };
     expect(validateNodeConfigField(field, 0, {})).toContain("最小值为 1");
     expect(validateNodeConfigField(field, 11, {})).toContain("最大值为 10");
   });
@@ -86,7 +101,13 @@ describe("validateNodeConfig", () => {
       ports: [],
       configFields: [
         { key: "name", label: { zh: "名称", en: "Name" }, kind: "text" as const, required: true },
-        { key: "count", label: { zh: "数量", en: "Count" }, kind: "number" as const, min: 1, max: 10 },
+        {
+          key: "count",
+          label: { zh: "数量", en: "Count" },
+          kind: "number" as const,
+          min: 1,
+          max: 10,
+        },
       ],
     };
     const issues = validateNodeConfig(definition, { name: "", count: 0 });

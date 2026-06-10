@@ -417,7 +417,9 @@ export function App() {
 
     if (!result) {
       setRunNotice(
-        language === "zh" ? `插件 ${enable ? "启用" : "禁用"} 失败` : `Plugin ${enable ? "enable" : "disable"} failed`,
+        language === "zh"
+          ? `插件 ${enable ? "启用" : "禁用"} 失败`
+          : `Plugin ${enable ? "enable" : "disable"} failed`,
       );
       return;
     }
@@ -722,7 +724,9 @@ export function App() {
         {help ? <span className="field-help">{help}</span> : null}
         {inner}
         {issues.map((issue, i) => (
-          <span key={i} className="field-issue">{issue}</span>
+          <span key={i} className="field-issue">
+            {issue}
+          </span>
         ))}
       </label>
     );
@@ -742,7 +746,11 @@ export function App() {
 
     if (field.kind === "multiselect") {
       const options: { label: string; value: string }[] = Array.isArray(field.options)
-        ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+        ? field.options.map((o) =>
+            typeof o === "string"
+              ? { label: o, value: o }
+              : { label: o.label[language], value: o.value },
+          )
         : [];
       const selected: string[] = Array.isArray(value) ? value.map(String) : [];
 
@@ -769,10 +777,7 @@ export function App() {
     }
 
     if (field.kind === "json") {
-      const textValue =
-        value !== undefined && value !== null
-          ? JSON.stringify(value, null, 2)
-          : "";
+      const textValue = value !== undefined && value !== null ? JSON.stringify(value, null, 2) : "";
       return wrapper(
         <div className="json-field">
           <textarea
@@ -819,7 +824,11 @@ export function App() {
 
     if (field.kind === "model") {
       const options: { label: string; value: string }[] = Array.isArray(field.options)
-        ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+        ? field.options.map((o) =>
+            typeof o === "string"
+              ? { label: o, value: o }
+              : { label: o.label[language], value: o.value },
+          )
         : [
             { label: "DeepSeek V4 Flash", value: "deepseek-v4-flash" },
             { label: "DeepSeek V4 Pro", value: "deepseek-v4-pro" },
@@ -857,7 +866,11 @@ export function App() {
 
     if (field.kind === "select") {
       const options: { label: string; value: string }[] = Array.isArray(field.options)
-        ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+        ? field.options.map((o) =>
+            typeof o === "string"
+              ? { label: o, value: o }
+              : { label: o.label[language], value: o.value },
+          )
         : [];
       return wrapper(
         <select value={String(value ?? "")} onChange={(event) => update(event.target.value)}>
@@ -1584,7 +1597,9 @@ export function App() {
                 const definition = getRuntimeNodeDefinition(selectedNode.type);
                 const presets = definition?.presets;
                 const allFields = getRuntimeNodeConfigFields(selectedNode.type);
-                const visibleFields = allFields.filter((f) => isFieldVisible(f, selectedNode.config));
+                const visibleFields = allFields.filter((f) =>
+                  isFieldVisible(f, selectedNode.config),
+                );
                 const basicFields = visibleFields.filter((f) => !f.advanced);
                 const advancedFields = visibleFields.filter((f) => f.advanced);
 
@@ -1642,7 +1657,11 @@ export function App() {
                   <strong>{text.nodeRunDetails}</strong>
                   <div className="run-timing">
                     <span className={`run-status-badge run-${selectedNodeRun.status}`}>
-                      {selectedNodeRun.status === "success" ? "✓" : selectedNodeRun.status === "error" ? "✕" : "⊘"}
+                      {selectedNodeRun.status === "success"
+                        ? "✓"
+                        : selectedNodeRun.status === "error"
+                          ? "✕"
+                          : "⊘"}
                     </span>
                     <span>
                       {language === "zh" ? "耗时 " : "Duration "}
@@ -1762,25 +1781,40 @@ export function App() {
           <div className="modal-content plugin-panel" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{language === "zh" ? "插件管理" : "Plugin Management"}</h2>
-              <button className="modal-close" type="button" onClick={() => setShowPluginPanel(false)}>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setShowPluginPanel(false)}
+              >
                 ×
               </button>
             </div>
             {pluginPanelError ? (
               <p className="notice">{pluginPanelError}</p>
             ) : pluginSummaries.length === 0 ? (
-              <p className="muted">{language === "zh" ? "没有已安装的插件。" : "No plugins installed."}</p>
+              <p className="muted">
+                {language === "zh" ? "没有已安装的插件。" : "No plugins installed."}
+              </p>
             ) : (
               <div className="plugin-card-list">
                 {pluginSummaries.map((plugin) => (
-                  <div key={plugin.id} className={`plugin-card ${plugin.enabled ? "" : "plugin-disabled"}`}>
+                  <div
+                    key={plugin.id}
+                    className={`plugin-card ${plugin.enabled ? "" : "plugin-disabled"}`}
+                  >
                     <div className="plugin-card-header">
                       <strong>{plugin.label}</strong>
                       <span className="plugin-version">v{plugin.version}</span>
-                      <span className={`plugin-status ${plugin.enabled ? "status-on" : "status-off"}`}>
+                      <span
+                        className={`plugin-status ${plugin.enabled ? "status-on" : "status-off"}`}
+                      >
                         {plugin.enabled
-                          ? language === "zh" ? "✓ 启用" : "✓ On"
-                          : language === "zh" ? "✕ 禁用" : "✕ Off"}
+                          ? language === "zh"
+                            ? "✓ 启用"
+                            : "✓ On"
+                          : language === "zh"
+                            ? "✕ 禁用"
+                            : "✕ Off"}
                       </span>
                     </div>
                     <p className="plugin-state-source">
@@ -1789,10 +1823,14 @@ export function App() {
                       {plugin.enabled && plugin.stateSource === "user" && "用户手动启用"}
                       {!plugin.enabled && plugin.stateSource === "user" && "用户手动禁用"}
                     </p>
-                    {plugin.description ? <p className="plugin-desc">{plugin.description}</p> : null}
+                    {plugin.description ? (
+                      <p className="plugin-desc">{plugin.description}</p>
+                    ) : null}
                     <div className="plugin-perms">
                       {plugin.permissions.map((perm) => (
-                        <code key={perm} className="perm-tag">{perm}</code>
+                        <code key={perm} className="perm-tag">
+                          {perm}
+                        </code>
                       ))}
                     </div>
                     <p className="plugin-node-types">
@@ -1832,26 +1870,36 @@ export function App() {
 
 function SnapshotBlock({ title, value }: { title: string; value: unknown }) {
   const isObject = typeof value === "object" && value !== null && !Array.isArray(value);
-  const views = isObject && "views" in value && Array.isArray((value as Record<string, unknown>).views)
-    ? (value as { views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }> }).views
-    : undefined;
+  const views =
+    isObject && "views" in value && Array.isArray((value as Record<string, unknown>).views)
+      ? (
+          value as {
+            views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }>;
+          }
+        ).views
+      : undefined;
 
   return (
     <details className="snapshot-block">
       <summary>{title}</summary>
-      {views ? (
-        <MetadataViews views={views} />
-      ) : (
-        <pre>{stringifySnapshot(value)}</pre>
-      )}
+      {views ? <MetadataViews views={views} /> : <pre>{stringifySnapshot(value)}</pre>}
     </details>
   );
 }
 
-function MetadataViews({ views }: { views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }> }) {
+function MetadataViews({
+  views,
+}: {
+  views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }>;
+}) {
   const [copiedId, setCopiedId] = useState<string>();
 
-  const copyViewContent = async (view: { id: string; kind: string; title: string; [key: string]: unknown }) => {
+  const copyViewContent = async (view: {
+    id: string;
+    kind: string;
+    title: string;
+    [key: string]: unknown;
+  }) => {
     let text: string;
     switch (view.kind) {
       case "entry-list":
@@ -1873,7 +1921,10 @@ function MetadataViews({ views }: { views: Array<{ id: string; kind: string; tit
         break;
       case "trace":
         text = (view.steps as Array<{ label: string; status?: string; detail?: string }>)
-          .map((step) => `[${step.status ?? "-"}] ${step.label}${step.detail ? ` — ${step.detail}` : ""}`)
+          .map(
+            (step) =>
+              `[${step.status ?? "-"}] ${step.label}${step.detail ? ` — ${step.detail}` : ""}`,
+          )
           .join("\n");
         break;
       default:
@@ -1906,7 +1957,14 @@ function MetadataViews({ views }: { views: Array<{ id: string; kind: string; tit
           <div className="metadata-view-body">
             {view.kind === "entry-list" && (
               <ul className="entry-list">
-                {(view.items as Array<{ id: string; title: string; summary?: string; tags?: string[] }>).map((item) => (
+                {(
+                  view.items as Array<{
+                    id: string;
+                    title: string;
+                    summary?: string;
+                    tags?: string[];
+                  }>
+                ).map((item) => (
                   <li key={item.id}>
                     <strong>{item.title}</strong>
                     {item.summary ? <span className="entry-summary">{item.summary}</span> : null}
@@ -1925,12 +1983,14 @@ function MetadataViews({ views }: { views: Array<{ id: string; kind: string; tit
             {view.kind === "stats" && (
               <table className="stats-table">
                 <tbody>
-                  {(view.pairs as Array<{ label: string; value: unknown; tone?: string }>).map((pair, i) => (
-                    <tr key={i} className={pair.tone ? `tone-${pair.tone}` : ""}>
-                      <td>{pair.label}</td>
-                      <td>{String(pair.value)}</td>
-                    </tr>
-                  ))}
+                  {(view.pairs as Array<{ label: string; value: unknown; tone?: string }>).map(
+                    (pair, i) => (
+                      <tr key={i} className={pair.tone ? `tone-${pair.tone}` : ""}>
+                        <td>{pair.label}</td>
+                        <td>{String(pair.value)}</td>
+                      </tr>
+                    ),
+                  )}
                 </tbody>
               </table>
             )}
@@ -1942,7 +2002,14 @@ function MetadataViews({ views }: { views: Array<{ id: string; kind: string; tit
             )}
             {view.kind === "trace" && (
               <ol className="trace-list">
-                {(view.steps as Array<{ label: string; status?: string; detail?: string; durationMs?: number }>).map((step, i) => (
+                {(
+                  view.steps as Array<{
+                    label: string;
+                    status?: string;
+                    detail?: string;
+                    durationMs?: number;
+                  }>
+                ).map((step, i) => (
                   <li key={i} className={`trace-step trace-${step.status ?? "default"}`}>
                     <span>{step.label}</span>
                     {step.detail ? <span className="trace-detail">{step.detail}</span> : null}

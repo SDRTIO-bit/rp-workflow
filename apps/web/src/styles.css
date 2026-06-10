@@ -1366,9 +1366,15 @@ code {
   font-size: 0.82rem;
 }
 
-.trace-success { color: #16a34a; }
-.trace-error { color: #dc2626; }
-.trace-skipped { color: var(--text-muted); }
+.trace-success {
+  color: #16a34a;
+}
+.trace-error {
+  color: #dc2626;
+}
+.trace-skipped {
+  color: var(--text-muted);
+}
 
 .trace-detail {
   display: block;
@@ -1405,25 +1411,89 @@ code {
   margin-left: auto;
 }
 
-.field-error .field-label { color: #dc2626; }
-.required-mark { color: #dc2626; margin-left: 2px; }
-.field-help { font-size: 0.75rem; color: var(--text-muted); display: block; }
-.field-issue { font-size: 0.75rem; color: #dc2626; display: block; margin-top: 2px; }
+.field-error .field-label {
+  color: #dc2626;
+}
+.required-mark {
+  color: #dc2626;
+  margin-left: 2px;
+}
+.field-help {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+}
+.field-issue {
+  font-size: 0.75rem;
+  color: #dc2626;
+  display: block;
+  margin-top: 2px;
+}
 
-.boolean-field { display: flex; align-items: center; gap: 6px; }
-.boolean-label { font-size: 0.88rem; }
+.boolean-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.boolean-label {
+  font-size: 0.88rem;
+}
 
-.multiselect-field { display: flex; flex-wrap: wrap; gap: 6px; }
-.multiselect-option { display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
+.multiselect-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.multiselect-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
 
-.json-field { display: flex; gap: 6px; align-items: flex-start; }
-.json-field textarea { flex: 1; min-height: 60px; }
+.json-field {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+.json-field textarea {
+  flex: 1;
+  min-height: 60px;
+}
 
-.preset-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.preset-button { font-size: 0.78rem; padding: 3px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--panel-bg); cursor: pointer; }
-.preset-button:hover { background: var(--code-bg); }
+.preset-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.preset-button {
+  font-size: 0.78rem;
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+.preset-button:hover {
+  background: var(--code-bg);
+}
 
-.advanced-params { margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 8px; }
-.advanced-params > summary { font-weight: 600; cursor: pointer; font-size: 0.9rem; }
-.advanced-group { margin-top: 6px; }
-.advanced-group-title { font-size: 0.82rem; color: var(--text-muted); margin: 4px 0; }
+.advanced-params {
+  margin-top: 10px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+.advanced-params > summary {
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.advanced-group {
+  margin-top: 6px;
+}
+.advanced-group-title {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 4px 0;
+}
