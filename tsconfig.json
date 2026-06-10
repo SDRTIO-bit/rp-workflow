@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/plugin-sdk" },
+    { "path": "./packages/memory-core" },
+    { "path": "./packages/agent-runtime" },
+    { "path": "./packages/workflow-core" },
+    { "path": "./packages/db" },
+    { "path": "./apps/web" }
+  ]
+}

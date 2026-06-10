@@ -1,0 +1,118 @@
+import { areTypesCompatible, findPortInCatalog, nodeRegistry } from "./nodeRegistry";
+import type { NodeCatalog, WorkflowDefinition, WorkflowValidationIssue } from "./types";
+
+export const validateWorkflow = (
+  workflow: WorkflowDefinition,
+  catalog: NodeCatalog = nodeRegistry,
+): WorkflowValidationIssue[] => {
+  const issues: WorkflowValidationIssue[] = [];
+  const nodeIds = new Set<string>();
+
+  for (const node of workflow.nodes) {
+    if (nodeIds.has(node.id)) {
+      issues.push({ level: "error", message: `Duplicate node id: ${node.id}`, nodeId: node.id });
+    }
+    nodeIds.add(node.id);
+
+    if (!catalog[node.type]) {
+      issues.push({ level: "error", message: `Unknown node type: ${node.type}`, nodeId: node.id });
+    }
+  }
+
+  for (const edge of workflow.edges) {
+    const source = workflow.nodes.find((node) => node.id === edge.source);
+    const target = workflow.nodes.find((node) => node.id === edge.target);
+
+    if (!source) {
+      issues.push({
+        level: "error",
+        message: `Missing source node: ${edge.source}`,
+        edgeId: edge.id,
+      });
+      continue;
+    }
+
+    if (!target) {
+      issues.push({
+        level: "error",
+        message: `Missing target node: ${edge.target}`,
+        edgeId: edge.id,
+      });
+      continue;
+    }
+
+    const sourcePort = findPortInCatalog(catalog, source.type, edge.sourcePort, "output");
+    const targetPort = findPortInCatalog(catalog, target.type, edge.targetPort, "input");
+
+    if (!sourcePort) {
+      issues.push({
+        level: "error",
+        message: `Missing output port: ${edge.sourcePort}`,
+        edgeId: edge.id,
+        nodeId: source.id,
+        portId: edge.sourcePort,
+      });
+      continue;
+    }
+
+    if (!targetPort) {
+      issues.push({
+        level: "error",
+        message: `Missing input port: ${edge.targetPort}`,
+        edgeId: edge.id,
+        nodeId: target.id,
+        portId: edge.targetPort,
+      });
+      continue;
+    }
+
+    if (!areTypesCompatible(sourcePort.dataType, targetPort.dataType)) {
+      issues.push({
+        level: "error",
+        message: `Incompatible edge types: ${sourcePort.dataType} -> ${targetPort.dataType}`,
+        edgeId: edge.id,
+      });
+    }
+  }
+
+  if (hasCycle(workflow)) {
+    issues.push({ level: "error", message: "Workflow graph contains a cycle" });
+  }
+
+  return issues;
+};
+
+export const hasCycle = (workflow: WorkflowDefinition): boolean => {
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const adjacency = new Map<string, string[]>();
+
+  for (const node of workflow.nodes) {
+    adjacency.set(node.id, []);
+  }
+
+  for (const edge of workflow.edges) {
+    adjacency.get(edge.source)?.push(edge.target);
+  }
+
+  const visit = (nodeId: string): boolean => {
+    if (visiting.has(nodeId)) {
+      return true;
+    }
+    if (visited.has(nodeId)) {
+      return false;
+    }
+
+    visiting.add(nodeId);
+    for (const next of adjacency.get(nodeId) ?? []) {
+      if (visit(next)) {
+        return true;
+      }
+    }
+    visiting.delete(nodeId);
+    visited.add(nodeId);
+    return false;
+  };
+
+  return workflow.nodes.some((node) => visit(node.id));
+};

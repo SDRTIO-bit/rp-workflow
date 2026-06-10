@@ -1,0 +1,27 @@
+{
+  "name": "@awp/web",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && node scripts/build.mjs",
+    "serve": "npm run build && node dist/server.mjs",
+    "test": "vitest run --passWithNoTests",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "dependencies": {
+    "@awp/agent-runtime": "*",
+    "@awp/memory-core": "*",
+    "@awp/plugin-sdk": "*",
+    "@awp/workflow-core": "*",
+    "vite": "^5.4.19",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "react-jsx",
+    "noEmit": true
+  },
+  "include": ["src", "vite.config.ts"],
+  "references": [
+    { "path": "../../packages/plugin-sdk" },
+    { "path": "../../packages/memory-core" },
+    { "path": "../../packages/agent-runtime" },
+    { "path": "../../packages/workflow-core" }
+  ]
+}

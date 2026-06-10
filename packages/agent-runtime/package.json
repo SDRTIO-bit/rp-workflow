@@ -1,0 +1,17 @@
+{
+  "name": "@awp/agent-runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@awp/plugin-sdk": "*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.2"
+  }
+}
