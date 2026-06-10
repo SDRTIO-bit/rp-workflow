@@ -78,6 +78,21 @@ const host = "127.0.0.1";
 const dist = resolve(import.meta.dirname);
 const dataDir = resolve(import.meta.dirname, "../../../data");
 const pluginsDir = resolve(import.meta.dirname, "../../../plugins");
+const pluginStateFile = join(pluginsDir, "plugin-state.json");
+
+const loadPluginState = async () => {
+  try {
+    return JSON.parse(await readFile(pluginStateFile, "utf8"));
+  } catch {
+    return {};
+  }
+};
+
+const savePluginState = async (state) => {
+  await mkdir(pluginsDir, { recursive: true });
+  await writeFile(pluginStateFile, `${JSON.stringify(state, null, 2)}\n`, "utf8");
+};
+
 const memoryFile = join(dataDir, "memories.json");
 const worldbookFile = join(dataDir, "worldbook.json");
 const apiKey = process.env.DEEPSEEK_API_KEY;
@@ -226,11 +241,39 @@ const createPluginExecutors = async (plugins, context) => {
   return executors;
 };
 
+let pluginState = await loadPluginState();
 let plugins = await loadNodePlugins();
+
+// Merge runtime state into plugins
+for (const plugin of plugins) {
+  const state = pluginState[plugin.manifest.id];
+  if (state && typeof state.enabled === "boolean") {
+    plugin.manifest.enabled = state.enabled;
+  }
+}
+
 let pluginCatalog = createPluginCatalog(plugins);
 let runtimeNodeCatalog = {
   ...nodeRegistry,
   ...pluginCatalog,
+};
+
+const reloadPluginRuntime = async () => {
+  pluginState = await loadPluginState();
+  plugins = await loadNodePlugins();
+
+  for (const plugin of plugins) {
+    const state = pluginState[plugin.manifest.id];
+    if (state && typeof state.enabled === "boolean") {
+      plugin.manifest.enabled = state.enabled;
+    }
+  }
+
+  pluginCatalog = createPluginCatalog(plugins);
+  runtimeNodeCatalog = {
+    ...nodeRegistry,
+    ...pluginCatalog,
+  };
 };
 
 const createExecutors = async (workflow, onToken) => {
