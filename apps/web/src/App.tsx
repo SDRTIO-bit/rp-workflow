@@ -1518,11 +1518,14 @@ export function App() {
                     <span className="node-type">{getRuntimeNodeLabel(node.type)}</span>
                     <strong>{node.id}</strong>
                     {renderNodeSummary(node)}
-                    {getRuntimeNodeDefinition(node.type)?.preview ? (
-                      <span className="node-meta">
-                        {getRuntimeNodeDefinition(node.type)?.preview}
-                      </span>
-                    ) : null}
+                    {(() => {
+                      const nodeDef = getRuntimeNodeDefinition(node.type);
+                      const previewText =
+                        nodeDef?.previewI18n?.[language] ?? nodeDef?.preview;
+                      return previewText ? (
+                        <span className="node-meta">{previewText}</span>
+                      ) : null;
+                    })()}
                     <PortList
                       direction="input"
                       ports={inputPorts}
@@ -1595,11 +1598,14 @@ export function App() {
               <section className="node-preview-panel">
                 <strong>{text.nodePreview}</strong>
                 <p>
-                  {getRuntimeNodeDefinition(selectedNode.type)?.description ??
+                  {getRuntimeNodeDefinition(selectedNode.type)?.descriptionI18n?.[language] ??
+                    getRuntimeNodeDefinition(selectedNode.type)?.description ??
                     text.externalNodeHint}
                 </p>
                 <span>
-                  {getRuntimeNodeDefinition(selectedNode.type)?.preview ?? text.externalNodeHint}
+                  {getRuntimeNodeDefinition(selectedNode.type)?.previewI18n?.[language] ??
+                    getRuntimeNodeDefinition(selectedNode.type)?.preview ??
+                    text.externalNodeHint}
                 </span>
               </section>
               {(() => {
@@ -2106,10 +2112,7 @@ function PortList({
             }
           }}
         />
-        <span className="port-label">
-          {port.id}
-          <small>{label}</small>
-        </span>
+        <span className="port-label">{label}</span>
       </span>
     );
   });

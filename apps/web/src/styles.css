@@ -624,11 +624,6 @@ select {
   justify-items: end;
 }
 
-.port-label small {
-  color: var(--label);
-  font-size: 9px;
-}
-
 .node-type {
   color: var(--node-color);
   font-size: 11px;

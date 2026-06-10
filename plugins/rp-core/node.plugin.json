@@ -29,6 +29,10 @@
       },
       "color": "#d97706",
       "preview": "Outputs parsed JSON with speech, action, intent, emotion, entities, and triggers.",
+      "previewI18n": {
+        "zh": "输出包含 speech、action、intent、emotion、entities 和 triggers 的解析 JSON。",
+        "en": "Outputs parsed JSON with speech, action, intent, emotion, entities, and triggers."
+      },
       "defaultConfig": {
         "parseRules": "分析玩家输入，提取：发言内容、角色动作、玩家意图、情绪标签、提到的实体名称、潜在触发词。输出JSON。",
         "language": "zh"
@@ -70,6 +74,10 @@
       },
       "color": "#d97706",
       "preview": "Outputs assembled RP context string from all upstream sources.",
+      "previewI18n": {
+        "zh": "输出来自所有上游来源的组装 RP 上下文字符串。",
+        "en": "Outputs assembled RP context string from all upstream sources."
+      },
       "defaultConfig": {
         "assemblyTemplate": "【角色设定】\n{character}\n\n【当前场景】\n{scene}\n\n【世界书设定】\n{worldbook}\n\n【相关记忆】\n{memory}\n\n【玩家输入解析】\n{parsed}\n\n请基于以上上下文进行角色扮演。",
         "maxTokens": 2000
@@ -115,6 +123,10 @@
       },
       "color": "#2f7d6d",
       "preview": "Returns matched worldbook entries and hit metadata.",
+      "previewI18n": {
+        "zh": "返回匹配的世界书条目和命中元数据。",
+        "en": "Returns matched worldbook entries and hit metadata."
+      },
       "defaultConfig": { "query": "", "limit": 4 },
       "configFields": [
         {
@@ -142,8 +154,16 @@
       "labelI18n": { "zh": "记忆召回", "en": "Memory Recall" },
       "category": "memory",
       "description": "Recall long-term roleplay memories relevant to the current user input.",
+      "descriptionI18n": {
+        "zh": "召回与当前玩家输入相关的长期角色扮演记忆。",
+        "en": "Recall long-term roleplay memories relevant to the current user input."
+      },
       "color": "#7b5ea7",
       "preview": "Returns matched relationship state, preferences, and unresolved hooks.",
+      "previewI18n": {
+        "zh": "返回匹配的关系状态、偏好和未解决的伏笔。",
+        "en": "Returns matched relationship state, preferences, and unresolved hooks."
+      },
       "defaultConfig": { "query": "", "limit": 4 },
       "configFields": [
         {
@@ -171,8 +191,16 @@
       "labelI18n": { "zh": "RP 角色卡", "en": "RP Character Card" },
       "category": "roleplay",
       "description": "Define an NPC persona, voice, and boundaries.",
+      "descriptionI18n": {
+        "zh": "定义 NPC 角色的人设、口吻和边界。",
+        "en": "Define an NPC persona, voice, and boundaries."
+      },
       "color": "#8f526b",
       "preview": "Outputs a structured character profile for roleplay generation.",
+      "previewI18n": {
+        "zh": "输出用于角色扮演生成的结构化角色档案。",
+        "en": "Outputs a structured character profile for roleplay generation."
+      },
       "defaultConfig": {
         "name": "璃夏",
         "persona": "冷静、敏锐，习惯用克制的语气试探对方。",
@@ -202,8 +230,16 @@
       "labelI18n": { "zh": "RP 场景状态", "en": "RP Scene State" },
       "category": "roleplay",
       "description": "Collect location, mood, stakes, setup, and lore into a scene state.",
+      "descriptionI18n": {
+        "zh": "将地点、氛围、风险、开局设定和背景设定收集为场景状态。",
+        "en": "Collect location, mood, stakes, setup, and lore into a scene state."
+      },
       "color": "#596d87",
       "preview": "Outputs structured scene state for the dialogue director.",
+      "previewI18n": {
+        "zh": "输出供对话导演使用的结构化场景状态。",
+        "en": "Outputs structured scene state for the dialogue director."
+      },
       "defaultConfig": {
         "location": "雨夜旧书店",
         "mood": "悬疑、克制、压低声音",
@@ -227,8 +263,16 @@
       "labelI18n": { "zh": "RP 对话导演", "en": "RP Dialogue Director" },
       "category": "roleplay",
       "description": "Generate an in-character roleplay reply from player input, character, scene, lore, and memory.",
+      "descriptionI18n": {
+        "zh": "从玩家输入、角色卡、场景、设定和记忆中生成角色扮演回复。",
+        "en": "Generate an in-character roleplay reply from player input, character, scene, lore, and memory."
+      },
       "color": "#9a6a3d",
       "preview": "Outputs an RP reply while preserving player agency.",
+      "previewI18n": {
+        "zh": "在保留玩家自主权的同时输出角色扮演回复。",
+        "en": "Outputs an RP reply while preserving player agency."
+      },
       "defaultConfig": {
         "replyRules": "写中文。保留悬念。不要替玩家说话或行动。",
         "skills": ["rp_persona", "rp_player_agency", "rp_continuity", "rp_slow_burn"],
@@ -276,8 +320,16 @@
       "labelI18n": { "zh": "RP 连续性检查", "en": "RP Continuity Check" },
       "category": "roleplay",
       "description": "Check persona, canon, relationship continuity, and player agency.",
+      "descriptionI18n": {
+        "zh": "检查角色人设、正典设定、关系连续性和玩家自主权。",
+        "en": "Check persona, canon, relationship continuity, and player agency."
+      },
       "color": "#7f6751",
       "preview": "Outputs continuity notes for the generated RP reply.",
+      "previewI18n": {
+        "zh": "输出针对已生成 RP 回复的连续性检查笔记。",
+        "en": "Outputs continuity notes for the generated RP reply."
+      },
       "defaultConfig": { "strictness": "medium", "skills": ["rp_player_agency", "rp_continuity"] },
       "configFields": [
         {
@@ -313,6 +365,10 @@
       },
       "color": "#d97706",
       "preview": "Outputs memory candidate JSON array with type, title, content, tags, and priority.",
+      "previewI18n": {
+        "zh": "输出包含类型、标题、内容、标签和优先级的记忆候选 JSON 数组。",
+        "en": "Outputs memory candidate JSON array with type, title, content, tags, and priority."
+      },
       "defaultConfig": {
         "autoWrite": false,
         "maxCandidates": 5,

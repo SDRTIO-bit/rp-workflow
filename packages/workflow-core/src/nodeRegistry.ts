@@ -30,8 +30,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "用户输入", en: "User Input" },
     category: "core",
     description: "Manual task, brief, or source text entered by the user.",
+    descriptionI18n: {
+      zh: "用户手动输入的任务、简介或源文本。",
+      en: "Manual task, brief, or source text entered by the user.",
+    },
     color: "#0f766e",
     preview: "Accepts free text and emits user_input for downstream nodes.",
+    previewI18n: {
+      zh: "接受自由文本并向下游节点发送 user_input。",
+      en: "Accepts free text and emits user_input for downstream nodes.",
+    },
     defaultConfig: { text: "在这里输入任务或剧情片段。" },
     configFields: [{ key: "text", label: { zh: "文本", en: "Text" }, kind: "textarea" }],
     ports: [output("text", "Text", "user_input")],
@@ -42,8 +50,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "Agent 节点", en: "Agent" },
     category: "core",
     description: "Runs an LLM agent with selected skills, plugins, and upstream context.",
+    descriptionI18n: {
+      zh: "使用选定的 skill、插件和上游上下文运行 LLM agent。",
+      en: "Runs an LLM agent with selected skills, plugins, and upstream context.",
+    },
     color: "#2563eb",
     preview: "Context + optional instruction -> draft result.",
+    previewI18n: {
+      zh: "上下文 + 可选指令 → 草稿结果。",
+      en: "Context + optional instruction -> draft result.",
+    },
     quickAdd: true,
     defaultConfig: {
       model: "deepseek-v4-flash",
@@ -75,8 +91,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "正文输出", en: "Text Output" },
     category: "core",
     description: "Final text sink used to collect the workflow result.",
+    descriptionI18n: {
+      zh: "用于收集工作流结果的最终文本输出节点。",
+      en: "Final text sink used to collect the workflow result.",
+    },
     color: "#b45309",
     preview: "Receives draft and emits final_text.",
+    previewI18n: {
+      zh: "接收草稿并输出 final_text。",
+      en: "Receives draft and emits final_text.",
+    },
     ports: [input("text", "Text", "draft"), output("final", "Final", "final_text")],
   },
   debugLog: {
@@ -85,8 +109,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "调试日志", en: "Debug Log" },
     category: "core",
     description: "Inspects JSON-like data while designing or debugging a workflow.",
+    descriptionI18n: {
+      zh: "在设计或调试工作流时检查 JSON 类数据。",
+      en: "Inspects JSON-like data while designing or debugging a workflow.",
+    },
     color: "#64748b",
     preview: "Shows incoming data as formatted debug output.",
+    previewI18n: {
+      zh: "将输入数据格式化为调试输出。",
+      en: "Shows incoming data as formatted debug output.",
+    },
     ports: [input("data", "Data", "json", false), output("debug", "Debug", "debug_info")],
   },
   promptTemplate: {
@@ -95,8 +127,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "提示词模板", en: "Prompt Template" },
     category: "core",
     description: "Combines source text with a reusable prompt template.",
+    descriptionI18n: {
+      zh: "将源文本与可复用的提示词模板组合。",
+      en: "Combines source text with a reusable prompt template.",
+    },
     color: "#4f46e5",
     preview: "Text source + template -> context prompt.",
+    previewI18n: {
+      zh: "文本源 + 模板 → 上下文提示词。",
+      en: "Text source + template -> context prompt.",
+    },
     defaultConfig: { template: "请基于以下内容继续处理：" },
     configFields: [{ key: "template", label: { zh: "文本", en: "Text" }, kind: "textarea" }],
     ports: [input("source", "Source", "text"), output("prompt", "Prompt", "context")],
@@ -107,8 +147,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "模拟检索", en: "Mock Search" },
     category: "core",
     description: "Local fake search node for offline workflow tests.",
+    descriptionI18n: {
+      zh: "本地模拟检索节点，用于离线工作流测试。",
+      en: "Local fake search node for offline workflow tests.",
+    },
     color: "#0891b2",
     preview: "Query -> simulated search_result.",
+    previewI18n: {
+      zh: "查询 → 模拟 search_result。",
+      en: "Query -> simulated search_result.",
+    },
     defaultConfig: { query: "", limit: 4 },
     configFields: [
       { key: "query", label: { zh: "检索词", en: "Query" }, kind: "text" },
@@ -122,8 +170,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "世界书检索", en: "Worldbook Search" },
     category: "knowledge",
     description: "Searches the local worldbook library and returns context evidence.",
+    descriptionI18n: {
+      zh: "检索本地世界书库并返回上下文证据。",
+      en: "Searches the local worldbook library and returns context evidence.",
+    },
     color: "#7c3aed",
     preview: "User query -> ranked worldbook search_result.",
+    previewI18n: {
+      zh: "用户查询 → 排序后的世界书 search_result。",
+      en: "User query -> ranked worldbook search_result.",
+    },
     defaultConfig: { query: "", limit: 4 },
     configFields: [
       { key: "query", label: { zh: "检索词", en: "Query" }, kind: "text" },
@@ -138,8 +194,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     category: "knowledge",
     description:
       "Searches the long-term memory library and returns relevant player, relationship, and prior-scene context.",
+    descriptionI18n: {
+      zh: "检索长期记忆库并返回相关玩家、关系和历史场景上下文。",
+      en: "Searches the long-term memory library and returns relevant player, relationship, and prior-scene context.",
+    },
     color: "#0e7490",
     preview: "Player turn -> ranked memory context.",
+    previewI18n: {
+      zh: "玩家回合 → 排序后的记忆上下文。",
+      en: "Player turn -> ranked memory context.",
+    },
     defaultConfig: { query: "", limit: 4, scope: "玩家偏好、角色关系、历史互动" },
     configFields: [
       { key: "query", label: { zh: "检索词", en: "Query" }, kind: "text" },
@@ -154,8 +218,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "琴行咨询", en: "Music School Intake" },
     category: "external",
     description: "Normalizes piano-school leads, student goals, age, and preferred schedule.",
+    descriptionI18n: {
+      zh: "规范化琴行线索、学生目标、年龄和偏好时间。",
+      en: "Normalizes piano-school leads, student goals, age, and preferred schedule.",
+    },
     color: "#be123c",
     preview: "Lead text -> business_data profile for sales or lesson planning agents.",
+    previewI18n: {
+      zh: "线索文本 → 供销售或课程规划 agent 使用的 business_data。",
+      en: "Lead text -> business_data profile for sales or lesson planning agents.",
+    },
     defaultConfig: { source: "琴行咨询", studentLevel: "初学" },
     configFields: [
       { key: "source", label: { zh: "来源", en: "Source" }, kind: "text" },
@@ -169,8 +241,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "琴行课纲", en: "Lesson Plan" },
     category: "external",
     description: "Creates a structured lesson plan from student profile and teaching context.",
+    descriptionI18n: {
+      zh: "从学生档案和教学上下文创建结构化课纲。",
+      en: "Creates a structured lesson plan from student profile and teaching context.",
+    },
     color: "#c2410c",
     preview: "Student profile + context -> lesson draft.",
+    previewI18n: {
+      zh: "学生档案 + 上下文 → 课纲草稿。",
+      en: "Student profile + context -> lesson draft.",
+    },
     defaultConfig: { weeks: 4, style: "钢琴启蒙" },
     configFields: [
       { key: "weeks", label: { zh: "周数", en: "Weeks" }, kind: "number", min: 1, max: 52 },
@@ -188,8 +268,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "Superpowers 计划", en: "Superpowers Plan" },
     category: "external",
     description: "Represents an external Superpowers planning or execution discipline node.",
+    descriptionI18n: {
+      zh: "表示一个外部 Superpowers 规划或执行规程节点。",
+      en: "Represents an external Superpowers planning or execution discipline node.",
+    },
     color: "#0d9488",
     preview: "Goal context -> implementation plan.",
+    previewI18n: {
+      zh: "目标上下文 → 实施计划。",
+      en: "Goal context -> implementation plan.",
+    },
     defaultConfig: { mode: "planning" },
     configFields: [{ key: "mode", label: { zh: "模式", en: "Mode" }, kind: "text" }],
     ports: [input("goal", "Goal", "context"), output("plan", "Plan", "analysis")],
@@ -200,8 +288,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "Web App 规格", en: "Web App Spec" },
     category: "external",
     description: "Turns product intent into a frontend implementation specification.",
+    descriptionI18n: {
+      zh: "将产品意图转化为前端实现规格说明。",
+      en: "Turns product intent into a frontend implementation specification.",
+    },
     color: "#16a34a",
     preview: "Product context -> UI spec for Build Web Apps workflows.",
+    previewI18n: {
+      zh: "产品上下文 → 用于 Build Web Apps 工作流的 UI 规格。",
+      en: "Product context -> UI spec for Build Web Apps workflows.",
+    },
     defaultConfig: { surface: "dashboard" },
     configFields: [{ key: "surface", label: { zh: "界面类型", en: "Surface" }, kind: "text" }],
     ports: [input("brief", "Brief", "context"), output("spec", "Spec", "ui_spec")],
@@ -212,8 +308,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "HyperFrames 合成", en: "HyperFrames Composition" },
     category: "external",
     description: "Models a HyperFrames HTML video composition with timing and media assets.",
+    descriptionI18n: {
+      zh: "使用时间轴和媒体资产对 HyperFrames HTML 视频合成进行建模。",
+      en: "Models a HyperFrames HTML video composition with timing and media assets.",
+    },
     color: "#db2777",
     preview: "Script + media asset -> video composition.",
+    previewI18n: {
+      zh: "脚本 + 媒体资产 → 视频合成。",
+      en: "Script + media asset -> video composition.",
+    },
     defaultConfig: { aspectRatio: "16:9", duration: 8 },
     configFields: [
       { key: "aspectRatio", label: { zh: "画幅", en: "Aspect ratio" }, kind: "text" },
@@ -231,8 +335,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     labelI18n: { zh: "OpenAI 工具适配", en: "OpenAI Tool Adapter" },
     category: "external",
     description: "Describes an OpenAI tool or agent adapter as an external workflow capability.",
+    descriptionI18n: {
+      zh: "将 OpenAI 工具或 agent 适配器描述为外部工作流能力。",
+      en: "Describes an OpenAI tool or agent adapter as an external workflow capability.",
+    },
     color: "#111827",
     preview: "Tool spec + context -> agent_tool definition.",
+    previewI18n: {
+      zh: "工具规格 + 上下文 → agent_tool 定义。",
+      en: "Tool spec + context -> agent_tool definition.",
+    },
     defaultConfig: { provider: "openai", toolName: "custom_tool" },
     configFields: [
       { key: "provider", label: { zh: "提供方", en: "Provider" }, kind: "text" },
@@ -247,8 +359,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     category: "utility",
     description:
       "Preview-only node for media, UI specs, tool specs, and video composition payloads.",
+    descriptionI18n: {
+      zh: "仅用于预览媒体、UI 规格、工具规格和视频合成数据的节点。",
+      en: "Preview-only node for media, UI specs, tool specs, and video composition payloads.",
+    },
     color: "#9333ea",
     preview: "Accepts external-node outputs and exposes debug_info without mutating workflow data.",
+    previewI18n: {
+      zh: "接受外部节点输出并以 debug_info 形式展示，不改写工作流数据。",
+      en: "Accepts external-node outputs and exposes debug_info without mutating workflow data.",
+    },
     quickAdd: true,
     ports: [input("data", "Data", "json", false), output("preview", "Preview", "debug_info")],
   },
@@ -259,8 +379,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     category: "roleplay",
     description:
       "Builds a stable roleplay character profile with persona, voice, boundaries, and secrets.",
+    descriptionI18n: {
+      zh: "创建一个包含人设、口吻、边界和秘密的稳定角色扮演角色档案。",
+      en: "Builds a stable roleplay character profile with persona, voice, boundaries, and secrets.",
+    },
     color: "#a21caf",
     preview: "Character seed -> character_profile.",
+    previewI18n: {
+      zh: "角色种子 → character_profile。",
+      en: "Character seed -> character_profile.",
+    },
     defaultConfig: {
       name: "雾岛澪",
       persona: "冷静克制的旧车站管理员，知道广播异常的来历。",
@@ -282,8 +410,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     category: "roleplay",
     description:
       "Tracks the current location, mood, active stakes, known facts, and unresolved hooks.",
+    descriptionI18n: {
+      zh: "跟踪当前地点、氛围、活跃目标、已知事实和未解决的伏笔。",
+      en: "Tracks the current location, mood, active stakes, known facts, and unresolved hooks.",
+    },
     color: "#7e22ce",
     preview: "Opening setup + optional lore -> scene_state.",
+    previewI18n: {
+      zh: "开场设定 + 可选设定 → scene_state。",
+      en: "Opening setup + optional lore -> scene_state.",
+    },
     defaultConfig: {
       location: "废弃车站候车厅",
       mood: "雨夜、旧广播、轻微超自然",
@@ -307,8 +443,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     category: "roleplay",
     description:
       "Retrieves roleplay lore, relationship facts, canon constraints, and unresolved plot hooks.",
+    descriptionI18n: {
+      zh: "检索角色扮演设定、关系事实、正典约束和未解决的剧情伏笔。",
+      en: "Retrieves roleplay lore, relationship facts, canon constraints, and unresolved plot hooks.",
+    },
     color: "#6d28d9",
     preview: "Player turn -> search_result lore context.",
+    previewI18n: {
+      zh: "玩家回合 → search_result 设定上下文。",
+      en: "Player turn -> search_result lore context.",
+    },
     defaultConfig: { limit: 5, scope: "角色关系、地点设定、未解决伏笔" },
     configFields: [
       { key: "limit", label: { zh: "返回数量", en: "Limit" }, kind: "number", min: 1, max: 12 },
@@ -323,8 +467,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     category: "roleplay",
     description:
       "Composes the next in-character reply from persona, scene state, player action, and memory.",
+    descriptionI18n: {
+      zh: "从角色人设、场景状态、玩家行动和记忆中编写下一段角色回复。",
+      en: "Composes the next in-character reply from persona, scene state, player action, and memory.",
+    },
     color: "#be185d",
     preview: "Character + scene + player turn -> in-character draft.",
+    previewI18n: {
+      zh: "角色 + 场景 + 玩家回合 → 角色扮演草稿。",
+      en: "Character + scene + player turn -> in-character draft.",
+    },
     defaultConfig: {
       style: "沉浸式中文 RP",
       replyRules: "只扮演 NPC 和环境；保留玩家行动选择；每轮推进一个清晰变化。",
@@ -350,8 +502,16 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     category: "roleplay",
     description:
       "Checks whether a draft violates persona, world facts, relationship state, or player agency.",
+    descriptionI18n: {
+      zh: "检查草稿是否违反角色人设、世界事实、关系状态或玩家自主权。",
+      en: "Checks whether a draft violates persona, world facts, relationship state, or player agency.",
+    },
     color: "#dc2626",
     preview: "RP draft + scene state -> continuity analysis.",
+    previewI18n: {
+      zh: "RP 草稿 + 场景状态 → 连续性分析。",
+      en: "RP draft + scene state -> continuity analysis.",
+    },
     defaultConfig: { strictness: "medium" },
     configFields: [
       {
