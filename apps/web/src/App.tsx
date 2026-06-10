@@ -45,10 +45,12 @@ import {
   enablePluginViaServer,
   loadNodeManifestsViaServer,
   loadPluginsViaServer,
+  loadSkillsViaServer,
   loadWorkflowTemplatesViaServer,
   runWorkflowStreamViaServer,
   runWorkflowViaServer,
   type PluginSummary,
+  type SkillSummary,
 } from "./runWorkflowClient";
 import { createLocalNodeExecutors } from "./runtime/localNodeExecutors";
 import {
@@ -327,6 +329,7 @@ export function App() {
   const [isPanning, setIsPanning] = useState(false);
   const [spacePressed, setSpacePressed] = useState(false);
   const [pluginSummaries, setPluginSummaries] = useState<PluginSummary[]>([]);
+  const [skillSummaries, setSkillSummaries] = useState<SkillSummary[]>([]);
   const [showPluginPanel, setShowPluginPanel] = useState(false);
   const [pluginPanelError, setPluginPanelError] = useState("");
   const dragRef = useRef<{ id: string; offset: Point } | undefined>(undefined);
@@ -396,6 +399,11 @@ export function App() {
     }
   };
 
+  const loadSkills = async () => {
+    const loaded = await loadSkillsViaServer();
+    if (loaded) setSkillSummaries(loaded);
+  };
+
   const handleTogglePlugin = async (plugin: PluginSummary, enable: boolean) => {
     if (!enable) {
       const usedNodeTypes = workflow.nodes
@@ -449,6 +457,7 @@ export function App() {
       }
 
       await loadPlugins();
+      void loadSkills();
     };
 
     void loadRuntimeConfiguration();

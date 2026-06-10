@@ -132,6 +132,27 @@ export type PluginSummary = {
   nodeTypes: string[];
 };
 
+export type SkillSummary = {
+  id: string;
+  label: { zh: string; en: string };
+  content: { zh: string; en: string };
+  category?: string;
+  tags?: string[];
+  pluginId: string;
+};
+
+export const loadSkillsViaServer = async (
+  fetcher: Fetcher = fetch,
+): Promise<SkillSummary[] | undefined> => {
+  try {
+    const response = await fetcher("/api/skills");
+    if (!response.ok) return undefined;
+    return ((await response.json()) as { skills: SkillSummary[] }).skills;
+  } catch {
+    return undefined;
+  }
+};
+
 export const loadPluginsViaServer = async (
   fetcher: Fetcher = fetch,
 ): Promise<PluginSummary[] | undefined> => {
