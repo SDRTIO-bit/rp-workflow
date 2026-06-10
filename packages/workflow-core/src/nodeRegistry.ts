@@ -88,21 +88,43 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
   },
   textOutput: {
     type: "textOutput",
-    label: "Text Output",
-    labelI18n: { zh: "正文输出", en: "Text Output" },
+    label: "Final Reply",
+    labelI18n: { zh: "最终回复", en: "Final Reply" },
     category: "core",
-    description: "Final text sink used to collect the workflow result.",
+    description:
+      "Delivers the final prose output to the user. This is what the end user sees as the workflow result.",
     descriptionI18n: {
-      zh: "用于收集工作流结果的最终文本输出节点。",
-      en: "Final text sink used to collect the workflow result.",
+      zh: "将最终文本输出发送给用户。这是终端用户看到的工作流结果。",
+      en: "Delivers the final prose output to the user. This is what the end user sees as the workflow result.",
     },
     color: "#b45309",
-    preview: "Receives draft and emits final_text.",
+    preview: "Receives draft and emits final_text for the user-facing reply.",
     previewI18n: {
-      zh: "接收草稿并输出 final_text。",
-      en: "Receives draft and emits final_text.",
+      zh: "接收草稿并输出面向用户的最终回复文本。",
+      en: "Receives draft and emits final_text for the user-facing reply.",
     },
     panelLayout: "output",
+    defaultConfig: {
+      destination: "user",
+      displayLabel: "Final Reply",
+    },
+    configFields: [
+      {
+        key: "destination",
+        label: { zh: "输出目标", en: "Destination" },
+        kind: "select",
+        options: [
+          { label: { zh: "发送给用户", en: "Send to User" }, value: "user" },
+          { label: { zh: "导出为文件", en: "Export as File" }, value: "export" },
+          { label: { zh: "仅预览", en: "Preview Only" }, value: "preview" },
+        ],
+      },
+      {
+        key: "displayLabel",
+        label: { zh: "显示标签", en: "Display Label" },
+        kind: "text",
+      },
+    ],
     ports: [input("text", "Text", "draft"), output("final", "Final", "final_text")],
   },
   debugLog: {
