@@ -31,13 +31,47 @@ export type LocalizedText = {
   en: string;
 };
 
+export type NodeConfigOption = {
+  label: LocalizedText;
+  value: string;
+};
+
+export type NodeConfigPreset = {
+  id: string;
+  label: LocalizedText;
+  description?: LocalizedText;
+  config: Record<string, unknown>;
+};
+
 export type NodeConfigField = {
   key: string;
   label: LocalizedText;
-  kind: "text" | "textarea" | "number" | "select" | "tags";
+  kind:
+    | "text"
+    | "textarea"
+    | "number"
+    | "select"
+    | "tags"
+    | "boolean"
+    | "multiselect"
+    | "json"
+    | "secret"
+    | "model";
   min?: number;
   max?: number;
-  options?: string[];
+  options?: string[] | NodeConfigOption[];
+  required?: boolean;
+  placeholder?: LocalizedText;
+  help?: LocalizedText;
+  group?: string;
+  groupLabel?: LocalizedText;
+  advanced?: boolean;
+  dependsOn?: {
+    field: string;
+    operator?: "equals" | "notEquals" | "includes" | "exists";
+    value?: unknown;
+  };
+  source?: "static" | "models";
 };
 
 export type NodeDefinition = {
@@ -53,6 +87,7 @@ export type NodeDefinition = {
   defaultConfig?: Record<string, unknown>;
   configFields?: NodeConfigField[];
   quickAdd?: boolean;
+  presets?: NodeConfigPreset[];
   ports: PortDefinition[];
 };
 

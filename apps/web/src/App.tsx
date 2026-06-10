@@ -739,11 +739,15 @@ export function App() {
         <label key={field.key}>
           {label}
           <select value={String(value ?? "")} onChange={(event) => update(event.target.value)}>
-            {(field.options ?? []).map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
+            {(field.options ?? []).map((option) => {
+              const optValue = typeof option === "string" ? option : option.value;
+              const optLabel = typeof option === "string" ? option : option.label.en;
+              return (
+                <option key={optValue} value={optValue}>
+                  {optLabel}
+                </option>
+              );
+            })}
           </select>
         </label>
       );
