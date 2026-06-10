@@ -639,6 +639,33 @@ const server = createServer(async (request, response) => {
   const pathname = requestUrl.pathname;
 
   try {
+    if (request.method === "GET" && pathname === "/api/plugins") {
+      const pluginList = plugins.map((plugin) => {
+        const state = pluginState[plugin.manifest.id];
+        const manifestEnabled = plugin.manifest.enabled !== false;
+        const userOverride = state && typeof state.enabled === "boolean";
+        const effectiveEnabled = userOverride ? state.enabled : manifestEnabled;
+
+        return {
+          id: plugin.manifest.id,
+          label: plugin.manifest.label,
+          version: plugin.manifest.version,
+          description: plugin.manifest.description ?? "",
+          author: plugin.manifest.author,
+          manifestEnabled,
+          enabled: effectiveEnabled,
+          stateSource: userOverride ? "user" : "manifest",
+          permissions: plugin.manifest.permissions ?? [],
+          dependencies: plugin.manifest.dependencies ?? [],
+          compatibility: plugin.manifest.compatibility ?? null,
+          nodeTypes: plugin.manifest.nodes.map((node) => node.type),
+        };
+      });
+
+      sendJson(response, 200, { plugins: pluginList });
+      return;
+    }
+
     if (request.method === "GET" && pathname === "/api/nodes") {
       sendJson(response, 200, {
         nodes: Object.values(runtimeNodeCatalog),
