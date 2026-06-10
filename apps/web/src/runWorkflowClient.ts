@@ -116,3 +116,60 @@ export const runWorkflowStreamViaServer = async (
     return undefined;
   }
 };
+
+export type PluginSummary = {
+  id: string;
+  label: string;
+  version: string;
+  description: string;
+  author?: string;
+  manifestEnabled: boolean;
+  enabled: boolean;
+  stateSource: "manifest" | "user";
+  permissions: string[];
+  dependencies: { id: string; versionRange?: string; optional?: boolean }[];
+  compatibility: { app?: string; workflowSchema?: number } | null;
+  nodeTypes: string[];
+};
+
+export const loadPluginsViaServer = async (
+  fetcher: Fetcher = fetch,
+): Promise<PluginSummary[] | undefined> => {
+  try {
+    const response = await fetcher("/api/plugins");
+    if (!response.ok) return undefined;
+    return ((await response.json()) as { plugins: PluginSummary[] }).plugins;
+  } catch {
+    return undefined;
+  }
+};
+
+export const enablePluginViaServer = async (
+  pluginId: string,
+  fetcher: Fetcher = fetch,
+): Promise<PluginSummary | undefined> => {
+  try {
+    const response = await fetcher(`/api/plugins/${encodeURIComponent(pluginId)}/enable`, {
+      method: "POST",
+    });
+    if (!response.ok) return undefined;
+    return (await response.json()) as PluginSummary;
+  } catch {
+    return undefined;
+  }
+};
+
+export const disablePluginViaServer = async (
+  pluginId: string,
+  fetcher: Fetcher = fetch,
+): Promise<PluginSummary | undefined> => {
+  try {
+    const response = await fetcher(`/api/plugins/${encodeURIComponent(pluginId)}/disable`, {
+      method: "POST",
+    });
+    if (!response.ok) return undefined;
+    return (await response.json()) as PluginSummary;
+  } catch {
+    return undefined;
+  }
+};
