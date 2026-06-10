@@ -223,6 +223,91 @@ const createPluginExecutors = async (plugins, context) => {
       continue;
     }
 
+    if (executor.adapter === "remote-http") {
+      const endpoint = executor.entry;
+      const timeoutMs = executor.timeoutMs ?? 30000;
+
+      // Validate URL protocol
+      try {
+        const parsed = new URL(endpoint);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          console.warn(
+            `Skipped executor for ${plugin.manifest.id}: unsupported protocol ${parsed.protocol}`,
+          );
+          continue;
+        }
+      } catch {
+        console.warn(`Skipped executor for ${plugin.manifest.id}: invalid URL ${endpoint}`);
+        continue;
+      }
+
+      // Check network permission
+      const hasNetwork = (plugin.manifest.permissions ?? []).includes("network");
+      if (!hasNetwork) {
+        console.warn(
+          `Skipped executor for ${plugin.manifest.id}: remote-http requires "network" permission`,
+        );
+        continue;
+      }
+
+      const remoteApiUrl = endpoint;
+
+      for (const nodeDef of plugin.manifest.nodes) {
+        executors[nodeDef.type] = async ({ node, inputs }) => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+          try {
+            const response = await fetch(remoteApiUrl, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                pluginId: plugin.manifest.id,
+                nodeType: node.type,
+                workflowId: context._workflowId,
+                node: { id: node.id, type: node.type, config: node.config },
+                inputs,
+              }),
+              signal: controller.signal,
+            });
+
+            clearTimeout(timer);
+
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const data = await response.json();
+
+            if (!data || typeof data !== "object") {
+              throw new Error("Invalid response: expected JSON object");
+            }
+
+            if (data.error) {
+              throw new Error(String(data.error));
+            }
+
+            if (!data.outputs || typeof data.outputs !== "object") {
+              throw new Error("Invalid response: missing outputs object");
+            }
+
+            return {
+              outputs: data.outputs,
+              metadata: data.metadata ?? {},
+            };
+          } catch (error) {
+            clearTimeout(timer);
+            const message = error instanceof Error ? error.message : String(error);
+            throw new Error(
+              `Remote executor ${plugin.manifest.id}/${nodeDef.type} failed at ${remoteApiUrl}: ${message}`,
+            );
+          }
+        };
+      }
+
+      continue;
+    }
+
     if (executor.adapter !== "local-module") {
       console.warn(`Skipped executor for ${plugin.manifest.id}: unsupported ${executor.adapter}`);
       continue;
@@ -286,6 +371,7 @@ const createExecutors = async (workflow, onToken) => {
   const worldbookEntries = await readEntries(worldbookFile);
   const relevantMemories = rankMemories(extractQuery(workflow), memories, 4);
   const pluginExecutors = await createPluginExecutors(plugins, {
+    _workflowId: workflow.id,
     readMemories: () => readEntries(memoryFile),
     readWorldbook: () => readEntries(worldbookFile),
     rankEntries: (query, entries, limit) =>

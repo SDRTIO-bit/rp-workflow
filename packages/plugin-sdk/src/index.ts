@@ -62,6 +62,7 @@ export type NodePluginManifest = {
   executor?: {
     adapter: "local-module" | "remote-http";
     entry: string;
+    timeoutMs?: number;
   };
 };
 
