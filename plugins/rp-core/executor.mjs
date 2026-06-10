@@ -225,6 +225,80 @@ export const createExecutors = async (context) => ({
     };
   },
 
+  rpMemoryWrite: async ({ node, inputs }) => {
+    const reply = String(inputs.reply ?? "");
+    const notes = String(inputs.notes ?? "");
+    const parsed = inputs.parsed;
+    const memoryTypes = Array.isArray(node.config.memoryTypes)
+      ? node.config.memoryTypes.map(String)
+      : ["relationship", "preference", "promise", "lore", "hook"];
+
+    if (!reply.trim() && !notes.trim()) {
+      return {
+        outputs: { candidates: [] },
+        metadata: { pluginId: "awp.rp-core", emptyInput: true },
+      };
+    }
+
+    const result = await context.executeAgent({
+      nodeId: node.id,
+      config: {
+        systemPrompt: [
+          "你是 RP 记忆管理助手。分析本轮角色扮演对话，提取值得写入长期记忆的内容。",
+          "",
+          `启用的记忆类型：${memoryTypes.join("、")}`,
+          "",
+          "类型说明：",
+          "- relationship: 角色之间的关系变化（信任度、亲密感、敌意等）",
+          "- preference: 玩家表现出的偏好、习惯或风格",
+          "- promise: 角色做出的承诺或约定",
+          "- lore: 新揭示的世界观设定或角色背景",
+          "- hook: 未解决的伏笔或悬念",
+          "",
+          "输出格式：严格的 JSON 数组，每个元素包含 type、title、content、tags、priority(1-5)。",
+          `最多输出 ${Number(node.config.maxCandidates ?? 5)} 条。`,
+          "如果本轮没有值得记录的变化，输出空数组 []。",
+        ].join("\n"),
+        skills: [],
+        plugins: [],
+        outputType: "json",
+      },
+      inputs: {
+        reply,
+        notes,
+        parsed: parsed ? JSON.stringify(parsed) : "",
+      },
+    });
+
+    try {
+      const candidates = JSON.parse(result.text);
+      const filtered = (Array.isArray(candidates) ? candidates : [])
+        .filter((c) => c && typeof c === "object" && memoryTypes.includes(String(c.type ?? "")))
+        .slice(0, Number(node.config.maxCandidates ?? 5))
+        .map((c) => ({
+          type: String(c.type ?? "lore"),
+          title: String(c.title ?? "").slice(0, 120),
+          content: String(c.content ?? "").slice(0, 500),
+          tags: Array.isArray(c.tags) ? c.tags.map(String) : [],
+          priority: Math.max(1, Math.min(5, Number(c.priority ?? 3))),
+        }));
+
+      return {
+        outputs: { candidates: filtered },
+        metadata: {
+          ...result.metadata,
+          pluginId: "awp.rp-core",
+          candidateCount: filtered.length,
+        },
+      };
+    } catch {
+      return {
+        outputs: { candidates: [] },
+        metadata: { pluginId: "awp.rp-core", parseError: true },
+      };
+    }
+  },
+
   rpContinuityCheck: async ({ node, inputs }) => {
     const result = await context.executeAgent({
       nodeId: node.id,

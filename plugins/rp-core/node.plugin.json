@@ -289,6 +289,58 @@
         { "id": "context", "label": "Context", "direction": "input", "dataType": "context" },
         { "id": "notes", "label": "Notes", "direction": "output", "dataType": "analysis" }
       ]
+    },
+    {
+      "type": "rpMemoryWrite",
+      "label": "RP Memory Write",
+      "labelI18n": { "zh": "RP 记忆写入", "en": "RP Memory Write" },
+      "category": "memory",
+      "description": "Analyze the turn and generate memory write candidates for relationship changes, preferences, promises, lore, and hooks.",
+      "descriptionI18n": {
+        "zh": "分析本轮对话，生成记忆写入候选：关系变化、偏好、承诺、设定揭示、未解决伏笔。",
+        "en": "Analyze this turn and generate memory write candidates for relationship changes, preferences, promises, lore reveals, and unresolved hooks."
+      },
+      "color": "#d97706",
+      "preview": "Outputs memory candidate JSON array with type, title, content, tags, and priority.",
+      "defaultConfig": {
+        "autoWrite": false,
+        "maxCandidates": 5,
+        "memoryTypes": ["relationship", "preference", "promise", "lore", "hook"]
+      },
+      "configFields": [
+        {
+          "key": "autoWrite",
+          "label": { "zh": "自动写入", "en": "Auto write" },
+          "kind": "boolean"
+        },
+        {
+          "key": "maxCandidates",
+          "label": { "zh": "最大候选数", "en": "Max candidates" },
+          "kind": "number",
+          "min": 1,
+          "max": 10
+        },
+        {
+          "key": "memoryTypes",
+          "label": { "zh": "记忆类型", "en": "Memory types" },
+          "kind": "multiselect",
+          "options": [
+            { "label": { "zh": "关系变化", "en": "Relationship" }, "value": "relationship" },
+            { "label": { "zh": "偏好", "en": "Preference" }, "value": "preference" },
+            { "label": { "zh": "承诺", "en": "Promise" }, "value": "promise" },
+            { "label": { "zh": "设定揭示", "en": "Lore" }, "value": "lore" },
+            { "label": { "zh": "伏笔", "en": "Hook" }, "value": "hook" }
+          ]
+        }
+      ],
+      "quickAdd": true,
+      "ports": [
+        { "id": "reply", "label": "Reply", "direction": "input", "dataType": "draft", "required": true },
+        { "id": "notes", "label": "Notes", "direction": "input", "dataType": "analysis", "required": true },
+        { "id": "parsed", "label": "Parsed", "direction": "input", "dataType": "json" },
+        { "id": "state", "label": "State", "direction": "input", "dataType": "scene_state" },
+        { "id": "candidates", "label": "Candidates", "direction": "output", "dataType": "json" }
+      ]
     }
   ]
 }
