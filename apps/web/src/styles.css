@@ -40,6 +40,9 @@ select {
   --grid-dot: #d7e1eb;
   --edge-label: #52677c;
   --ok: #0f766e;
+  --border-color: var(--border);
+  --text-muted: var(--muted);
+  --code-bg: #f0f2f5;
   background: var(--app-bg);
   color: var(--text);
   display: grid;
@@ -66,6 +69,9 @@ select {
   --grid-dot: #203146;
   --edge-label: #9db3c8;
   --ok: #5eead4;
+  --border-color: var(--border);
+  --text-muted: var(--muted);
+  --code-bg: #1a2433;
 }
 
 .topbar {
@@ -1123,4 +1129,129 @@ code {
     grid-template-columns: minmax(320px, 1fr);
     overflow-x: auto;
   }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: var(--panel-bg);
+  border-radius: 10px;
+  padding: 24px;
+  max-width: 620px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  color: var(--text-muted);
+}
+
+.plugin-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.plugin-card {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.plugin-card.plugin-disabled {
+  opacity: 0.7;
+}
+
+.plugin-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.plugin-card-header strong {
+  font-size: 1.02rem;
+}
+
+.plugin-version {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.plugin-status {
+  margin-left: auto;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.plugin-status.status-on {
+  color: #16a34a;
+}
+
+.plugin-status.status-off {
+  color: #dc2626;
+}
+
+.plugin-state-source {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  margin: 2px 0 6px;
+}
+
+.plugin-desc {
+  font-size: 0.85rem;
+  margin: 0 0 8px;
+}
+
+.plugin-perms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.perm-tag {
+  font-size: 0.72rem;
+  background: var(--code-bg);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+.plugin-node-types {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
+
+.plugin-card-actions {
+  display: flex;
+  gap: 8px;
 }

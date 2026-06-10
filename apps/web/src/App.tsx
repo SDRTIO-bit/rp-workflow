@@ -41,10 +41,14 @@ import {
 import { edgeDelayMs, motionStyle, nodeDelayMs } from "./motion";
 import { dataTypePresentation, getNodePorts } from "./portPresentation";
 import {
+  disablePluginViaServer,
+  enablePluginViaServer,
   loadNodeManifestsViaServer,
+  loadPluginsViaServer,
   loadWorkflowTemplatesViaServer,
   runWorkflowStreamViaServer,
   runWorkflowViaServer,
+  type PluginSummary,
 } from "./runWorkflowClient";
 import { createLocalNodeExecutors } from "./runtime/localNodeExecutors";
 import {
@@ -321,6 +325,9 @@ export function App() {
   const [canvasMenu, setCanvasMenu] = useState<CanvasMenu>();
   const [isPanning, setIsPanning] = useState(false);
   const [spacePressed, setSpacePressed] = useState(false);
+  const [pluginSummaries, setPluginSummaries] = useState<PluginSummary[]>([]);
+  const [showPluginPanel, setShowPluginPanel] = useState(false);
+  const [pluginPanelError, setPluginPanelError] = useState("");
   const dragRef = useRef<{ id: string; offset: Point } | undefined>(undefined);
   const panRef = useRef<
     | {
@@ -378,6 +385,52 @@ export function App() {
   const getRuntimeNodeConfigFields = (nodeType: string) =>
     getRuntimeNodeDefinition(nodeType)?.configFields ?? [];
 
+  const loadPlugins = async () => {
+    const loaded = await loadPluginsViaServer();
+    if (loaded) {
+      setPluginSummaries(loaded);
+      setPluginPanelError("");
+    } else {
+      setPluginPanelError("插件服务不可用，当前使用本地内置节点。");
+    }
+  };
+
+  const handleTogglePlugin = async (plugin: PluginSummary, enable: boolean) => {
+    if (!enable) {
+      const usedNodeTypes = workflow.nodes
+        .map((n) => n.type)
+        .filter((t) => plugin.nodeTypes.includes(t));
+      if (usedNodeTypes.length > 0) {
+        const confirmed = window.confirm(
+          language === "zh"
+            ? `当前工作流正在使用 ${usedNodeTypes.length} 个该插件节点，禁用后会校验失败。`
+            : `The current workflow uses ${usedNodeTypes.length} nodes from this plugin. Disabling will cause validation errors.`,
+        );
+        if (!confirmed) return;
+      }
+    }
+
+    const result = enable
+      ? await enablePluginViaServer(plugin.id)
+      : await disablePluginViaServer(plugin.id);
+
+    if (!result) {
+      setRunNotice(
+        language === "zh" ? `插件 ${enable ? "启用" : "禁用"} 失败` : `Plugin ${enable ? "enable" : "disable"} failed`,
+      );
+      return;
+    }
+
+    await loadPlugins();
+    const [loadedNodes] = await Promise.all([loadNodeManifestsViaServer()]);
+    if (loadedNodes?.length) setNodeDefinitions(loadedNodes);
+    setRunNotice(
+      language === "zh"
+        ? `插件 "${plugin.label}" 已${enable ? "启用" : "禁用"}。`
+        : `Plugin "${plugin.label}" ${enable ? "enabled" : "disabled"}.`,
+    );
+  };
+
   useEffect(() => {
     const loadRuntimeConfiguration = async () => {
       const [loadedNodes, loadedTemplates] = await Promise.all([
@@ -391,6 +444,8 @@ export function App() {
       if (loadedTemplates?.length) {
         setTemplateDefinitions(loadedTemplates);
       }
+
+      await loadPlugins();
     };
 
     void loadRuntimeConfiguration();
@@ -1164,6 +1219,17 @@ export function App() {
           }}
         />
 
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={() => {
+            void loadPlugins();
+            setShowPluginPanel(true);
+          }}
+        >
+          {language === "zh" ? "插件" : "Plugins"}
+        </button>
+
         <button className="secondary-button" type="button">
           {text.tripleCheck}
         </button>
@@ -1505,6 +1571,76 @@ export function App() {
           ) : null}
         </div>
       </section>
+
+      {showPluginPanel ? (
+        <div className="modal-overlay" onClick={() => setShowPluginPanel(false)}>
+          <div className="modal-content plugin-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{language === "zh" ? "插件管理" : "Plugin Management"}</h2>
+              <button className="modal-close" type="button" onClick={() => setShowPluginPanel(false)}>
+                ×
+              </button>
+            </div>
+            {pluginPanelError ? (
+              <p className="notice">{pluginPanelError}</p>
+            ) : pluginSummaries.length === 0 ? (
+              <p className="muted">{language === "zh" ? "没有已安装的插件。" : "No plugins installed."}</p>
+            ) : (
+              <div className="plugin-card-list">
+                {pluginSummaries.map((plugin) => (
+                  <div key={plugin.id} className={`plugin-card ${plugin.enabled ? "" : "plugin-disabled"}`}>
+                    <div className="plugin-card-header">
+                      <strong>{plugin.label}</strong>
+                      <span className="plugin-version">v{plugin.version}</span>
+                      <span className={`plugin-status ${plugin.enabled ? "status-on" : "status-off"}`}>
+                        {plugin.enabled
+                          ? language === "zh" ? "✓ 启用" : "✓ On"
+                          : language === "zh" ? "✕ 禁用" : "✕ Off"}
+                      </span>
+                    </div>
+                    <p className="plugin-state-source">
+                      {plugin.enabled && plugin.stateSource === "manifest" && "默认启用"}
+                      {!plugin.enabled && plugin.stateSource === "manifest" && "默认禁用"}
+                      {plugin.enabled && plugin.stateSource === "user" && "用户手动启用"}
+                      {!plugin.enabled && plugin.stateSource === "user" && "用户手动禁用"}
+                    </p>
+                    {plugin.description ? <p className="plugin-desc">{plugin.description}</p> : null}
+                    <div className="plugin-perms">
+                      {plugin.permissions.map((perm) => (
+                        <code key={perm} className="perm-tag">{perm}</code>
+                      ))}
+                    </div>
+                    <p className="plugin-node-types">
+                      {language === "zh" ? "节点: " : "Nodes: "}
+                      {plugin.nodeTypes.slice(0, 3).join(", ")}
+                      {plugin.nodeTypes.length > 3 ? ` +${plugin.nodeTypes.length - 3}` : ""}
+                    </p>
+                    <div className="plugin-card-actions">
+                      {plugin.enabled ? (
+                        <button
+                          className="secondary-button"
+                          type="button"
+                          onClick={() => handleTogglePlugin(plugin, false)}
+                        >
+                          {language === "zh" ? "禁用" : "Disable"}
+                        </button>
+                      ) : (
+                        <button
+                          className="primary-button"
+                          type="button"
+                          onClick={() => handleTogglePlugin(plugin, true)}
+                        >
+                          {language === "zh" ? "启用" : "Enable"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }
