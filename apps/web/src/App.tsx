@@ -1583,116 +1583,7 @@ export function App() {
           </div>
         </section>
 
-        <aside className="inspector panel">
-          <h2>{text.inspector}</h2>
-          {selectedNode ? (
-            <div className="field-stack">
-              <label>
-                {text.node}
-                <input value={selectedNode.id} readOnly />
-              </label>
-              <label>
-                {text.type}
-                <input value={getRuntimeNodeLabel(selectedNode.type)} readOnly />
-              </label>
-              <section className="node-preview-panel">
-                <strong>{text.nodePreview}</strong>
-                <p>
-                  {getRuntimeNodeDefinition(selectedNode.type)?.descriptionI18n?.[language] ??
-                    getRuntimeNodeDefinition(selectedNode.type)?.description ??
-                    text.externalNodeHint}
-                </p>
-                <span>
-                  {getRuntimeNodeDefinition(selectedNode.type)?.previewI18n?.[language] ??
-                    getRuntimeNodeDefinition(selectedNode.type)?.preview ??
-                    text.externalNodeHint}
-                </span>
-              </section>
-              {(() => {
-                const definition = getRuntimeNodeDefinition(selectedNode.type);
-                const presets = definition?.presets;
-                const allFields = getRuntimeNodeConfigFields(selectedNode.type);
-                const visibleFields = allFields.filter((f) =>
-                  isFieldVisible(f, selectedNode.config),
-                );
-                const basicFields = visibleFields.filter((f) => !f.advanced);
-                const advancedFields = visibleFields.filter((f) => f.advanced);
-
-                // Group advanced fields by group
-                const advancedGroups = new Map<string, NodeConfigField[]>();
-                for (const f of advancedFields) {
-                  const g = f.group ?? "";
-                  advancedGroups.set(g, [...(advancedGroups.get(g) ?? []), f]);
-                }
-
-                return (
-                  <>
-                    {presets?.length ? (
-                      <div className="preset-bar">
-                        {presets.map((preset) => (
-                          <button
-                            key={preset.id}
-                            className="preset-button"
-                            type="button"
-                            title={preset.description?.[language]}
-                            onClick={() => {
-                              for (const [k, v] of Object.entries(preset.config)) {
-                                updateSelectedConfig(k, v);
-                              }
-                            }}
-                          >
-                            {preset.label[language]}
-                          </button>
-                        ))}
-                      </div>
-                    ) : null}
-                    {basicFields.map((field) => renderConfigField(field, selectedNode))}
-                    {advancedFields.length > 0 ? (
-                      <details className="advanced-params">
-                        <summary>
-                          {language === "zh" ? "高级参数" : "Advanced"} ({advancedFields.length})
-                        </summary>
-                        {Array.from(advancedGroups.entries()).map(([group, fields]) => (
-                          <div key={group} className="advanced-group">
-                            {group ? (
-                              <h4 className="advanced-group-title">
-                                {fields[0]?.groupLabel?.[language] ?? group}
-                              </h4>
-                            ) : null}
-                            {fields.map((field) => renderConfigField(field, selectedNode))}
-                          </div>
-                        ))}
-                      </details>
-                    ) : null}
-                  </>
-                );
-              })()}
-              {selectedNodeRun ? (
-                <section className="node-run-details">
-                  <strong>{text.nodeRunDetails}</strong>
-                  <div className="run-timing">
-                    <span className={`run-status-badge run-${selectedNodeRun.status}`}>
-                      {selectedNodeRun.status === "success"
-                        ? "✓"
-                        : selectedNodeRun.status === "error"
-                          ? "✕"
-                          : "⊘"}
-                    </span>
-                    <span>
-                      {language === "zh" ? "耗时 " : "Duration "}
-                      {Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt) < 1000
-                        ? `${Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt)}ms`
-                        : `${((selectedNodeRun.endedAt - selectedNodeRun.startedAt) / 1000).toFixed(1)}s`}
-                    </span>
-                  </div>
-                  <SnapshotBlock title={text.runInputs} value={selectedNodeRun.inputs} />
-                  <SnapshotBlock title={text.runOutputs} value={selectedNodeRun.outputs} />
-                  <SnapshotBlock title={text.runMetadata} value={selectedNodeRun.metadata ?? {}} />
-                </section>
-              ) : null}
-            </div>
-          ) : null}
-
+        <aside className="libraries panel">
           <EntryPanel
             title={text.memoryLibrary}
             entries={memories}
@@ -1790,6 +1681,123 @@ export function App() {
           ) : null}
         </div>
       </section>
+
+      {selectedNodeId && selectedNode ? (
+        <div className="modal-overlay" onClick={() => setSelectedNodeId(null)}>
+          <div
+            className="modal-content node-config-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2>
+                {getRuntimeNodeLabel(selectedNode.type)} — {selectedNode.id}
+              </h2>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setSelectedNodeId(null)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="field-stack">
+              <section className="node-preview-panel">
+                <p>
+                  {getRuntimeNodeDefinition(selectedNode.type)?.descriptionI18n?.[language] ??
+                    getRuntimeNodeDefinition(selectedNode.type)?.description ??
+                    text.externalNodeHint}
+                </p>
+                <span>
+                  {getRuntimeNodeDefinition(selectedNode.type)?.previewI18n?.[language] ??
+                    getRuntimeNodeDefinition(selectedNode.type)?.preview ??
+                    text.externalNodeHint}
+                </span>
+              </section>
+              {(() => {
+                const definition = getRuntimeNodeDefinition(selectedNode.type);
+                const presets = definition?.presets;
+                const allFields = getRuntimeNodeConfigFields(selectedNode.type);
+                const visibleFields = allFields.filter((f) =>
+                  isFieldVisible(f, selectedNode.config),
+                );
+                const basicFields = visibleFields.filter((f) => !f.advanced);
+                const advancedFields = visibleFields.filter((f) => f.advanced);
+
+                const advancedGroups = new Map<string, NodeConfigField[]>();
+                for (const f of advancedFields) {
+                  const g = f.group ?? "";
+                  advancedGroups.set(g, [...(advancedGroups.get(g) ?? []), f]);
+                }
+
+                return (
+                  <>
+                    {presets?.length ? (
+                      <div className="preset-bar">
+                        {presets.map((preset) => (
+                          <button
+                            key={preset.id}
+                            className="preset-button"
+                            type="button"
+                            title={preset.description?.[language]}
+                            onClick={() => {
+                              for (const [k, v] of Object.entries(preset.config)) {
+                                updateSelectedConfig(k, v);
+                              }
+                            }}
+                          >
+                            {preset.label[language]}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                    {basicFields.map((field) => renderConfigField(field, selectedNode))}
+                    {advancedFields.length > 0 ? (
+                      <details className="advanced-params">
+                        <summary>
+                          {language === "zh" ? "高级参数" : "Advanced"} ({advancedFields.length})
+                        </summary>
+                        {Array.from(advancedGroups.entries()).map(([group, fields]) => (
+                          <div key={group} className="advanced-group">
+                            {group ? (
+                              <h4 className="advanced-group-title">
+                                {fields[0]?.groupLabel?.[language] ?? group}
+                              </h4>
+                            ) : null}
+                            {fields.map((field) => renderConfigField(field, selectedNode))}
+                          </div>
+                        ))}
+                      </details>
+                    ) : null}
+                  </>
+                );
+              })()}
+              {selectedNodeRun ? (
+                <section className="node-run-details">
+                  <strong>{text.nodeRunDetails}</strong>
+                  <div className="run-timing">
+                    <span className={`run-status-badge run-${selectedNodeRun.status}`}>
+                      {selectedNodeRun.status === "success"
+                        ? "✓"
+                        : selectedNodeRun.status === "error"
+                          ? "✕"
+                          : "⊘"}
+                    </span>
+                    <span>
+                      {language === "zh" ? "耗时 " : "Duration "}
+                      {Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt) < 1000
+                        ? `${Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt)}ms`
+                        : `${((selectedNodeRun.endedAt - selectedNodeRun.startedAt) / 1000).toFixed(1)}s`}
+                    </span>
+                  </div>
+                  <SnapshotBlock title={text.runInputs} value={selectedNodeRun.inputs} />
+                  <SnapshotBlock title={text.runOutputs} value={selectedNodeRun.outputs} />
+                  <SnapshotBlock title={text.runMetadata} value={selectedNodeRun.metadata ?? {}} />
+                </section>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {showPluginPanel ? (
         <div className="modal-overlay" onClick={() => setShowPluginPanel(false)}>

@@ -188,7 +188,7 @@ select {
 
 .workspace {
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr) 300px;
+  grid-template-columns: 210px minmax(0, 1fr) 280px;
   min-height: 0;
 }
 
@@ -1147,6 +1147,35 @@ code {
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.node-config-modal {
+  max-width: 540px;
+  width: 92%;
+  max-height: 84vh;
+}
+
+.node-config-modal .field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.node-config-modal .node-preview-panel {
+  padding: 12px;
+  border-radius: 6px;
+  background: var(--hover);
+}
+
+.node-config-modal .node-preview-panel p {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.node-config-modal .node-preview-panel span {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 .modal-header {
