@@ -206,7 +206,11 @@ const loadSkillPlugins = async () => {
 
       for (const skill of manifest.skills) {
         skills.push({
-          ...skill,
+          id: skill.id,
+          label: typeof skill.label === "string" ? skill.label : (skill.label.zh ?? skill.label.en ?? ""),
+          content: typeof skill.content === "string" ? skill.content : (skill.content.zh ?? skill.content.en ?? ""),
+          category: skill.category,
+          tags: skill.tags,
           pluginId: manifest.id,
         });
       }
