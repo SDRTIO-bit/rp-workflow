@@ -243,6 +243,8 @@ select {
 
 .palette {
   border-width: 0 1px 0 0;
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 .inspector {
