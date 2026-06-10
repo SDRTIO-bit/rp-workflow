@@ -311,6 +311,51 @@ export const parallelWorkflow: WorkflowDefinition = {
   ],
 };
 
+export const rpFullPipeline: WorkflowTemplate = {
+  id: "rp_full_pipeline",
+  label: { zh: "RP 完整流水线", en: "RP Full Pipeline" },
+  description: {
+    zh: "完整 RP 工作流：输入解析 → 上下文组装 → 对话导演 → 连续性检查 → 记忆写入",
+    en: "Full RP workflow: input parsing → context assembly → dialogue director → continuity check → memory write",
+  },
+  workflow: {
+    id: "rp_full_pipeline",
+    name: "RP 完整流水线",
+    version: 1,
+    nodes: [
+      { id: "user_1", type: "userInput", position: { x: 100, y: 100 }, config: { text: "" } },
+      { id: "parser_1", type: "rpInputParser", position: { x: 360, y: 100 }, config: { language: "zh" } },
+      { id: "worldbook_1", type: "worldbookSearch", position: { x: 620, y: 20 }, config: { limit: 4 } },
+      { id: "memory_1", type: "memoryRecall", position: { x: 620, y: 180 }, config: { limit: 4 } },
+      { id: "char_1", type: "rpCharacterCard", position: { x: 360, y: 280 }, config: {} },
+      { id: "scene_1", type: "rpSceneState", position: { x: 100, y: 280 }, config: {} },
+      { id: "assembler_1", type: "rpContextAssembler", position: { x: 880, y: 100 }, config: {} },
+      { id: "director_1", type: "rpDialogueDirector", position: { x: 1140, y: 100 }, config: {} },
+      { id: "check_1", type: "rpContinuityCheck", position: { x: 1400, y: 30 }, config: { strictness: "medium" } },
+      { id: "output_1", type: "textOutput", position: { x: 1660, y: 100 }, config: {} },
+      { id: "memwrite_1", type: "rpMemoryWrite", position: { x: 1400, y: 230 }, config: { maxCandidates: 5 } },
+    ],
+    edges: [
+      { id: "e1", source: "user_1", sourcePort: "text", target: "parser_1", targetPort: "text" },
+      { id: "e2", source: "user_1", sourcePort: "text", target: "worldbook_1", targetPort: "query" },
+      { id: "e3", source: "user_1", sourcePort: "text", target: "memory_1", targetPort: "query" },
+      { id: "e4", source: "parser_1", sourcePort: "parsed", target: "assembler_1", targetPort: "parsed" },
+      { id: "e5", source: "char_1", sourcePort: "profile", target: "assembler_1", targetPort: "character" },
+      { id: "e6", source: "scene_1", sourcePort: "state", target: "assembler_1", targetPort: "scene" },
+      { id: "e7", source: "worldbook_1", sourcePort: "results", target: "assembler_1", targetPort: "worldbook" },
+      { id: "e8", source: "memory_1", sourcePort: "memories", target: "assembler_1", targetPort: "memory" },
+      { id: "e9", source: "assembler_1", sourcePort: "context", target: "director_1", targetPort: "memory" },
+      { id: "e10", source: "char_1", sourcePort: "profile", target: "director_1", targetPort: "character" },
+      { id: "e11", source: "scene_1", sourcePort: "state", target: "director_1", targetPort: "scene" },
+      { id: "e12", source: "user_1", sourcePort: "text", target: "director_1", targetPort: "player" },
+      { id: "e13", source: "director_1", sourcePort: "reply", target: "check_1", targetPort: "draft" },
+      { id: "e14", source: "director_1", sourcePort: "reply", target: "output_1", targetPort: "text" },
+      { id: "e15", source: "director_1", sourcePort: "reply", target: "memwrite_1", targetPort: "reply" },
+      { id: "e16", source: "check_1", sourcePort: "notes", target: "memwrite_1", targetPort: "notes" },
+    ],
+  },
+};
+
 export const workflowTemplates: WorkflowTemplate[] = [
   {
     id: "rp_memory_worldbook_validation",
@@ -329,5 +374,14 @@ export const workflowTemplates: WorkflowTemplate[] = [
       en: "Runs two analysis agents in parallel, then merges them into a draft.",
     },
     workflow: parallelWorkflow,
+  },
+  {
+    id: "rp_full_pipeline",
+    label: { zh: "RP 完整流水线", en: "RP Full Pipeline" },
+    description: {
+      zh: "完整 RP 工作流：输入解析 → 上下文组装 → 对话导演 → 连续性检查 → 记忆写入",
+      en: "Full RP workflow: input parsing → context assembly → dialogue director → continuity check → memory write",
+    },
+    workflow: rpFullPipeline.workflow,
   },
 ];
