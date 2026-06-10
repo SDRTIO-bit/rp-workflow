@@ -221,10 +221,18 @@ export const validateSkillPluginManifest = (manifest: unknown): string[] => {
       if (typeof skill.id !== "string" || skill.id.trim() === "") {
         issues.push(`skills[${index}].id must be a non-empty string`);
       }
-      if (!isObject(skill.label) || typeof skill.label.zh !== "string" || typeof skill.label.en !== "string") {
+      if (
+        !isObject(skill.label) ||
+        typeof skill.label.zh !== "string" ||
+        typeof skill.label.en !== "string"
+      ) {
         issues.push(`skills[${index}].label must have zh and en strings`);
       }
-      if (!isObject(skill.content) || typeof skill.content.zh !== "string" || typeof skill.content.en !== "string") {
+      if (
+        !isObject(skill.content) ||
+        typeof skill.content.zh !== "string" ||
+        typeof skill.content.en !== "string"
+      ) {
         issues.push(`skills[${index}].content must have zh and en strings`);
       }
     }

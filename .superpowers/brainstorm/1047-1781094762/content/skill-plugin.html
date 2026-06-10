@@ -1,0 +1,118 @@
+<h2>Skill 独立插件 — Manifest 协议设计</h2>
+<p class="subtitle">方案 B：skill 与节点插件分离，各自独立管理</p>
+
+<div class="section">
+  <h3>skill.plugin.json 格式</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">plugins/rp-skills/skill.plugin.json</div>
+  <div class="mockup-body">
+<pre style="font-size:0.75rem;background:var(--code-bg);padding:12px;border-radius:6px;overflow-x:auto;"><code>{
+  "schemaVersion": 1,
+  "id": "awp.rp-skills",
+  "label": "RP Skills",
+  "version": "0.1.0",
+  "description": "Roleplay agent skills for persona, continuity, agency, etc.",
+  "enabled": true,
+  "compatibility": { "app": ">=0.1.0" },
+  "skills": [
+    {
+      "id": "rp_persona",
+      "label": { "zh": "RP 角色扮演", "en": "RP Persona" },
+      "content": { "zh": "保持角色人设、语气、关系立场、秘密...", "en": "Stay in character..." },
+      "category": "roleplay",
+      "tags": ["persona", "voice", "immersion"]
+    },
+    {
+      "id": "rp_player_agency",
+      "label": { "zh": "玩家行动权保护", "en": "RP Player Agency" },
+      "content": { "zh": "不替玩家决定行动、情绪、发言...", "en": "Never decide the player's..." },
+      "category": "safety",
+      "tags": ["agency", "boundary"]
+    }
+  ]
+}</code></pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>与 node.plugin.json 的对比</h3>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">node.plugin.json</div>
+    <div class="mockup-body" style="font-size:0.78rem;">
+      <code>nodes[]</code> ← 节点定义<br>
+      <code>executor{}</code> ← 执行入口<br>
+      <code>permissions[]</code> ← 权限声明<br>
+      <code style="color:var(--text-muted);">~~ skills[] ~~</code> ← 不放在这
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">skill.plugin.json</div>
+    <div class="mockup-body" style="font-size:0.78rem;">
+      <code>skills[]</code> ← 技能定义<br>
+      <code style="color:var(--text-muted);">~~ executor ~~</code> ← 无执行逻辑<br>
+      <code style="color:var(--text-muted);">~~ permissions ~~</code> ← skill 不需要权限<br>
+      <code>compatibility{}</code> ← 版本兼容
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>加载与聚合流程</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-body">
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:0.8rem;">
+      <div class="placeholder" style="background:#1a2a1a;padding:10px;border-left:3px solid #16a34a;">
+        <strong>1. 扫描</strong> — serve.mjs 扫描 <code>plugins/*/skill.plugin.json</code>
+      </div>
+      <div style="text-align:center;color:var(--text-muted);">↓</div>
+      <div class="placeholder" style="background:#1a2a1a;padding:10px;border-left:3px solid #16a34a;">
+        <strong>2. 校验</strong> — validateSkillPluginManifest() 校验 schema
+      </div>
+      <div style="text-align:center;color:var(--text-muted);">↓</div>
+      <div class="placeholder" style="background:#1a2a1a;padding:10px;border-left:3px solid #16a34a;">
+        <strong>3. 合并</strong> — 跳过 disabled，跳过无效，合并所有 skills[]
+      </div>
+      <div style="text-align:center;color:var(--text-muted);">↓</div>
+      <div class="placeholder" style="background:#1a1a2a;padding:10px;border-left:3px solid #2563eb;">
+        <strong>4. 暴露</strong> — <code>GET /api/skills</code> | <code>GET /api/plugins (含 skills)</code>
+      </div>
+      <div style="text-align:center;color:var(--text-muted);">↓</div>
+      <div class="placeholder" style="background:#1a1a2a;padding:10px;border-left:3px solid #2563eb;">
+        <strong>5. 消费</strong> — Agent 节点 config 面板通过 API 获取可选 skill 列表
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>API 设计</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-body" style="font-size:0.82rem;">
+    <p><strong>GET /api/skills</strong> — 返回所有启用的 skill</p>
+<pre style="font-size:0.75rem;background:var(--code-bg);padding:8px;border-radius:4px;"><code>{
+  "skills": [
+    { "id": "rp_persona", "label": {...}, "content": {...},
+      "category": "roleplay", "pluginId": "awp.rp-skills" },
+    ...
+  ],
+  "categories": ["roleplay", "safety", "writing", "memory"]
+}</code></pre>
+
+    <p style="margin-top:12px;"><strong>GET /api/plugins</strong> — 扩展返回 skill 插件信息</p>
+<pre style="font-size:0.75rem;background:var(--code-bg);padding:8px;border-radius:4px;"><code>{
+  "id": "awp.rp-skills",
+  "kind": "skill-plugin",        // 新增 kind 字段区分类型
+  "skillCount": 7,
+  ...
+}</code></pre>
+  </div>
+</div>

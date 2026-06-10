@@ -186,8 +186,16 @@ type NodeConfigField = {
   key: string;
   label: LocalizedText;
   kind:
-    | "text" | "textarea" | "number" | "select" | "tags"
-    | "boolean" | "multiselect" | "json" | "secret" | "model";
+    | "text"
+    | "textarea"
+    | "number"
+    | "select"
+    | "tags"
+    | "boolean"
+    | "multiselect"
+    | "json"
+    | "secret"
+    | "model";
   min?: number;
   max?: number;
   options?: string[] | NodeConfigOption[];
@@ -214,13 +222,13 @@ presets?: NodeConfigPreset[];
 
 ### 新增 kind 渲染
 
-| kind | 渲染 | 说明 |
-|------|------|------|
-| `boolean` | checkbox/toggle | 值存 boolean |
-| `multiselect` | 多选标签列表 | 值存 string[] |
-| `json` | textarea + 格式化按钮 | 合法 JSON 写入 object，非法仅本地错误提示 |
-| `secret` | password 输入框 | 遮蔽显示，值存 string |
-| `model` | select 下拉 | 选项来自静态配置或 `/api/models` |
+| kind          | 渲染                  | 说明                                      |
+| ------------- | --------------------- | ----------------------------------------- |
+| `boolean`     | checkbox/toggle       | 值存 boolean                              |
+| `multiselect` | 多选标签列表          | 值存 string[]                             |
+| `json`        | textarea + 格式化按钮 | 合法 JSON 写入 object，非法仅本地错误提示 |
+| `secret`      | password 输入框       | 遮蔽显示，值存 string                     |
+| `model`       | select 下拉           | 选项来自静态配置或 `/api/models`          |
 
 ### 高级参数折叠
 

@@ -28,6 +28,7 @@ plugins/plugin-state.json            — Create: initial empty state file
 ### Task 1: Prepare mutable runtime state in serve.mjs
 
 **Files:**
+
 - Modify: `apps/web/scripts/serve.mjs:229-234`
 
 **Goal:** Convert `const` plugin runtime variables to `let` so enable/disable can mutate them.
@@ -75,6 +76,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 2: Add plugin state persistence
 
 **Files:**
+
 - Modify: `apps/web/scripts/serve.mjs` (add plugin-state.json read/write + reloadPluginRuntime)
 - Create: `plugins/plugin-state.json`
 
@@ -184,6 +186,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 3: Add GET /api/plugins endpoint
 
 **Files:**
+
 - Modify: `apps/web/scripts/serve.mjs` (add route handler)
 
 **Goal:** Return merged plugin list with manifest + runtime state.
@@ -245,6 +248,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 4: Add enable/disable API endpoints
 
 **Files:**
+
 - Modify: `apps/web/scripts/serve.mjs` (add POST /api/plugins/:id/enable and disable)
 
 **Goal:** Enable/disable plugins at runtime, persist to plugin-state.json, refresh runtime catalog.
@@ -335,6 +339,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 5: Add plugin client to frontend
 
 **Files:**
+
 - Modify: `apps/web/src/runWorkflowClient.ts` (add plugin API functions)
 
 **Goal:** Frontend functions to call plugin management APIs.
@@ -416,6 +421,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 6: Add plugin management modal to App.tsx
 
 **Files:**
+
 - Modify: `apps/web/src/App.tsx` (add plugin button, modal, state)
 - Modify: `apps/web/src/styles.css` (modal styles)
 
@@ -522,7 +528,9 @@ const handleTogglePlugin = async (plugin: PluginSummary, enable: boolean) => {
 
   if (!result) {
     setRunNotice(
-      language === "zh" ? `插件 ${enable ? "启用" : "禁用"} 失败` : `Plugin ${enable ? "enable" : "disable"} failed`,
+      language === "zh"
+        ? `插件 ${enable ? "启用" : "禁用"} 失败`
+        : `Plugin ${enable ? "enable" : "disable"} failed`,
     );
     return;
   }
@@ -560,75 +568,88 @@ After the import button in the header (after line 1166), add:
 Add the modal JSX before the closing `</main>` tag (before line 1509), after the bottom-dock section:
 
 ```tsx
-{showPluginPanel ? (
-  <div className="modal-overlay" onClick={() => setShowPluginPanel(false)}>
-    <div className="modal-content plugin-panel" onClick={(e) => e.stopPropagation()}>
-      <div className="modal-header">
-        <h2>{language === "zh" ? "插件管理" : "Plugin Management"}</h2>
-        <button className="modal-close" type="button" onClick={() => setShowPluginPanel(false)}>
-          ×
-        </button>
-      </div>
-      {pluginPanelError ? (
-        <p className="notice">{pluginPanelError}</p>
-      ) : pluginSummaries.length === 0 ? (
-        <p className="muted">{language === "zh" ? "没有已安装的插件。" : "No plugins installed."}</p>
-      ) : (
-        <div className="plugin-card-list">
-          {pluginSummaries.map((plugin) => (
-            <div key={plugin.id} className={`plugin-card ${plugin.enabled ? "" : "plugin-disabled"}`}>
-              <div className="plugin-card-header">
-                <strong>{plugin.label}</strong>
-                <span className="plugin-version">v{plugin.version}</span>
-                <span className={`plugin-status ${plugin.enabled ? "status-on" : "status-off"}`}>
-                  {plugin.enabled
-                    ? language === "zh" ? "✓ 启用" : "✓ On"
-                    : language === "zh" ? "✕ 禁用" : "✕ Off"}
-                </span>
-              </div>
-              <p className="plugin-state-source">
-                {plugin.enabled && plugin.stateSource === "manifest" && "默认启用"}
-                {!plugin.enabled && plugin.stateSource === "manifest" && "默认禁用"}
-                {plugin.enabled && plugin.stateSource === "user" && "用户手动启用"}
-                {!plugin.enabled && plugin.stateSource === "user" && "用户手动禁用"}
-              </p>
-              {plugin.description ? <p className="plugin-desc">{plugin.description}</p> : null}
-              <div className="plugin-perms">
-                {plugin.permissions.map((perm) => (
-                  <code key={perm} className="perm-tag">{perm}</code>
-                ))}
-              </div>
-              <p className="plugin-node-types">
-                {language === "zh" ? "节点: " : "Nodes: "}
-                {plugin.nodeTypes.slice(0, 3).join(", ")}
-                {plugin.nodeTypes.length > 3 ? ` +${plugin.nodeTypes.length - 3}` : ""}
-              </p>
-              <div className="plugin-card-actions">
-                {plugin.enabled ? (
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() => handleTogglePlugin(plugin, false)}
-                  >
-                    {language === "zh" ? "禁用" : "Disable"}
-                  </button>
-                ) : (
-                  <button
-                    className="primary-button"
-                    type="button"
-                    onClick={() => handleTogglePlugin(plugin, true)}
-                  >
-                    {language === "zh" ? "启用" : "Enable"}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+{
+  showPluginPanel ? (
+    <div className="modal-overlay" onClick={() => setShowPluginPanel(false)}>
+      <div className="modal-content plugin-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>{language === "zh" ? "插件管理" : "Plugin Management"}</h2>
+          <button className="modal-close" type="button" onClick={() => setShowPluginPanel(false)}>
+            ×
+          </button>
         </div>
-      )}
+        {pluginPanelError ? (
+          <p className="notice">{pluginPanelError}</p>
+        ) : pluginSummaries.length === 0 ? (
+          <p className="muted">
+            {language === "zh" ? "没有已安装的插件。" : "No plugins installed."}
+          </p>
+        ) : (
+          <div className="plugin-card-list">
+            {pluginSummaries.map((plugin) => (
+              <div
+                key={plugin.id}
+                className={`plugin-card ${plugin.enabled ? "" : "plugin-disabled"}`}
+              >
+                <div className="plugin-card-header">
+                  <strong>{plugin.label}</strong>
+                  <span className="plugin-version">v{plugin.version}</span>
+                  <span className={`plugin-status ${plugin.enabled ? "status-on" : "status-off"}`}>
+                    {plugin.enabled
+                      ? language === "zh"
+                        ? "✓ 启用"
+                        : "✓ On"
+                      : language === "zh"
+                        ? "✕ 禁用"
+                        : "✕ Off"}
+                  </span>
+                </div>
+                <p className="plugin-state-source">
+                  {plugin.enabled && plugin.stateSource === "manifest" && "默认启用"}
+                  {!plugin.enabled && plugin.stateSource === "manifest" && "默认禁用"}
+                  {plugin.enabled && plugin.stateSource === "user" && "用户手动启用"}
+                  {!plugin.enabled && plugin.stateSource === "user" && "用户手动禁用"}
+                </p>
+                {plugin.description ? <p className="plugin-desc">{plugin.description}</p> : null}
+                <div className="plugin-perms">
+                  {plugin.permissions.map((perm) => (
+                    <code key={perm} className="perm-tag">
+                      {perm}
+                    </code>
+                  ))}
+                </div>
+                <p className="plugin-node-types">
+                  {language === "zh" ? "节点: " : "Nodes: "}
+                  {plugin.nodeTypes.slice(0, 3).join(", ")}
+                  {plugin.nodeTypes.length > 3 ? ` +${plugin.nodeTypes.length - 3}` : ""}
+                </p>
+                <div className="plugin-card-actions">
+                  {plugin.enabled ? (
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => handleTogglePlugin(plugin, false)}
+                    >
+                      {language === "zh" ? "禁用" : "Disable"}
+                    </button>
+                  ) : (
+                    <button
+                      className="primary-button"
+                      type="button"
+                      onClick={() => handleTogglePlugin(plugin, true)}
+                    >
+                      {language === "zh" ? "启用" : "Enable"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-) : null}
+  ) : null;
+}
 ```
 
 - [ ] **Step 6: Add CSS styles**
@@ -770,6 +791,7 @@ npm run serve
 ```
 
 Open `http://127.0.0.1:5180`, click "插件", verify:
+
 - Modal opens with rp-core plugin info
 - Enable/disable buttons work
 - Node library refreshes after toggle
@@ -789,6 +811,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 7: Define metadata view types in plugin-sdk
 
 **Files:**
+
 - Modify: `packages/plugin-sdk/src/index.ts` (add view types)
 
 **Goal:** Define `NodeRunMetadataView` union type and related types.
@@ -850,6 +873,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 8: Add structured view rendering to App.tsx
 
 **Files:**
+
 - Modify: `apps/web/src/App.tsx` (SnapshotBlock upgrade, duration display, copy buttons)
 - Modify: `apps/web/src/styles.css` (view styles)
 
@@ -860,10 +884,19 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 In `App.tsx`, add a new `MetadataViews` component. Add it before the `PortList` component (before line 1521):
 
 ```tsx
-function MetadataViews({ views }: { views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }> }) {
+function MetadataViews({
+  views,
+}: {
+  views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }>;
+}) {
   const [copiedId, setCopiedId] = useState<string>();
 
-  const copyViewContent = async (view: { id: string; kind: string; title: string; [key: string]: unknown }) => {
+  const copyViewContent = async (view: {
+    id: string;
+    kind: string;
+    title: string;
+    [key: string]: unknown;
+  }) => {
     let text: string;
     switch (view.kind) {
       case "entry-list":
@@ -885,7 +918,10 @@ function MetadataViews({ views }: { views: Array<{ id: string; kind: string; tit
         break;
       case "trace":
         text = (view.steps as Array<{ label: string; status?: string; detail?: string }>)
-          .map((step) => `[${step.status ?? "-"}] ${step.label}${step.detail ? ` — ${step.detail}` : ""}`)
+          .map(
+            (step) =>
+              `[${step.status ?? "-"}] ${step.label}${step.detail ? ` — ${step.detail}` : ""}`,
+          )
           .join("\n");
         break;
       default:
@@ -916,7 +952,9 @@ function MetadataViews({ views }: { views: Array<{ id: string; kind: string; tit
       <div className="metadata-view-body">
         {view.kind === "entry-list" && (
           <ul className="entry-list">
-            {(view.items as Array<{ id: string; title: string; summary?: string; tags?: string[] }>).map((item) => (
+            {(
+              view.items as Array<{ id: string; title: string; summary?: string; tags?: string[] }>
+            ).map((item) => (
               <li key={item.id}>
                 <strong>{item.title}</strong>
                 {item.summary ? <span className="entry-summary">{item.summary}</span> : null}
@@ -935,12 +973,14 @@ function MetadataViews({ views }: { views: Array<{ id: string; kind: string; tit
         {view.kind === "stats" && (
           <table className="stats-table">
             <tbody>
-              {(view.pairs as Array<{ label: string; value: unknown; tone?: string }>).map((pair, i) => (
-                <tr key={i} className={pair.tone ? `tone-${pair.tone}` : ""}>
-                  <td>{pair.label}</td>
-                  <td>{String(pair.value)}</td>
-                </tr>
-              ))}
+              {(view.pairs as Array<{ label: string; value: unknown; tone?: string }>).map(
+                (pair, i) => (
+                  <tr key={i} className={pair.tone ? `tone-${pair.tone}` : ""}>
+                    <td>{pair.label}</td>
+                    <td>{String(pair.value)}</td>
+                  </tr>
+                ),
+              )}
             </tbody>
           </table>
         )}
@@ -952,7 +992,14 @@ function MetadataViews({ views }: { views: Array<{ id: string; kind: string; tit
         )}
         {view.kind === "trace" && (
           <ol className="trace-list">
-            {(view.steps as Array<{ label: string; status?: string; detail?: string; durationMs?: number }>).map((step, i) => (
+            {(
+              view.steps as Array<{
+                label: string;
+                status?: string;
+                detail?: string;
+                durationMs?: number;
+              }>
+            ).map((step, i) => (
               <li key={i} className={`trace-step trace-${step.status ?? "default"}`}>
                 <span>{step.label}</span>
                 {step.detail ? <span className="trace-detail">{step.detail}</span> : null}
@@ -976,18 +1023,19 @@ Replace the existing `SnapshotBlock` function (line 1512-1518):
 ```tsx
 function SnapshotBlock({ title, value }: { title: string; value: unknown }) {
   const isObject = typeof value === "object" && value !== null && !Array.isArray(value);
-  const views = isObject && "views" in value && Array.isArray((value as Record<string, unknown>).views)
-    ? (value as { views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }> }).views
-    : undefined;
+  const views =
+    isObject && "views" in value && Array.isArray((value as Record<string, unknown>).views)
+      ? (
+          value as {
+            views: Array<{ id: string; kind: string; title: string; [key: string]: unknown }>;
+          }
+        ).views
+      : undefined;
 
   return (
     <details className="snapshot-block">
       <summary>{title}</summary>
-      {views ? (
-        <MetadataViews views={views} />
-      ) : (
-        <pre>{stringifySnapshot(value)}</pre>
-      )}
+      {views ? <MetadataViews views={views} /> : <pre>{stringifySnapshot(value)}</pre>}
     </details>
   );
 }
@@ -998,13 +1046,15 @@ function SnapshotBlock({ title, value }: { title: string; value: unknown }) {
 In the run log rendering (around line 1488), change the run row to include duration:
 
 ```tsx
-{run.status === "success" || run.status === "error" ? (
-  <span className="run-duration">
-    {Math.max(0, run.endedAt - run.startedAt) < 1000
-      ? `${Math.max(0, run.endedAt - run.startedAt)}ms`
-      : `${((run.endedAt - run.startedAt) / 1000).toFixed(1)}s`}
-  </span>
-) : null}
+{
+  run.status === "success" || run.status === "error" ? (
+    <span className="run-duration">
+      {Math.max(0, run.endedAt - run.startedAt) < 1000
+        ? `${Math.max(0, run.endedAt - run.startedAt)}ms`
+        : `${((run.endedAt - run.startedAt) / 1000).toFixed(1)}s`}
+    </span>
+  ) : null;
+}
 ```
 
 Add inside the run row `button`, after the `<span>{run.status}</span>`.
@@ -1014,19 +1064,25 @@ Add inside the run row `button`, after the `<span>{run.status}</span>`.
 In the inspector `nodeRunDetails` section (around line 1406), add before the SnapshotBlocks:
 
 ```tsx
-{selectedNodeRun ? (
-  <div className="run-timing">
-    <span className={`run-status-badge run-${selectedNodeRun.status}`}>
-      {selectedNodeRun.status === "success" ? "✓" : selectedNodeRun.status === "error" ? "✕" : "⊘"}
-    </span>
-    <span>
-      {language === "zh" ? "耗时 " : "Duration "}
-      {Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt) < 1000
-        ? `${Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt)}ms`
-        : `${((selectedNodeRun.endedAt - selectedNodeRun.startedAt) / 1000).toFixed(1)}s`}
-    </span>
-  </div>
-) : null}
+{
+  selectedNodeRun ? (
+    <div className="run-timing">
+      <span className={`run-status-badge run-${selectedNodeRun.status}`}>
+        {selectedNodeRun.status === "success"
+          ? "✓"
+          : selectedNodeRun.status === "error"
+            ? "✕"
+            : "⊘"}
+      </span>
+      <span>
+        {language === "zh" ? "耗时 " : "Duration "}
+        {Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt) < 1000
+          ? `${Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt)}ms`
+          : `${((selectedNodeRun.endedAt - selectedNodeRun.startedAt) / 1000).toFixed(1)}s`}
+      </span>
+    </div>
+  ) : null;
+}
 ```
 
 - [ ] **Step 5: Add CSS for new components**
@@ -1144,9 +1200,15 @@ In `apps/web/src/styles.css`, append:
   font-size: 0.82rem;
 }
 
-.trace-success { color: #16a34a; }
-.trace-error { color: #dc2626; }
-.trace-skipped { color: var(--text-muted); }
+.trace-success {
+  color: #16a34a;
+}
+.trace-error {
+  color: #dc2626;
+}
+.trace-skipped {
+  color: var(--text-muted);
+}
 
 .trace-detail {
   display: block;
@@ -1205,6 +1267,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 9: Add views to rp-core executor
 
 **Files:**
+
 - Modify: `plugins/rp-core/executor.mjs` (add views to metadata)
 
 **Goal:** Demonstrate structured views in the rp-core plugin by adding entry-list and stats views to worldbookSearch and memoryRecall.
@@ -1311,6 +1374,7 @@ npm run serve
 ```
 
 Open browser, load an RP workflow, run it. Click on worldbookSearch or memoryRecall in the run log. Verify:
+
 - "命中世界书条目" shows as expandable entry-list
 - "检索统计" shows as stats table
 - Copy button works on each view
@@ -1329,6 +1393,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 10: Extend NodeConfigField type in workflow-core
 
 **Files:**
+
 - Modify: `packages/workflow-core/src/types.ts` (extend NodeConfigField, add NodeConfigPreset)
 
 **Goal:** Add new field kinds, options upgrade, validation/visibility fields, presets.
@@ -1414,6 +1479,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 11: Add node config validation functions
 
 **Files:**
+
 - Create: `apps/web/src/nodeConfigValidation.ts`
 - Create: `apps/web/src/nodeConfigValidation.test.ts`
 
@@ -1475,7 +1541,11 @@ export const validateNodeConfigField = (
     }
   }
 
-  if ((field.kind === "select" || field.kind === "model") && field.options && typeof value === "string") {
+  if (
+    (field.kind === "select" || field.kind === "model") &&
+    field.options &&
+    typeof value === "string"
+  ) {
     const optionValues = Array.isArray(field.options)
       ? field.options.map((o) => (typeof o === "string" ? o : o.value))
       : [];
@@ -1512,7 +1582,11 @@ Create `apps/web/src/nodeConfigValidation.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { isFieldVisible, validateNodeConfigField, validateNodeConfig } from "./nodeConfigValidation";
+import {
+  isFieldVisible,
+  validateNodeConfigField,
+  validateNodeConfig,
+} from "./nodeConfigValidation";
 import type { NodeConfigField } from "@awp/workflow-core";
 
 describe("isFieldVisible", () => {
@@ -1558,12 +1632,23 @@ describe("isFieldVisible", () => {
 
 describe("validateNodeConfigField", () => {
   it("flags missing required fields", () => {
-    const field: NodeConfigField = { key: "name", label: { zh: "名称", en: "Name" }, kind: "text", required: true };
+    const field: NodeConfigField = {
+      key: "name",
+      label: { zh: "名称", en: "Name" },
+      kind: "text",
+      required: true,
+    };
     expect(validateNodeConfigField(field, "", {})).toContain("名称 为必填项");
   });
 
   it("flags number out of range", () => {
-    const field: NodeConfigField = { key: "count", label: { zh: "数量", en: "Count" }, kind: "number", min: 1, max: 10 };
+    const field: NodeConfigField = {
+      key: "count",
+      label: { zh: "数量", en: "Count" },
+      kind: "number",
+      min: 1,
+      max: 10,
+    };
     expect(validateNodeConfigField(field, 0, {})).toContain("最小值为 1");
     expect(validateNodeConfigField(field, 11, {})).toContain("最大值为 10");
   });
@@ -1599,7 +1684,13 @@ describe("validateNodeConfig", () => {
       ports: [],
       configFields: [
         { key: "name", label: { zh: "名称", en: "Name" }, kind: "text" as const, required: true },
-        { key: "count", label: { zh: "数量", en: "Count" }, kind: "number" as const, min: 1, max: 10 },
+        {
+          key: "count",
+          label: { zh: "数量", en: "Count" },
+          kind: "number" as const,
+          min: 1,
+          max: 10,
+        },
       ],
     };
     const issues = validateNodeConfig(definition, { name: "", count: 0 });
@@ -1652,6 +1743,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 12: Add new field kind renderers to App.tsx
 
 **Files:**
+
 - Modify: `apps/web/src/App.tsx` (renderConfigField upgrade)
 
 **Goal:** Add boolean, multiselect, json, secret, model renderers plus presets, advanced folding, and field-level validation.
@@ -1661,7 +1753,11 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 Add at top of App.tsx:
 
 ```ts
-import { isFieldVisible, validateNodeConfig, validateNodeConfigField } from "./nodeConfigValidation";
+import {
+  isFieldVisible,
+  validateNodeConfig,
+  validateNodeConfigField,
+} from "./nodeConfigValidation";
 ```
 
 - [ ] **Step 2: Rewrite renderConfigField**
@@ -1685,7 +1781,9 @@ const renderConfigField = (field: NodeConfigField, node: WorkflowNode) => {
       {help ? <span className="field-help">{help}</span> : null}
       {inner}
       {issues.map((issue, i) => (
-        <span key={i} className="field-issue">{issue}</span>
+        <span key={i} className="field-issue">
+          {issue}
+        </span>
       ))}
     </label>
   );
@@ -1705,7 +1803,11 @@ const renderConfigField = (field: NodeConfigField, node: WorkflowNode) => {
 
   if (field.kind === "multiselect") {
     const options: { label: string; value: string }[] = Array.isArray(field.options)
-      ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+      ? field.options.map((o) =>
+          typeof o === "string"
+            ? { label: o, value: o }
+            : { label: o.label[language], value: o.value },
+        )
       : [];
     const selected: string[] = Array.isArray(value) ? value.map(String) : [];
 
@@ -1732,10 +1834,7 @@ const renderConfigField = (field: NodeConfigField, node: WorkflowNode) => {
   }
 
   if (field.kind === "json") {
-    const textValue =
-      value !== undefined && value !== null
-        ? JSON.stringify(value, null, 2)
-        : "";
+    const textValue = value !== undefined && value !== null ? JSON.stringify(value, null, 2) : "";
     return wrapper(
       <div className="json-field">
         <textarea
@@ -1783,7 +1882,11 @@ const renderConfigField = (field: NodeConfigField, node: WorkflowNode) => {
 
   if (field.kind === "model") {
     const options: { label: string; value: string }[] = Array.isArray(field.options)
-      ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+      ? field.options.map((o) =>
+          typeof o === "string"
+            ? { label: o, value: o }
+            : { label: o.label[language], value: o.value },
+        )
       : [
           { label: "DeepSeek V4 Flash", value: "deepseek-v4-flash" },
           { label: "DeepSeek V4 Pro", value: "deepseek-v4-pro" },
@@ -1792,7 +1895,7 @@ const renderConfigField = (field: NodeConfigField, node: WorkflowNode) => {
 
     return wrapper(
       <select value={String(value ?? "")} onChange={(event) => update(event.target.value)}>
-        {(options).map((option) => (
+        {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
@@ -1821,11 +1924,15 @@ const renderConfigField = (field: NodeConfigField, node: WorkflowNode) => {
 
   if (field.kind === "select") {
     const options: { label: string; value: string }[] = Array.isArray(field.options)
-      ? field.options.map((o) => (typeof o === "string" ? { label: o, value: o } : { label: o.label[language], value: o.value }))
+      ? field.options.map((o) =>
+          typeof o === "string"
+            ? { label: o, value: o }
+            : { label: o.label[language], value: o.value },
+        )
       : [];
     return wrapper(
       <select value={String(value ?? "")} onChange={(event) => update(event.target.value)}>
-        {(options).map((option) => (
+        {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
@@ -1854,101 +1961,174 @@ const renderConfigField = (field: NodeConfigField, node: WorkflowNode) => {
 Replace the config fields rendering section in the inspector (around lines 1402-1404):
 
 ```tsx
-{getRuntimeNodeConfigFields(selectedNode.type).map((field) =>
-  renderConfigField(field, selectedNode),
-)}
+{
+  getRuntimeNodeConfigFields(selectedNode.type).map((field) =>
+    renderConfigField(field, selectedNode),
+  );
+}
 ```
 
 Replace with:
 
 ```tsx
-{(() => {
-  const definition = getRuntimeNodeDefinition(selectedNode.type);
-  const presets = definition?.presets;
-  const allFields = getRuntimeNodeConfigFields(selectedNode.type);
-  const visibleFields = allFields.filter((f) => isFieldVisible(f, selectedNode.config));
-  const basicFields = visibleFields.filter((f) => !f.advanced);
-  const advancedFields = visibleFields.filter((f) => f.advanced);
+{
+  (() => {
+    const definition = getRuntimeNodeDefinition(selectedNode.type);
+    const presets = definition?.presets;
+    const allFields = getRuntimeNodeConfigFields(selectedNode.type);
+    const visibleFields = allFields.filter((f) => isFieldVisible(f, selectedNode.config));
+    const basicFields = visibleFields.filter((f) => !f.advanced);
+    const advancedFields = visibleFields.filter((f) => f.advanced);
 
-  // Group advanced fields by group
-  const advancedGroups = new Map<string, NodeConfigField[]>();
-  for (const f of advancedFields) {
-    const g = f.group ?? "";
-    advancedGroups.set(g, [...(advancedGroups.get(g) ?? []), f]);
-  }
+    // Group advanced fields by group
+    const advancedGroups = new Map<string, NodeConfigField[]>();
+    for (const f of advancedFields) {
+      const g = f.group ?? "";
+      advancedGroups.set(g, [...(advancedGroups.get(g) ?? []), f]);
+    }
 
-  return (
-    <>
-      {presets?.length ? (
-        <div className="preset-bar">
-          {presets.map((preset) => (
-            <button
-              key={preset.id}
-              className="preset-button"
-              type="button"
-              title={preset.description?.[language]}
-              onClick={() => {
-                for (const [k, v] of Object.entries(preset.config)) {
-                  updateSelectedConfig(k, v);
-                }
-              }}
-            >
-              {preset.label[language]}
-            </button>
-          ))}
-        </div>
-      ) : null}
-      {basicFields.map((field) => renderConfigField(field, selectedNode))}
-      {advancedFields.length > 0 ? (
-        <details className="advanced-params">
-          <summary>
-            {language === "zh" ? "高级参数" : "Advanced"} ({advancedFields.length})
-          </summary>
-          {Array.from(advancedGroups.entries()).map(([group, fields]) => (
-            <div key={group} className="advanced-group">
-              {group ? (
-                <h4 className="advanced-group-title">
-                  {fields[0]?.groupLabel?.[language] ?? group}
-                </h4>
-              ) : null}
-              {fields.map((field) => renderConfigField(field, selectedNode))}
-            </div>
-          ))}
-        </details>
-      ) : null}
-    </>
-  );
-})()}
+    return (
+      <>
+        {presets?.length ? (
+          <div className="preset-bar">
+            {presets.map((preset) => (
+              <button
+                key={preset.id}
+                className="preset-button"
+                type="button"
+                title={preset.description?.[language]}
+                onClick={() => {
+                  for (const [k, v] of Object.entries(preset.config)) {
+                    updateSelectedConfig(k, v);
+                  }
+                }}
+              >
+                {preset.label[language]}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        {basicFields.map((field) => renderConfigField(field, selectedNode))}
+        {advancedFields.length > 0 ? (
+          <details className="advanced-params">
+            <summary>
+              {language === "zh" ? "高级参数" : "Advanced"} ({advancedFields.length})
+            </summary>
+            {Array.from(advancedGroups.entries()).map(([group, fields]) => (
+              <div key={group} className="advanced-group">
+                {group ? (
+                  <h4 className="advanced-group-title">
+                    {fields[0]?.groupLabel?.[language] ?? group}
+                  </h4>
+                ) : null}
+                {fields.map((field) => renderConfigField(field, selectedNode))}
+              </div>
+            ))}
+          </details>
+        ) : null}
+      </>
+    );
+  })();
+}
 ```
 
 - [ ] **Step 4: Add CSS for new field types**
 
 ```css
-.field-error .field-label { color: #dc2626; }
-.required-mark { color: #dc2626; margin-left: 2px; }
-.field-help { font-size: 0.75rem; color: var(--text-muted); display: block; }
-.field-issue { font-size: 0.75rem; color: #dc2626; display: block; margin-top: 2px; }
+.field-error .field-label {
+  color: #dc2626;
+}
+.required-mark {
+  color: #dc2626;
+  margin-left: 2px;
+}
+.field-help {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  display: block;
+}
+.field-issue {
+  font-size: 0.75rem;
+  color: #dc2626;
+  display: block;
+  margin-top: 2px;
+}
 
-.boolean-field { display: flex; align-items: center; gap: 6px; }
-.boolean-label { font-size: 0.88rem; }
+.boolean-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.boolean-label {
+  font-size: 0.88rem;
+}
 
-.multiselect-field { display: flex; flex-wrap: wrap; gap: 6px; }
-.multiselect-option { display: flex; align-items: center; gap: 4px; font-size: 0.85rem; }
+.multiselect-field {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.multiselect-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85rem;
+}
 
-.json-field { display: flex; gap: 6px; align-items: flex-start; }
-.json-field textarea { flex: 1; min-height: 60px; }
+.json-field {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+.json-field textarea {
+  flex: 1;
+  min-height: 60px;
+}
 
-.secret-field { display: flex; gap: 6px; }
-.secret-field input { flex: 1; }
+.secret-field {
+  display: flex;
+  gap: 6px;
+}
+.secret-field input {
+  flex: 1;
+}
 
-.preset-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.preset-button { font-size: 0.78rem; padding: 3px 8px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--panel-bg); cursor: pointer; }
-.preset-button:hover { background: var(--code-bg); }
+.preset-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.preset-button {
+  font-size: 0.78rem;
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--panel-bg);
+  cursor: pointer;
+}
+.preset-button:hover {
+  background: var(--code-bg);
+}
 
-.advanced-params { margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 8px; }
-.advanced-params > summary { font-weight: 600; cursor: pointer; font-size: 0.9rem; }
-.advanced-group { margin-top: 6px; }
-.advanced-group-title { font-size: 0.82rem; color: var(--text-muted); margin: 4px 0; }
+.advanced-params {
+  margin-top: 10px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 8px;
+}
+.advanced-params > summary {
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.advanced-group {
+  margin-top: 6px;
+}
+.advanced-group-title {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 4px 0;
+}
 ```
 
 - [ ] **Step 5: Build and typecheck**
@@ -1974,6 +2154,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 13: Add remote-http executor support
 
 **Files:**
+
 - Modify: `packages/plugin-sdk/src/index.ts` (add timeoutMs to executor type)
 - Modify: `apps/web/scripts/serve.mjs` (add remote-http branch in createPluginExecutors)
 
@@ -2096,7 +2277,7 @@ if (executor.adapter !== "local-module") {
 }
 ```
 
-- [ ] **Step 3: Pass _workflowId to context**
+- [ ] **Step 3: Pass \_workflowId to context**
 
 In `serve.mjs`, when creating the context for `createPluginExecutors`, add `_workflowId`:
 

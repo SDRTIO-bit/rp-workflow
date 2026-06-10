@@ -1,0 +1,103 @@
+<h2>3 个新增 RP 节点 — 端口与配置定义</h2>
+<p class="subtitle">全部注册在 rp-core 插件（node.plugin.json），executor 实现在 executor.mjs</p>
+
+<div class="section">
+  <h3>1. rpInputParser — 玩家输入解析</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">Node: rpInputParser</div>
+  <div class="mockup-body">
+    <table style="width:100%;font-size:0.82rem;border-collapse:collapse;">
+      <tr><td style="color:var(--text-muted);width:100px;">Category</td><td>roleplay</td></tr>
+      <tr><td style="color:var(--text-muted);">Color</td><td style="color:#d97706;">#d97706</td></tr>
+      <tr><td style="color:var(--text-muted);">Input</td><td><code>text (user_input)</code> — 玩家原始输入</td></tr>
+      <tr><td style="color:var(--text-muted);">Outputs</td><td>
+        <code>parsed (json)</code> — 结构化解析结果<br>
+        <code style="font-size:0.75rem;">{ speech, action, intent, emotion, entities[], triggers[] }</code>
+      </td></tr>
+      <tr><td style="color:var(--text-muted);">Config</td><td>
+        <code>parseRules (textarea)</code> — 解析指令<br>
+        <code>language (select: zh/en)</code>
+      </td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. rpContextAssembler — 上下文组装</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">Node: rpContextAssembler</div>
+  <div class="mockup-body">
+    <table style="width:100%;font-size:0.82rem;border-collapse:collapse;">
+      <tr><td style="color:var(--text-muted);width:100px;">Category</td><td>roleplay</td></tr>
+      <tr><td style="color:var(--text-muted);">Color</td><td style="color:#d97706;">#d97706</td></tr>
+      <tr><td style="color:var(--text-muted);">Inputs</td><td>
+        <code>parsed (json)</code> — 来自 rpInputParser<br>
+        <code>character (character_profile)</code> — 角色卡<br>
+        <code>scene (scene_state)</code> — 场景状态<br>
+        <code>worldbook (context)</code> — 世界书命中<br>
+        <code>memory (context)</code> — 记忆召回
+      </td></tr>
+      <tr><td style="color:var(--text-muted);">Output</td><td>
+        <code>context (context)</code> — 组装后的完整 RP 上下文
+      </td></tr>
+      <tr><td style="color:var(--text-muted);">Config</td><td>
+        <code>assemblyTemplate (textarea)</code> — 组装模板<br>
+        <code>maxTokens (number, 500-4000)</code>
+      </td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. rpMemoryWrite — 记忆写入候选</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">Node: rpMemoryWrite</div>
+  <div class="mockup-body">
+    <table style="width:100%;font-size:0.82rem;border-collapse:collapse;">
+      <tr><td style="color:var(--text-muted);width:100px;">Category</td><td>memory</td></tr>
+      <tr><td style="color:var(--text-muted);">Color</td><td style="color:#d97706;">#d97706</td></tr>
+      <tr><td style="color:var(--text-muted);">Inputs</td><td>
+        <code>reply (draft)</code> — 导演输出<br>
+        <code>notes (analysis)</code> — 连续性检查结果<br>
+        <code>parsed (json)</code> — 玩家输入解析（可选）<br>
+        <code>state (scene_state)</code> — 场景状态（可选）
+      </td></tr>
+      <tr><td style="color:var(--text-muted);">Output</td><td>
+        <code>candidates (json)</code> — 建议写入的记忆条目列表<br>
+        <code style="font-size:0.75rem;">[{type, title, content, tags, priority}]</code><br>
+        <code style="font-size:0.75rem;">type: relationship | preference | promise | lore | hook</code>
+      </td></tr>
+      <tr><td style="color:var(--text-muted);">Config</td><td>
+        <code>autoWrite (boolean, default: false)</code> — 是否自动写入<br>
+        <code>maxCandidates (number, 1-10, default: 5)</code><br>
+        <code>memoryTypes (multiselect)</code> — 启用哪些类型
+      </td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>新增数据类型</h3>
+</div>
+
+<div class="mockup">
+  <div class="mockup-body">
+    <table style="width:100%;font-size:0.8rem;">
+      <tr style="font-weight:600;"><td>dataType</td><td>说明</td><td>生产者</td><td>消费者</td></tr>
+      <tr><td><code>json</code></td><td>结构化 JSON</td><td>rpInputParser</td><td>rpContextAssembler</td></tr>
+      <tr><td><code>context</code></td><td>已有（扩展用途）</td><td>rpContextAssembler</td><td>rpDialogueDirector</td></tr>
+      <tr><td><code>draft</code></td><td>已有</td><td>rpDialogueDirector</td><td>rpMemoryWrite</td></tr>
+      <tr><td><code>analysis</code></td><td>已有</td><td>rpContinuityCheck</td><td>rpMemoryWrite</td></tr>
+    </table>
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-top:8px;">
+      <code>json</code> 是唯一需要新增到 areTypesCompatible 的数据类型。
+      需要补充兼容对：<code>json:context</code>、<code>parsed:json</code> 等。
+    </p>
+  </div>
+</div>

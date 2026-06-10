@@ -61,7 +61,10 @@ export const createExecutors = async (context) => ({
   },
 
   rpContextAssembler: async ({ node, inputs }) => {
-    const template = String(node.config.assemblyTemplate ?? "{character}\n\n{scene}\n\n{worldbook}\n\n{memory}\n\n{parsed}");
+    const template = String(
+      node.config.assemblyTemplate ??
+        "{character}\n\n{scene}\n\n{worldbook}\n\n{memory}\n\n{parsed}",
+    );
 
     const formatValue = (key, value) => {
       if (value === undefined || value === null || value === "") return `[${key} 暂未提供]`;
@@ -77,9 +80,10 @@ export const createExecutors = async (context) => ({
       .replace(/\{parsed\}/g, formatValue("解析输入", inputs.parsed));
 
     const maxTokens = Number(node.config.maxTokens ?? 2000);
-    const truncated = context.length > maxTokens * 4
-      ? context.slice(0, maxTokens * 4) + "\n\n[上下文已截断]"
-      : context;
+    const truncated =
+      context.length > maxTokens * 4
+        ? context.slice(0, maxTokens * 4) + "\n\n[上下文已截断]"
+        : context;
 
     return {
       outputs: { context: truncated },

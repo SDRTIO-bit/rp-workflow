@@ -48,7 +48,13 @@
       ],
       "quickAdd": true,
       "ports": [
-        { "id": "text", "label": "Text", "direction": "input", "dataType": "user_input", "required": true },
+        {
+          "id": "text",
+          "label": "Text",
+          "direction": "input",
+          "dataType": "user_input",
+          "required": true
+        },
         { "id": "parsed", "label": "Parsed", "direction": "output", "dataType": "json" }
       ]
     },
@@ -85,7 +91,12 @@
       "quickAdd": true,
       "ports": [
         { "id": "parsed", "label": "Parsed", "direction": "input", "dataType": "json" },
-        { "id": "character", "label": "Character", "direction": "input", "dataType": "character_profile" },
+        {
+          "id": "character",
+          "label": "Character",
+          "direction": "input",
+          "dataType": "character_profile"
+        },
         { "id": "scene", "label": "Scene", "direction": "input", "dataType": "scene_state" },
         { "id": "worldbook", "label": "Worldbook", "direction": "input", "dataType": "context" },
         { "id": "memory", "label": "Memory", "direction": "input", "dataType": "context" },
@@ -335,8 +346,20 @@
       ],
       "quickAdd": true,
       "ports": [
-        { "id": "reply", "label": "Reply", "direction": "input", "dataType": "draft", "required": true },
-        { "id": "notes", "label": "Notes", "direction": "input", "dataType": "analysis", "required": true },
+        {
+          "id": "reply",
+          "label": "Reply",
+          "direction": "input",
+          "dataType": "draft",
+          "required": true
+        },
+        {
+          "id": "notes",
+          "label": "Notes",
+          "direction": "input",
+          "dataType": "analysis",
+          "required": true
+        },
         { "id": "parsed", "label": "Parsed", "direction": "input", "dataType": "json" },
         { "id": "state", "label": "State", "direction": "input", "dataType": "scene_state" },
         { "id": "candidates", "label": "Candidates", "direction": "output", "dataType": "json" }
