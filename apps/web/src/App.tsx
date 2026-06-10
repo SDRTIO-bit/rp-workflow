@@ -992,17 +992,19 @@ export function App() {
             </span>
             {node.config.destination !== undefined ? (
               <span className="type-chip">
-                {String(node.config.destination === "user"
-                  ? language === "zh"
-                    ? "发送给用户"
-                    : "Send to User"
-                  : node.config.destination === "export"
+                {String(
+                  node.config.destination === "user"
                     ? language === "zh"
-                      ? "导出为文件"
-                      : "Export as File"
-                    : language === "zh"
-                      ? "仅预览"
-                      : "Preview Only")}
+                      ? "发送给用户"
+                      : "Send to User"
+                    : node.config.destination === "export"
+                      ? language === "zh"
+                        ? "导出为文件"
+                        : "Export as File"
+                      : language === "zh"
+                        ? "仅预览"
+                        : "Preview Only",
+                )}
               </span>
             ) : null}
           </div>
@@ -1622,9 +1624,7 @@ export function App() {
                   >
                     <span className="node-type">{getRuntimeNodeLabel(node.type)}</span>
                     {isAgentNode(node.type) ? (
-                      <span className="agent-badge">
-                        {language === "zh" ? "Agent" : "Agent"}
-                      </span>
+                      <span className="agent-badge">{language === "zh" ? "Agent" : "Agent"}</span>
                     ) : null}
                     <strong>{node.id}</strong>
                     {isAgentNode(node.type) && node.config.model ? (
@@ -1638,11 +1638,8 @@ export function App() {
                     {renderNodeSummary(node)}
                     {(() => {
                       const nodeDef = getRuntimeNodeDefinition(node.type);
-                      const previewText =
-                        nodeDef?.previewI18n?.[language] ?? nodeDef?.preview;
-                      return previewText ? (
-                        <span className="node-meta">{previewText}</span>
-                      ) : null;
+                      const previewText = nodeDef?.previewI18n?.[language] ?? nodeDef?.preview;
+                      return previewText ? <span className="node-meta">{previewText}</span> : null;
                     })()}
                     <PortList
                       direction="input"
@@ -1801,20 +1798,13 @@ export function App() {
       </section>
 
       {selectedNodeId && selectedNode ? (
-        <div className="modal-overlay" onClick={() => setSelectedNodeId(null)}>
-          <div
-            className="modal-content node-config-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="modal-overlay" onClick={() => setSelectedNodeId("")}>
+          <div className="modal-content node-config-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>
                 {getRuntimeNodeLabel(selectedNode.type)} — {selectedNode.id}
               </h2>
-              <button
-                className="modal-close"
-                type="button"
-                onClick={() => setSelectedNodeId(null)}
-              >
+              <button className="modal-close" type="button" onClick={() => setSelectedNodeId("")}>
                 ×
               </button>
             </div>
