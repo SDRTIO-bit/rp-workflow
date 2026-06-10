@@ -522,6 +522,31 @@ select {
   overflow-wrap: anywhere;
 }
 
+.canvas-node.agent-node {
+  border-left: 3px solid var(--node-color);
+}
+
+.agent-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--node-color) 18%, transparent);
+  color: var(--node-color);
+  width: fit-content;
+}
+
+.agent-summary {
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .canvas-node.run-success {
   border-color: color-mix(in srgb, var(--node-color) 72%, #ffffff);
   box-shadow:

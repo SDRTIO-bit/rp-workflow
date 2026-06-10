@@ -273,12 +273,20 @@
         "zh": "在保留玩家自主权的同时输出角色扮演回复。",
         "en": "Outputs an RP reply while preserving player agency."
       },
+      "panelLayout": "agent",
       "defaultConfig": {
         "replyRules": "写中文。保留悬念。不要替玩家说话或行动。",
         "skills": ["rp_persona", "rp_player_agency", "rp_continuity", "rp_slow_burn"],
-        "plugins": ["worldbook_read", "rp_memory_read"]
+        "plugins": ["worldbook_read", "rp_memory_read"],
+        "model": "deepseek-v4-flash"
       },
       "configFields": [
+        {
+          "key": "model",
+          "label": { "zh": "模型", "en": "Model" },
+          "kind": "select",
+          "options": ["deepseek-v4-flash", "deepseek-v4-pro", "deepseek-reasoner"]
+        },
         {
           "key": "replyRules",
           "label": { "zh": "回复规则", "en": "Reply rules" },
@@ -330,6 +338,7 @@
         "zh": "输出针对已生成 RP 回复的连续性检查笔记。",
         "en": "Outputs continuity notes for the generated RP reply."
       },
+      "panelLayout": "agent",
       "defaultConfig": { "strictness": "medium", "skills": ["rp_player_agency", "rp_continuity"] },
       "configFields": [
         {

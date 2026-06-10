@@ -389,6 +389,11 @@ export function App() {
   const getRuntimeNodeConfigFields = (nodeType: string) =>
     getRuntimeNodeDefinition(nodeType)?.configFields ?? [];
 
+  const isAgentNode = (nodeType: string) => {
+    const def = getRuntimeNodeDefinition(nodeType);
+    return def?.panelLayout === "agent" || def?.defaultConfig?.model !== undefined;
+  };
+
   const loadPlugins = async () => {
     const loaded = await loadPluginsViaServer();
     if (loaded) {
@@ -1599,7 +1604,7 @@ export function App() {
                     key={node.id}
                     className={`canvas-node ${selectedNodeId === node.id ? "selected" : ""} ${
                       runStatusByNode.has(node.id) ? `run-${runStatusByNode.get(node.id)}` : ""
-                    }`}
+                    } ${isAgentNode(node.type) ? "agent-node" : ""}`}
                     style={
                       {
                         "--node-color": getRuntimeNodeDefinition(node.type)?.color ?? "#64748b",
@@ -1616,7 +1621,20 @@ export function App() {
                     tabIndex={0}
                   >
                     <span className="node-type">{getRuntimeNodeLabel(node.type)}</span>
+                    {isAgentNode(node.type) ? (
+                      <span className="agent-badge">
+                        {language === "zh" ? "Agent" : "Agent"}
+                      </span>
+                    ) : null}
                     <strong>{node.id}</strong>
+                    {isAgentNode(node.type) && node.config.model ? (
+                      <span className="agent-summary">
+                        {String(node.config.model)}
+                        {Array.isArray(node.config.skills) && node.config.skills.length > 0
+                          ? ` · ${node.config.skills.length} skills`
+                          : ""}
+                      </span>
+                    ) : null}
                     {renderNodeSummary(node)}
                     {(() => {
                       const nodeDef = getRuntimeNodeDefinition(node.type);
