@@ -226,9 +226,9 @@ const createPluginExecutors = async (plugins, context) => {
   return executors;
 };
 
-const plugins = await loadNodePlugins();
-const pluginCatalog = createPluginCatalog(plugins);
-const runtimeNodeCatalog = {
+let plugins = await loadNodePlugins();
+let pluginCatalog = createPluginCatalog(plugins);
+let runtimeNodeCatalog = {
   ...nodeRegistry,
   ...pluginCatalog,
 };
