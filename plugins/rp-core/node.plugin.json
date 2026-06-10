@@ -18,6 +18,41 @@
   },
   "nodes": [
     {
+      "type": "rpInputParser",
+      "label": "RP Input Parser",
+      "labelI18n": { "zh": "RP 输入解析", "en": "RP Input Parser" },
+      "category": "roleplay",
+      "description": "Parse raw player input into structured speech, action, intent, emotion, entities, and triggers.",
+      "descriptionI18n": {
+        "zh": "将玩家原始输入解析为结构化的发言、动作、意图、情绪、实体和触发词。",
+        "en": "Parse raw player input into structured speech, action, intent, emotion, entities, and triggers."
+      },
+      "color": "#d97706",
+      "preview": "Outputs parsed JSON with speech, action, intent, emotion, entities, and triggers.",
+      "defaultConfig": {
+        "parseRules": "分析玩家输入，提取：发言内容、角色动作、玩家意图、情绪标签、提到的实体名称、潜在触发词。输出JSON。",
+        "language": "zh"
+      },
+      "configFields": [
+        {
+          "key": "parseRules",
+          "label": { "zh": "解析指令", "en": "Parse rules" },
+          "kind": "textarea"
+        },
+        {
+          "key": "language",
+          "label": { "zh": "语言", "en": "Language" },
+          "kind": "select",
+          "options": ["zh", "en"]
+        }
+      ],
+      "quickAdd": true,
+      "ports": [
+        { "id": "text", "label": "Text", "direction": "input", "dataType": "user_input", "required": true },
+        { "id": "parsed", "label": "Parsed", "direction": "output", "dataType": "json" }
+      ]
+    },
+    {
       "type": "worldbookSearch",
       "label": "Worldbook Search",
       "labelI18n": { "zh": "世界书检索", "en": "Worldbook Search" },

@@ -1,4 +1,65 @@
 export const createExecutors = async (context) => ({
+  rpInputParser: async ({ node, inputs }) => {
+    const text = String(inputs.text ?? "");
+    if (!text.trim()) {
+      return {
+        outputs: {
+          parsed: {
+            speech: "",
+            action: "",
+            intent: "",
+            emotion: "",
+            entities: [],
+            triggers: [],
+          },
+        },
+        metadata: { pluginId: "awp.rp-core" },
+      };
+    }
+
+    const result = await context.executeAgent({
+      nodeId: node.id,
+      config: {
+        systemPrompt: String(node.config.parseRules ?? "分析玩家输入，提取结构化信息。"),
+        skills: [],
+        plugins: [],
+        outputType: "json",
+      },
+      inputs: { text },
+    });
+
+    try {
+      const parsed = JSON.parse(result.text);
+      return {
+        outputs: {
+          parsed: {
+            speech: String(parsed.speech ?? ""),
+            action: String(parsed.action ?? ""),
+            intent: String(parsed.intent ?? ""),
+            emotion: String(parsed.emotion ?? ""),
+            entities: Array.isArray(parsed.entities) ? parsed.entities.map(String) : [],
+            triggers: Array.isArray(parsed.triggers) ? parsed.triggers.map(String) : [],
+          },
+        },
+        metadata: { ...result.metadata, pluginId: "awp.rp-core" },
+      };
+    } catch {
+      return {
+        outputs: {
+          parsed: {
+            speech: text,
+            action: "",
+            intent: "",
+            emotion: "",
+            entities: [],
+            triggers: [],
+          },
+        },
+        metadata: { pluginId: "awp.rp-core", parseFallback: true },
+      };
+    }
+  },
+
   worldbookSearch: async ({ node, inputs }) => {
     const entries = await context.readWorldbook();
     const query = String(inputs.query ?? node.config.query ?? "");
