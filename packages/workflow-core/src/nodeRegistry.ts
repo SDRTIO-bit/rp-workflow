@@ -352,6 +352,34 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     ],
     ports: [input("spec", "Spec", "ui_spec"), output("tool", "Tool", "agent_tool")],
   },
+  preview: {
+    type: "preview",
+    label: "Preview",
+    labelI18n: { zh: "通用预览", en: "Preview" },
+    category: "utility",
+    description: "Universal data inspector — connect any output to preview its contents.",
+    descriptionI18n: {
+      zh: "通用数据检查器 — 连接任意输出来预览其内容。",
+      en: "Universal data inspector — connect any output to preview its contents.",
+    },
+    color: "#0d9488",
+    preview: "Accepts any data type and renders text, JSON, or a structured summary.",
+    previewI18n: {
+      zh: "接受任意数据类型，渲染为文本、JSON 或结构化摘要。",
+      en: "Accepts any data type and renders text, JSON, or a structured summary.",
+    },
+    quickAdd: true,
+    defaultConfig: { displayMode: "auto" },
+    configFields: [
+      {
+        key: "displayMode",
+        label: { zh: "显示模式", en: "Display mode" },
+        kind: "select",
+        options: ["auto", "text", "json", "summary"],
+      },
+    ],
+    ports: [input("data", "Data", "json", false), output("preview", "Preview", "debug_info")],
+  },
   assetPreview: {
     type: "assetPreview",
     label: "Asset Preview",
@@ -583,6 +611,11 @@ export const areTypesCompatible = (sourceType: DataType, targetType: DataType): 
     "scene_state:context",
     "scene_state:json",
     "analysis:json",
+    "text:json",
+    "context:json",
+    "search_result:json",
+    "final_text:json",
+    "debug_info:json",
   ]);
 
   return compatible.has(`${sourceType}:${targetType}`);
