@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateNodePluginManifest } from "./index";
+import { validateNodePluginManifest, validateSkillPluginManifest } from "./index";
 
 describe("plugin sdk", () => {
   it("accepts a minimal node plugin manifest", () => {
@@ -24,6 +24,50 @@ describe("plugin sdk", () => {
         ],
       }),
     ).toEqual([]);
+  });
+
+  it("validates a valid skill plugin manifest", () => {
+    const manifest = {
+      schemaVersion: 1,
+      id: "awp.rp-skills",
+      label: "RP Skills",
+      version: "0.1.0",
+      skills: [
+        {
+          id: "rp_persona",
+          label: { zh: "角色扮演", en: "RP Persona" },
+          content: { zh: "保持人设", en: "Stay in character" },
+        },
+      ],
+    };
+    expect(validateSkillPluginManifest(manifest)).toEqual([]);
+  });
+
+  it("rejects skill manifest with missing skills array", () => {
+    const issues = validateSkillPluginManifest({
+      schemaVersion: 1,
+      id: "awp.test",
+      label: "Test",
+      version: "0.1.0",
+    });
+    expect(issues).toContain("skills must be an array");
+  });
+
+  it("rejects skill with missing label zh", () => {
+    const issues = validateSkillPluginManifest({
+      schemaVersion: 1,
+      id: "awp.test",
+      label: "Test",
+      version: "0.1.0",
+      skills: [
+        {
+          id: "bad_skill",
+          label: { en: "Only English" },
+          content: { zh: "内容", en: "Content" },
+        },
+      ],
+    });
+    expect(issues.length).toBeGreaterThan(0);
   });
 
   it("reports invalid node plugin manifests", () => {

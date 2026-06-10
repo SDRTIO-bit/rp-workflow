@@ -26,6 +26,11 @@ export type PluginDefinition = {
   tools: ToolDefinition[];
 };
 
+export type LocalizedText = {
+  zh: string;
+  en: string;
+};
+
 export type PluginPermission =
   | "filesystem:read"
   | "filesystem:write"
@@ -40,6 +45,26 @@ export type PluginDependency = {
   id: string;
   versionRange?: string;
   optional?: boolean;
+};
+
+export type SkillDefinition = {
+  id: string;
+  label: LocalizedText;
+  content: LocalizedText;
+  category?: string;
+  tags?: string[];
+};
+
+export type SkillPluginManifest = {
+  schemaVersion: 1;
+  id: string;
+  label: string;
+  version: string;
+  description?: string;
+  author?: string;
+  enabled?: boolean;
+  compatibility?: PluginCompatibility;
+  skills: SkillDefinition[];
 };
 
 export type PluginCompatibility = {
@@ -161,6 +186,46 @@ export const validateNodePluginManifest = (manifest: unknown): string[] => {
       }
       if (typeof manifest.executor.entry !== "string" || manifest.executor.entry.trim() === "") {
         issues.push("executor.entry must be a non-empty string");
+      }
+    }
+  }
+
+  return issues;
+};
+
+export const validateSkillPluginManifest = (manifest: unknown): string[] => {
+  const issues: string[] = [];
+
+  if (!isObject(manifest)) {
+    return ["skill manifest must be an object"];
+  }
+
+  if (manifest.schemaVersion !== 1) {
+    issues.push("schemaVersion must be 1");
+  }
+
+  for (const key of ["id", "label", "version"] as const) {
+    if (typeof manifest[key] !== "string" || manifest[key].trim() === "") {
+      issues.push(`${key} must be a non-empty string`);
+    }
+  }
+
+  if (!Array.isArray(manifest.skills)) {
+    issues.push("skills must be an array");
+  } else {
+    for (const [index, skill] of manifest.skills.entries()) {
+      if (!isObject(skill)) {
+        issues.push(`skills[${index}] must be an object`);
+        continue;
+      }
+      if (typeof skill.id !== "string" || skill.id.trim() === "") {
+        issues.push(`skills[${index}].id must be a non-empty string`);
+      }
+      if (!isObject(skill.label) || typeof skill.label.zh !== "string" || typeof skill.label.en !== "string") {
+        issues.push(`skills[${index}].label must have zh and en strings`);
+      }
+      if (!isObject(skill.content) || typeof skill.content.zh !== "string" || typeof skill.content.en !== "string") {
+        issues.push(`skills[${index}].content must have zh and en strings`);
       }
     }
   }
