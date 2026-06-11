@@ -72,52 +72,52 @@ apps/server/
 
 ### 记忆
 
-| 方法 | 路径 | 请求体 | 响应 |
-|------|------|--------|------|
-| GET | `/api/memories` | — | `{ memories: MemoryEntry[] }` |
-| POST | `/api/memories` | `MemoryDraft` | `{ memories: MemoryEntry[], entry: MemoryEntry }` |
-| PUT | `/api/memories/:id` | `MemoryDraft` | `{ memories: MemoryEntry[] }` |
-| DELETE | `/api/memories/:id` | — | `{ memories: MemoryEntry[] }` |
+| 方法   | 路径                | 请求体        | 响应                                              |
+| ------ | ------------------- | ------------- | ------------------------------------------------- |
+| GET    | `/api/memories`     | —             | `{ memories: MemoryEntry[] }`                     |
+| POST   | `/api/memories`     | `MemoryDraft` | `{ memories: MemoryEntry[], entry: MemoryEntry }` |
+| PUT    | `/api/memories/:id` | `MemoryDraft` | `{ memories: MemoryEntry[] }`                     |
+| DELETE | `/api/memories/:id` | —             | `{ memories: MemoryEntry[] }`                     |
 
 ### 世界书
 
-| 方法 | 路径 | 请求体 | 响应 |
-|------|------|--------|------|
-| GET | `/api/worldbook` | — | `{ entries: MemoryEntry[] }` |
-| POST | `/api/worldbook` | `MemoryDraft` | `{ entries: MemoryEntry[], entry: MemoryEntry }` |
-| PUT | `/api/worldbook/:id` | `MemoryDraft` | `{ entries: MemoryEntry[] }` |
-| DELETE | `/api/worldbook/:id` | — | `{ entries: MemoryEntry[] }` |
+| 方法   | 路径                 | 请求体        | 响应                                             |
+| ------ | -------------------- | ------------- | ------------------------------------------------ |
+| GET    | `/api/worldbook`     | —             | `{ entries: MemoryEntry[] }`                     |
+| POST   | `/api/worldbook`     | `MemoryDraft` | `{ entries: MemoryEntry[], entry: MemoryEntry }` |
+| PUT    | `/api/worldbook/:id` | `MemoryDraft` | `{ entries: MemoryEntry[] }`                     |
+| DELETE | `/api/worldbook/:id` | —             | `{ entries: MemoryEntry[] }`                     |
 
 ### 插件与技能
 
-| 方法 | 路径 | 响应 |
-|------|------|------|
-| GET | `/api/plugins` | `{ plugins: PluginSummary[] }` |
-| POST | `/api/plugins/:id/enable` | `{ id, enabled, manifestEnabled, stateSource, nodeTypes }` |
+| 方法 | 路径                       | 响应                                                       |
+| ---- | -------------------------- | ---------------------------------------------------------- |
+| GET  | `/api/plugins`             | `{ plugins: PluginSummary[] }`                             |
+| POST | `/api/plugins/:id/enable`  | `{ id, enabled, manifestEnabled, stateSource, nodeTypes }` |
 | POST | `/api/plugins/:id/disable` | `{ id, enabled, manifestEnabled, stateSource, nodeTypes }` |
-| GET | `/api/skills` | `{ skills: SkillSummary[], categories: string[] }` |
-| GET | `/api/nodes` | `{ nodes: NodeDefinition[], plugins: PluginMeta[] }` |
+| GET  | `/api/skills`              | `{ skills: SkillSummary[], categories: string[] }`         |
+| GET  | `/api/nodes`               | `{ nodes: NodeDefinition[], plugins: PluginMeta[] }`       |
 
 ### 工作流
 
-| 方法 | 路径 | 请求体 | 响应 |
-|------|------|--------|------|
-| POST | `/api/run-workflow` | `{ workflow }` | `WorkflowRunResult` |
-| POST | `/api/run-workflow-stream` | `{ workflow }` | NDJSON 流：`WorkflowStreamEvent` |
-| POST | `/api/workflows/validate` | `{ workflow }` | `{ issues: WorkflowValidationIssue[] }` |
+| 方法 | 路径                       | 请求体         | 响应                                    |
+| ---- | -------------------------- | -------------- | --------------------------------------- |
+| POST | `/api/run-workflow`        | `{ workflow }` | `WorkflowRunResult`                     |
+| POST | `/api/run-workflow-stream` | `{ workflow }` | NDJSON 流：`WorkflowStreamEvent`        |
+| POST | `/api/workflows/validate`  | `{ workflow }` | `{ issues: WorkflowValidationIssue[] }` |
 
 ### 模板
 
-| 方法 | 路径 | 响应 |
-|------|------|------|
-| GET | `/api/templates` | `{ templates: WorkflowTemplate[] }` |
+| 方法 | 路径             | 响应                                |
+| ---- | ---------------- | ----------------------------------- |
+| GET  | `/api/templates` | `{ templates: WorkflowTemplate[] }` |
 
 ### LLM 代理
 
-| 方法 | 路径 | 请求体 | 响应 |
-|------|------|--------|------|
-| GET | `/api/llm/status` | — | `{ configured: boolean, model: string }` |
-| POST | `/api/llm/chat` | `{ messages, model? }` | `{ text, metadata }` 或流式 NDJSON |
+| 方法 | 路径              | 请求体                 | 响应                                     |
+| ---- | ----------------- | ---------------------- | ---------------------------------------- |
+| GET  | `/api/llm/status` | —                      | `{ configured: boolean, model: string }` |
+| POST | `/api/llm/chat`   | `{ messages, model? }` | `{ text, metadata }` 或流式 NDJSON       |
 
 ## 开发模式
 
@@ -149,10 +149,10 @@ Hono 在生产环境通过 `serveStatic` 中间件服务前端构建产物，实
 
 ```ts
 // src/index.ts
-import { serveStatic } from '@hono/node-server/serve-static'
+import { serveStatic } from "@hono/node-server/serve-static";
 
-if (process.env.NODE_ENV === 'production') {
-  app.use('/*', serveStatic({ root: '../web/dist' }))
+if (process.env.NODE_ENV === "production") {
+  app.use("/*", serveStatic({ root: "../web/dist" }));
 }
 ```
 
@@ -160,14 +160,14 @@ if (process.env.NODE_ENV === 'production') {
 
 ## 环境变量
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `PORT` | `5180` | 服务端口 |
-| `DATA_DIR` | `path.resolve(import.meta.dirname, '../../../data')` | 数据文件目录 |
-| `DEEPSEEK_API_KEY` | — | DeepSeek API 密钥 |
-| `DEEPSEEK_MODEL` | `deepseek-v4-flash` | 默认模型 |
-| `PLUGINS_DIR` | `path.resolve(import.meta.dirname, '../../../plugins')` | 插件目录 |
-| `NODE_ENV` | `development` | 运行环境 |
+| 变量               | 默认值                                                  | 说明              |
+| ------------------ | ------------------------------------------------------- | ----------------- |
+| `PORT`             | `5180`                                                  | 服务端口          |
+| `DATA_DIR`         | `path.resolve(import.meta.dirname, '../../../data')`    | 数据文件目录      |
+| `DEEPSEEK_API_KEY` | —                                                       | DeepSeek API 密钥 |
+| `DEEPSEEK_MODEL`   | `deepseek-v4-flash`                                     | 默认模型          |
+| `PLUGINS_DIR`      | `path.resolve(import.meta.dirname, '../../../plugins')` | 插件目录          |
+| `NODE_ENV`         | `development`                                           | 运行环境          |
 
 ## 服务层设计
 

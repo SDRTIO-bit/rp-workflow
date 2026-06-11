@@ -24,9 +24,7 @@ import { nodeRegistry, type NodeCatalog } from "@awp/workflow-core";
 
 const app = new Hono();
 
-app.get("/api/health", (c) =>
-  c.json({ status: "ok", timestamp: new Date().toISOString() }),
-);
+app.get("/api/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 const env = resolveEnv();
 const memoryFile = resolve(env.dataDir, "memories.json");
@@ -96,7 +94,10 @@ const initPlugins = async () => {
 // Register routes
 app.route("/", createMemoriesRoutes(memoryFile));
 app.route("/", createWorldbookRoutes(worldbookFile));
-app.route("/", createPluginsRoutes(env.pluginsDir, pluginStateFile, getPluginRuntime, setPluginRuntime));
+app.route(
+  "/",
+  createPluginsRoutes(env.pluginsDir, pluginStateFile, getPluginRuntime, setPluginRuntime),
+);
 app.route("/", createSkillsRoutes(getSkillsRuntime));
 app.route("/", createNodesRoutes(getNodesRuntime));
 app.route("/", createTemplatesRoutes());
@@ -115,9 +116,7 @@ const start = async () => {
   serve({ fetch: app.fetch, port: env.port }, (info) => {
     console.log(`@awp/server running at http://127.0.0.1:${info.port}`);
     console.log(
-      env.deepseekApiKey
-        ? "DeepSeek Agent: enabled"
-        : "DeepSeek Agent: missing DEEPSEEK_API_KEY",
+      env.deepseekApiKey ? "DeepSeek Agent: enabled" : "DeepSeek Agent: missing DEEPSEEK_API_KEY",
     );
   });
 };

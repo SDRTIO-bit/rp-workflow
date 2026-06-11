@@ -9,26 +9,41 @@
   <div class="mockup">
     <div class="mockup-header">Before（当前）</div>
     <div class="mockup-body">
-      <div class="placeholder" style="background:#2a1a1a;padding:12px;margin:4px 0;border-left:3px solid #dc2626;">
-        <strong>serve.mjs</strong><br>
-        <code style="font-size:0.7rem;">const sampleSkills = [<br>
-        &nbsp;&nbsp;{id:"rp_persona", ...},<br>
-        &nbsp;&nbsp;{id:"rp_continuity", ...},<br>
-        &nbsp;&nbsp;... // 硬编码 7 个 skill<br>
-        ];</code>
+      <div
+        class="placeholder"
+        style="background: #2a1a1a; padding: 12px; margin: 4px 0; border-left: 3px solid #dc2626"
+      >
+        <strong>serve.mjs</strong><br />
+        <code style="font-size: 0.7rem"
+          >const sampleSkills = [<br />
+          &nbsp;&nbsp;{id:"rp_persona", ...},<br />
+          &nbsp;&nbsp;{id:"rp_continuity", ...},<br />
+          &nbsp;&nbsp;... // 硬编码 7 个 skill<br />
+          ];</code
+        >
       </div>
-      <div class="placeholder" style="background:#1a2a1a;padding:12px;margin:4px 0;border-left:3px solid #16a34a;">
-        <strong>plugins/rp-core/</strong><br>
-        <code style="font-size:0.7rem;">node.plugin.json (6 nodes)<br>
-        executor.mjs</code>
+      <div
+        class="placeholder"
+        style="background: #1a2a1a; padding: 12px; margin: 4px 0; border-left: 3px solid #16a34a"
+      >
+        <strong>plugins/rp-core/</strong><br />
+        <code style="font-size: 0.7rem"
+          >node.plugin.json (6 nodes)<br />
+          executor.mjs</code
+        >
       </div>
-      <div style="text-align:center;padding:8px;color:var(--text-muted);">
+      <div style="text-align: center; padding: 8px; color: var(--text-muted)">
         ↓ Agent 调用时传入 ↓
       </div>
-      <div class="placeholder" style="background:#1a1a2a;padding:12px;margin:4px 0;border-left:3px solid #2563eb;">
-        <strong>agent nodes</strong><br>
-        <code style="font-size:0.7rem;">availableSkills: sampleSkills<br>
-        availablePlugins: samplePlugins</code>
+      <div
+        class="placeholder"
+        style="background: #1a1a2a; padding: 12px; margin: 4px 0; border-left: 3px solid #2563eb"
+      >
+        <strong>agent nodes</strong><br />
+        <code style="font-size: 0.7rem"
+          >availableSkills: sampleSkills<br />
+          availablePlugins: samplePlugins</code
+        >
       </div>
     </div>
   </div>
@@ -36,28 +51,39 @@
   <div class="mockup">
     <div class="mockup-header">After（目标）</div>
     <div class="mockup-body">
-      <div class="placeholder" style="background:#1a2a1a;padding:12px;margin:4px 0;border-left:3px solid #16a34a;">
-        <strong>plugins/rp-core/</strong><br>
-        <code style="font-size:0.7rem;">node.plugin.json<br>
-        &nbsp;&nbsp;├ nodes: 9 (原6 + 新3)<br>
-        &nbsp;&nbsp;└ skills: [rp_persona, ...]<br>
-        executor.mjs</code>
+      <div
+        class="placeholder"
+        style="background: #1a2a1a; padding: 12px; margin: 4px 0; border-left: 3px solid #16a34a"
+      >
+        <strong>plugins/rp-core/</strong><br />
+        <code style="font-size: 0.7rem"
+          >node.plugin.json<br />
+          &nbsp;&nbsp;├ nodes: 9 (原6 + 新3)<br />
+          &nbsp;&nbsp;└ skills: [rp_persona, ...]<br />
+          executor.mjs</code
+        >
       </div>
-      <div style="text-align:center;padding:8px;color:var(--text-muted);">
+      <div style="text-align: center; padding: 8px; color: var(--text-muted)">
         ↓ GET /api/skills ↓
       </div>
-      <div class="placeholder" style="background:#1a1a2a;padding:12px;margin:4px 0;border-left:3px solid #2563eb;">
-        <strong>serve.mjs</strong><br>
-        <code style="font-size:0.7rem;">// 不再硬编码 skill<br>
-        // 从 plugin manifests 聚合<br>
-        skills = aggregateSkills(plugins)</code>
+      <div
+        class="placeholder"
+        style="background: #1a1a2a; padding: 12px; margin: 4px 0; border-left: 3px solid #2563eb"
+      >
+        <strong>serve.mjs</strong><br />
+        <code style="font-size: 0.7rem"
+          >// 不再硬编码 skill<br />
+          // 从 plugin manifests 聚合<br />
+          skills = aggregateSkills(plugins)</code
+        >
       </div>
-      <div style="text-align:center;padding:8px;color:var(--text-muted);">
-        ↓ 动态注入 ↓
-      </div>
-      <div class="placeholder" style="background:#1a1a2a;padding:12px;margin:4px 0;border-left:3px solid #2563eb;">
-        <strong>agent nodes</strong><br>
-        <code style="font-size:0.7rem;">availableSkills: pluginSkills</code>
+      <div style="text-align: center; padding: 8px; color: var(--text-muted)">↓ 动态注入 ↓</div>
+      <div
+        class="placeholder"
+        style="background: #1a1a2a; padding: 12px; margin: 4px 0; border-left: 3px solid #2563eb"
+      >
+        <strong>agent nodes</strong><br />
+        <code style="font-size: 0.7rem">availableSkills: pluginSkills</code>
       </div>
     </div>
   </div>
@@ -70,31 +96,55 @@
 <div class="mockup">
   <div class="mockup-header">推荐工作流链路（新增节点高亮）</div>
   <div class="mockup-body">
-    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:0.75rem;">
-      <span class="mock-button" style="background:#0f766e;">userInput</span>
-      <span style="color:var(--text-muted);">→</span>
-      <span class="mock-button" style="background:#d97706;border:2px solid #f59e0b;">🆕 rpInputParser</span>
-      <span style="color:var(--text-muted);">→</span>
-      <span class="mock-button" style="background:#2f7d6d;">worldbookSearch</span>
-      <span style="color:var(--text-muted);">→</span>
-      <span class="mock-button" style="background:#7b5ea7;">memoryRecall</span>
-      <span style="color:var(--text-muted);">→</span>
-      <span class="mock-button" style="background:#8f526b;">rpCharacterCard</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.75rem">
+      <span class="mock-button" style="background: #0f766e">userInput</span>
+      <span style="color: var(--text-muted)">→</span>
+      <span class="mock-button" style="background: #d97706; border: 2px solid #f59e0b"
+        >🆕 rpInputParser</span
+      >
+      <span style="color: var(--text-muted)">→</span>
+      <span class="mock-button" style="background: #2f7d6d">worldbookSearch</span>
+      <span style="color: var(--text-muted)">→</span>
+      <span class="mock-button" style="background: #7b5ea7">memoryRecall</span>
+      <span style="color: var(--text-muted)">→</span>
+      <span class="mock-button" style="background: #8f526b">rpCharacterCard</span>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:0.75rem;margin-top:6px;">
-      <span class="mock-button" style="background:#596d87;">rpSceneState</span>
-      <span style="color:var(--text-muted);">→</span>
-      <span class="mock-button" style="background:#d97706;border:2px solid #f59e0b;">🆕 rpContextAssembler</span>
-      <span style="color:var(--text-muted);">→</span>
-      <span class="mock-button" style="background:#9a6a3d;">rpDialogueDirector</span>
-      <span style="color:var(--text-muted);">→</span>
-      <span class="mock-button" style="background:#7f6751;">rpContinuityCheck</span>
-      <span style="color:var(--text-muted);">→</span>
-      <span class="mock-button" style="background:#0f766e;">textOutput</span>
+    <div
+      style="
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        font-size: 0.75rem;
+        margin-top: 6px;
+      "
+    >
+      <span class="mock-button" style="background: #596d87">rpSceneState</span>
+      <span style="color: var(--text-muted)">→</span>
+      <span class="mock-button" style="background: #d97706; border: 2px solid #f59e0b"
+        >🆕 rpContextAssembler</span
+      >
+      <span style="color: var(--text-muted)">→</span>
+      <span class="mock-button" style="background: #9a6a3d">rpDialogueDirector</span>
+      <span style="color: var(--text-muted)">→</span>
+      <span class="mock-button" style="background: #7f6751">rpContinuityCheck</span>
+      <span style="color: var(--text-muted)">→</span>
+      <span class="mock-button" style="background: #0f766e">textOutput</span>
     </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:0.75rem;margin-top:6px;">
-      <span class="mock-button" style="background:#d97706;border:2px solid #f59e0b;">🆕 rpMemoryWrite</span>
-      <span style="color:var(--text-muted);">← 接收 director + check 输出，生成记忆候选</span>
+    <div
+      style="
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        font-size: 0.75rem;
+        margin-top: 6px;
+      "
+    >
+      <span class="mock-button" style="background: #d97706; border: 2px solid #f59e0b"
+        >🆕 rpMemoryWrite</span
+      >
+      <span style="color: var(--text-muted)">← 接收 director + check 输出，生成记忆候选</span>
     </div>
   </div>
 </div>
@@ -107,17 +157,26 @@
   <div class="card" data-choice="a" onclick="toggleSelect(this)">
     <div class="card-body">
       <h3>A. Skill 入 rp-core manifest</h3>
-      <p>在现有 <code>node.plugin.json</code> 中增加 <code>"skills"</code> 字段，server 从所有 plugin 聚合 skill 列表</p>
+      <p>
+        在现有 <code>node.plugin.json</code> 中增加 <code>"skills"</code> 字段，server 从所有 plugin
+        聚合 skill 列表
+      </p>
       <div class="pros-cons">
-        <div class="pros"><h4>Pros</h4><ul>
-          <li>最小改动，复用现有 plugin 加载流程</li>
-          <li>skill 和节点天然绑定同一插件</li>
-          <li>插件启用/禁用时 skill 同步生效</li>
-        </ul></div>
-        <div class="cons"><h4>Cons</h4><ul>
-          <li>skill 和节点耦合在一个 manifest 里</li>
-          <li>纯 skill 插件也需要声明空的 nodes 数组</li>
-        </ul></div>
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>最小改动，复用现有 plugin 加载流程</li>
+            <li>skill 和节点天然绑定同一插件</li>
+            <li>插件启用/禁用时 skill 同步生效</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>skill 和节点耦合在一个 manifest 里</li>
+            <li>纯 skill 插件也需要声明空的 nodes 数组</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
@@ -126,14 +185,20 @@
       <h3>B. 独立 skill 插件</h3>
       <p>新建 <code>skill.plugin.json</code> manifest 类型，skill 和节点插件彻底分离</p>
       <div class="pros-cons">
-        <div class="pros"><h4>Pros</h4><ul>
-          <li>skill 和节点独立管理、独立启用/禁用</li>
-          <li>第三方可以只发布 skill 包</li>
-        </ul></div>
-        <div class="cons"><h4>Cons</h4><ul>
-          <li>新增 manifest 类型、加载逻辑、API</li>
-          <li>前期设计工作量更大</li>
-        </ul></div>
+        <div class="pros">
+          <h4>Pros</h4>
+          <ul>
+            <li>skill 和节点独立管理、独立启用/禁用</li>
+            <li>第三方可以只发布 skill 包</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h4>Cons</h4>
+          <ul>
+            <li>新增 manifest 类型、加载逻辑、API</li>
+            <li>前期设计工作量更大</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>

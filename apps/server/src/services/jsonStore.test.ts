@@ -22,18 +22,29 @@ describe("jsonStore", () => {
 
     it("reads existing entries", async () => {
       const filePath = join(tmpDir, "test.json");
-      await writeFile(filePath, JSON.stringify([{ id: "1", title: "Test", content: "Content", tags: [], updatedAt: "2020-01-01" }]));
+      await writeFile(
+        filePath,
+        JSON.stringify([
+          { id: "1", title: "Test", content: "Content", tags: [], updatedAt: "2020-01-01" },
+        ]),
+      );
       const result = await readEntries(filePath);
-      expect(result).toEqual([{ id: "1", title: "Test", content: "Content", tags: [], updatedAt: "2020-01-01" }]);
+      expect(result).toEqual([
+        { id: "1", title: "Test", content: "Content", tags: [], updatedAt: "2020-01-01" },
+      ]);
     });
   });
 
   describe("writeEntries", () => {
     it("writes entries to file creating directory if needed", async () => {
       const filePath = join(tmpDir, "sub", "test.json");
-      await writeEntries(filePath, [{ id: "1", title: "Test", content: "Content", tags: [], updatedAt: "2020-01-01" }]);
+      await writeEntries(filePath, [
+        { id: "1", title: "Test", content: "Content", tags: [], updatedAt: "2020-01-01" },
+      ]);
       const content = await readFile(filePath, "utf8");
-      expect(JSON.parse(content)).toEqual([{ id: "1", title: "Test", content: "Content", tags: [], updatedAt: "2020-01-01" }]);
+      expect(JSON.parse(content)).toEqual([
+        { id: "1", title: "Test", content: "Content", tags: [], updatedAt: "2020-01-01" },
+      ]);
     });
   });
 

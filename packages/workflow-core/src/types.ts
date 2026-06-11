@@ -8,6 +8,7 @@ export type DataType =
   | "final_text"
   | "debug_info"
   | "json"
+  | "memory"
   | "media_asset"
   | "video_composition"
   | "ui_spec"

@@ -51,7 +51,10 @@ export const loadPluginState = async (pluginStateFile: string): Promise<PluginSt
   }
 };
 
-export const savePluginState = async (pluginStateFile: string, state: PluginState): Promise<void> => {
+export const savePluginState = async (
+  pluginStateFile: string,
+  state: PluginState,
+): Promise<void> => {
   await mkdir(dirname(pluginStateFile), { recursive: true });
   await writeFile(pluginStateFile, `${JSON.stringify(state, null, 2)}\n`, "utf8");
 };
@@ -88,9 +91,7 @@ export const loadNodePlugins = async (pluginsDir: string): Promise<NodePlugin[]>
     } catch (error: unknown) {
       const err = error as { code?: string; message?: string };
       if (err.code !== "ENOENT") {
-        console.warn(
-          `Skipped node plugin ${entry.name}: ${err.message ?? String(error)}`,
-        );
+        console.warn(`Skipped node plugin ${entry.name}: ${err.message ?? String(error)}`);
       }
     }
   }
@@ -142,9 +143,7 @@ export const loadSkillPlugins = async (pluginsDir: string): Promise<SkillItem[]>
     } catch (error: unknown) {
       const err = error as { code?: string; message?: string };
       if (err.code !== "ENOENT") {
-        console.warn(
-          `Skipped skill plugin ${entry.name}: ${err.message ?? String(error)}`,
-        );
+        console.warn(`Skipped skill plugin ${entry.name}: ${err.message ?? String(error)}`);
       }
     }
   }

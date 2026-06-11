@@ -14,11 +14,8 @@ export type Env = {
 
 export const resolveEnv = (): Env => ({
   port: Number(process.env.PORT ?? 5180),
-  dataDir:
-    process.env.DATA_DIR ?? resolve(__dirname, "..", "..", "..", "data"),
-  pluginsDir:
-    process.env.PLUGINS_DIR ??
-    resolve(__dirname, "..", "..", "..", "plugins"),
+  dataDir: process.env.DATA_DIR ?? resolve(__dirname, "..", "..", "..", "data"),
+  pluginsDir: process.env.PLUGINS_DIR ?? resolve(__dirname, "..", "..", "..", "plugins"),
   deepseekApiKey: process.env.DEEPSEEK_API_KEY,
   deepseekModel: process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash",
   nodeEnv: process.env.NODE_ENV ?? "development",

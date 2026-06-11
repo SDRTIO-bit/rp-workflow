@@ -39,7 +39,7 @@ import {
   updateMemoryViaServer,
 } from "./memoryClient";
 import { edgeDelayMs, motionStyle, nodeDelayMs } from "./motion";
-import { dataTypePresentation, getNodePorts } from "./portPresentation";
+import { getDataTypePresentation, getNodePorts } from "./portPresentation";
 import {
   disablePluginViaServer,
   enablePluginViaServer,
@@ -83,10 +83,10 @@ type CanvasMenu =
   | { kind: "canvas"; x: number; y: number; point: Point };
 
 const canvasWorld = { width: 2400, height: 1400 };
-const nodeWidth = 230;
-const nodeBaseHeight = 116;
-const portTop = 58;
-const portGap = 28;
+const nodeWidth = 286;
+const nodeBaseHeight = 156;
+const portTop = 104;
+const portGap = 30;
 const portCenterOffset = 8;
 
 const builtinNodeDefinitions = Object.values(nodeRegistry);
@@ -348,6 +348,7 @@ export function App() {
     [runs],
   );
   const text = copy[language];
+  const nodeLanguage: Language = language;
   const nodeDefinitionsByType = useMemo(
     () => new Map(nodeDefinitions.map((definition) => [definition.type, definition])),
     [nodeDefinitions],
@@ -379,19 +380,51 @@ export function App() {
   const getRuntimeNodeDefinition = (nodeType: string) =>
     nodeDefinitionsByType.get(nodeType) ?? nodeRegistry[nodeType];
 
-  const getRuntimeNodeLabel = (nodeType: string) => {
+  const getRuntimeNodeLabel = (nodeType: string, displayLanguage: Language = language) => {
     const definition = getRuntimeNodeDefinition(nodeType);
     return (
-      definition?.labelI18n?.[language] ?? definition?.label ?? getNodeLabel(nodeType, language)
+      definition?.labelI18n?.[displayLanguage] ??
+      definition?.label ??
+      getNodeLabel(nodeType, displayLanguage)
     );
   };
 
   const getRuntimeNodeConfigFields = (nodeType: string) =>
     getRuntimeNodeDefinition(nodeType)?.configFields ?? [];
 
+  const getNodePanelLayout = (nodeType: string) => {
+    const def = getRuntimeNodeDefinition(nodeType);
+    const normalizedType = nodeType.toLowerCase();
+    const normalizedLabel = String(def?.label ?? "").toLowerCase();
+
+    if (def?.panelLayout && def.panelLayout !== "generic") {
+      return def.panelLayout;
+    }
+    if (def?.defaultConfig?.model !== undefined || normalizedType.includes("agent")) {
+      return "agent";
+    }
+    if (normalizedType.includes("director") || normalizedType.includes("continuity")) {
+      return "agent";
+    }
+    if (normalizedType.includes("worldbook") || normalizedLabel.includes("worldbook")) {
+      return "worldbook";
+    }
+    if (normalizedType.includes("memory") || normalizedLabel.includes("memory")) {
+      return "memory";
+    }
+    if (normalizedType.includes("output") || normalizedType.includes("final")) {
+      return "output";
+    }
+    if (normalizedType.includes("preview")) {
+      return "preview";
+    }
+
+    return def?.panelLayout ?? "generic";
+  };
+
   const isAgentNode = (nodeType: string) => {
     const def = getRuntimeNodeDefinition(nodeType);
-    return def?.panelLayout === "agent" || def?.defaultConfig?.model !== undefined;
+    return getNodePanelLayout(nodeType) === "agent" || def?.defaultConfig?.model !== undefined;
   };
 
   const loadPlugins = async () => {
@@ -723,11 +756,11 @@ export function App() {
   };
 
   const renderConfigField = (field: NodeConfigField, node: WorkflowNode) => {
-    const label = field.label[language];
+    const label = field.label[nodeLanguage];
     const value = node.config[field.key];
     const update = (nextValue: unknown) => updateSelectedConfig(field.key, nextValue);
     const issues = validateNodeConfigField(field, value, node.config);
-    const help = field.help?.[language];
+    const help = field.help?.[nodeLanguage];
 
     const wrapper = (inner: React.ReactNode) => (
       <label key={field.key} className={issues.length > 0 ? "field-error" : ""}>
@@ -763,7 +796,7 @@ export function App() {
         ? field.options.map((o) =>
             typeof o === "string"
               ? { label: o, value: o }
-              : { label: o.label[language], value: o.value },
+              : { label: o.label[nodeLanguage], value: o.value },
           )
         : [];
       const selected: string[] = Array.isArray(value) ? value.map(String) : [];
@@ -841,7 +874,7 @@ export function App() {
         ? field.options.map((o) =>
             typeof o === "string"
               ? { label: o, value: o }
-              : { label: o.label[language], value: o.value },
+              : { label: o.label[nodeLanguage], value: o.value },
           )
         : [
             { label: "DeepSeek V4 Flash", value: "deepseek-v4-flash" },
@@ -883,7 +916,7 @@ export function App() {
         ? field.options.map((o) =>
             typeof o === "string"
               ? { label: o, value: o }
-              : { label: o.label[language], value: o.value },
+              : { label: o.label[nodeLanguage], value: o.value },
           )
         : [];
       return wrapper(
@@ -898,11 +931,41 @@ export function App() {
     }
 
     if (field.kind === "tags") {
+      const skillItems =
+        field.key === "skills" && skillSummaries.length > 0
+          ? skillSummaries.map((s) => ({ id: s.id, display: s.label[language] ?? s.id }))
+          : [];
+      const pluginItems =
+        field.key === "plugins" && pluginSummaries.length > 0
+          ? pluginSummaries.map((p) => ({ id: p.id, display: p.label ?? p.id }))
+          : [];
+      const availableItems = [...skillItems, ...pluginItems];
+      const currentTags: string[] = Array.isArray(value)
+        ? value.map(String)
+        : toTags(String(value ?? ""));
       return wrapper(
-        <input
-          value={Array.isArray(value) ? value.map(String).join(", ") : String(value ?? "")}
-          onChange={(event) => update(toTags(event.target.value))}
-        />,
+        <>
+          <input
+            value={Array.isArray(value) ? value.map(String).join(", ") : String(value ?? "")}
+            onChange={(event) => update(toTags(event.target.value))}
+          />
+          {availableItems.length > 0 ? (
+            <div className="tag-suggestions">
+              {availableItems
+                .filter((item) => !currentTags.includes(item.id))
+                .map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="tag-suggestion"
+                    onClick={() => update([...currentTags, item.id])}
+                  >
+                    + {item.display}
+                  </button>
+                ))}
+            </div>
+          ) : null}
+        </>,
       );
     }
 
@@ -924,8 +987,7 @@ export function App() {
   };
 
   const renderPanelTypeSummary = (node: WorkflowNode) => {
-    const definition = getRuntimeNodeDefinition(node.type);
-    const layout = definition?.panelLayout;
+    const layout = getNodePanelLayout(node.type);
 
     if (!layout || layout === "generic") return null;
 
@@ -1332,13 +1394,13 @@ export function App() {
             className="edge-path"
             d={edgePath(start, end)}
             fill="none"
-            stroke={dataTypePresentation[sourcePort.dataType].color}
+            stroke={getDataTypePresentation(sourcePort.dataType).color}
             strokeWidth="2.5"
             pathLength={1}
             style={motionStyle("--edge-delay", edgeDelayMs(edgeIndex))}
           />
           <text x={middleX - 34} y={middleY - 6} className="edge-label">
-            {edge.sourcePort} → {edge.targetPort}
+            {`${edge.sourcePort} → ${edge.targetPort}`}
           </text>
           <g className="edge-action" transform={`translate(${middleX + 22} ${middleY - 18})`}>
             <rect width="22" height="18" rx="5" />
@@ -1376,7 +1438,7 @@ export function App() {
         className="connection-preview"
         d={edgePath(start, connectionDraft.pointer)}
         fill="none"
-        stroke={dataTypePresentation[sourcePort.dataType].color}
+        stroke={getDataTypePresentation(sourcePort.dataType).color}
         strokeWidth="3"
       />
     );
@@ -1506,7 +1568,7 @@ export function App() {
           <h2>{text.nodes}</h2>
           {paletteByCategory.map(([category, definitions]) => (
             <section key={category} className="palette-group">
-              <h3>{getCategoryLabel(category, language)}</h3>
+              <h3>{getCategoryLabel(category, nodeLanguage)}</h3>
               {definitions.map((definition) => (
                 <button
                   key={definition.type}
@@ -1519,7 +1581,7 @@ export function App() {
                     className="node-pill-dot"
                     style={{ "--node-color": definition.color ?? "#64748b" } as CSSProperties}
                   />
-                  <span>{getRuntimeNodeLabel(definition.type)}</span>
+                  <span>{getRuntimeNodeLabel(definition.type, nodeLanguage)}</span>
                 </button>
               ))}
             </section>
@@ -1622,29 +1684,29 @@ export function App() {
                     role="button"
                     tabIndex={0}
                   >
-                    <span className="node-type">{getRuntimeNodeLabel(node.type)}</span>
-                    {isAgentNode(node.type) ? (
-                      <span className="agent-badge">{language === "zh" ? "Agent" : "Agent"}</span>
-                    ) : null}
+                    <span className="node-type">
+                      {getRuntimeNodeLabel(node.type, nodeLanguage)}
+                    </span>
+                    {isAgentNode(node.type) ? <span className="agent-badge">Agent</span> : null}
                     <strong>{node.id}</strong>
                     {isAgentNode(node.type) && node.config.model ? (
                       <span className="agent-summary">
                         {String(node.config.model)}
                         {Array.isArray(node.config.skills) && node.config.skills.length > 0
-                          ? ` · ${node.config.skills.length} skills`
+                          ? ` / ${node.config.skills.length} skills`
                           : ""}
                       </span>
                     ) : null}
                     {renderNodeSummary(node)}
                     {(() => {
                       const nodeDef = getRuntimeNodeDefinition(node.type);
-                      const previewText = nodeDef?.previewI18n?.[language] ?? nodeDef?.preview;
+                      const previewText = nodeDef?.previewI18n?.[nodeLanguage] ?? nodeDef?.preview;
                       return previewText ? <span className="node-meta">{previewText}</span> : null;
                     })()}
                     <PortList
                       direction="input"
                       ports={inputPorts}
-                      language={language}
+                      language={nodeLanguage}
                       node={node}
                       connectionDraft={connectionDraft}
                       compatibilityClass={portCompatibilityClass}
@@ -1654,7 +1716,7 @@ export function App() {
                     <PortList
                       direction="output"
                       ports={outputPorts}
-                      language={language}
+                      language={nodeLanguage}
                       node={node}
                       connectionDraft={connectionDraft}
                       compatibilityClass={portCompatibilityClass}
@@ -1687,7 +1749,7 @@ export function App() {
                           type="button"
                           onClick={() => addNode(definition.type, canvasMenu.point)}
                         >
-                          {getRuntimeNodeLabel(definition.type)}
+                          {getRuntimeNodeLabel(definition.type, nodeLanguage)}
                         </button>
                       ))}
                     </>
@@ -1802,7 +1864,7 @@ export function App() {
           <div className="modal-content node-config-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>
-                {getRuntimeNodeLabel(selectedNode.type)} — {selectedNode.id}
+                {getRuntimeNodeLabel(selectedNode.type, nodeLanguage)} - {selectedNode.id}
               </h2>
               <button className="modal-close" type="button" onClick={() => setSelectedNodeId("")}>
                 ×
@@ -1811,12 +1873,12 @@ export function App() {
             <div className="field-stack">
               <section className="node-preview-panel">
                 <p>
-                  {getRuntimeNodeDefinition(selectedNode.type)?.descriptionI18n?.[language] ??
+                  {getRuntimeNodeDefinition(selectedNode.type)?.descriptionI18n?.[nodeLanguage] ??
                     getRuntimeNodeDefinition(selectedNode.type)?.description ??
                     text.externalNodeHint}
                 </p>
                 <span>
-                  {getRuntimeNodeDefinition(selectedNode.type)?.previewI18n?.[language] ??
+                  {getRuntimeNodeDefinition(selectedNode.type)?.previewI18n?.[nodeLanguage] ??
                     getRuntimeNodeDefinition(selectedNode.type)?.preview ??
                     text.externalNodeHint}
                 </span>
@@ -1847,14 +1909,14 @@ export function App() {
                             key={preset.id}
                             className="preset-button"
                             type="button"
-                            title={preset.description?.[language]}
+                            title={preset.description?.[nodeLanguage]}
                             onClick={() => {
                               for (const [k, v] of Object.entries(preset.config)) {
                                 updateSelectedConfig(k, v);
                               }
                             }}
                           >
-                            {preset.label[language]}
+                            {preset.label[nodeLanguage]}
                           </button>
                         ))}
                       </div>
@@ -1869,7 +1931,7 @@ export function App() {
                           <div key={group} className="advanced-group">
                             {group ? (
                               <h4 className="advanced-group-title">
-                                {fields[0]?.groupLabel?.[language] ?? group}
+                                {fields[0]?.groupLabel?.[nodeLanguage] ?? group}
                               </h4>
                             ) : null}
                             {fields.map((field) => renderConfigField(field, selectedNode))}
@@ -2189,8 +2251,9 @@ function PortList({
   onHover: (node: WorkflowNode, port: PortDefinition, enabled: boolean) => void;
 }) {
   return ports.map((port, index) => {
-    const presentation = dataTypePresentation[port.dataType];
-    const label = language === "zh" ? presentation.labelZh : presentation.labelEn;
+    const presentation = getDataTypePresentation(port.dataType);
+    const typeLabel = language === "zh" ? presentation.labelZh : presentation.labelEn;
+    const label = port.label;
     const isInput = direction === "input";
     const isHovered =
       connectionDraft?.hoverTarget?.target === node.id &&
@@ -2206,8 +2269,8 @@ function PortList({
           className={`port-button ${direction}-port ${compatibilityClass(node, port)}`}
           style={{ "--port-color": presentation.color } as CSSProperties}
           type="button"
-          title={`${port.label} / ${label}`}
-          aria-label={`${node.id}.${port.id} ${label}`}
+          title={`${port.label} / ${typeLabel}`}
+          aria-label={`${node.id}.${port.id} ${typeLabel}`}
           onPointerDown={(event) => {
             if (!isInput) {
               onStartConnection?.(event, node, port);

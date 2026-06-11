@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import type { WorkflowDefinition } from "@awp/workflow-core";
+import type { DataType, NodeCatalog, WorkflowDefinition } from "@awp/workflow-core";
 import { evaluateConnection } from "./connectionRules";
 
 const workflow: WorkflowDefinition = {
@@ -11,6 +11,7 @@ const workflow: WorkflowDefinition = {
     { id: "agent", type: "agent", position: { x: 280, y: 0 }, config: {} },
     { id: "output", type: "textOutput", position: { x: 560, y: 0 }, config: {} },
     { id: "worldbook", type: "worldbookSearch", position: { x: 0, y: 220 }, config: {} },
+    { id: "preview", type: "preview", position: { x: 840, y: 0 }, config: {} },
   ],
   edges: [],
 };
@@ -79,5 +80,50 @@ describe("connectionRules", () => {
         },
       ),
     ).toEqual({ ok: false, reason: "目标输入端口已经被占用。" });
+  });
+
+  test("allows preview nodes to inspect plugin data types", () => {
+    const catalog: NodeCatalog = {
+      memorySource: {
+        type: "memorySource",
+        label: "Memory Source",
+        ports: [
+          {
+            id: "memories",
+            label: "Memories",
+            direction: "output",
+            dataType: "memory" as DataType,
+          },
+        ],
+      },
+      preview: {
+        type: "preview",
+        label: "Preview",
+        ports: [{ id: "data", label: "Data", direction: "input", dataType: "json" }],
+      },
+    };
+    const pluginWorkflow: WorkflowDefinition = {
+      id: "preview-plugin-data",
+      name: "Preview plugin data",
+      version: 1,
+      nodes: [
+        { id: "memory", type: "memorySource", position: { x: 0, y: 0 }, config: {} },
+        { id: "preview", type: "preview", position: { x: 280, y: 0 }, config: {} },
+      ],
+      edges: [],
+    };
+
+    expect(
+      evaluateConnection(
+        pluginWorkflow,
+        {
+          source: "memory",
+          sourcePort: "memories",
+          target: "preview",
+          targetPort: "data",
+        },
+        catalog,
+      ),
+    ).toEqual({ ok: true });
   });
 });

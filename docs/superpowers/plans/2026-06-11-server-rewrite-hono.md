@@ -17,6 +17,7 @@
 ### Task 1: Create `apps/server` package scaffold
 
 **Files:**
+
 - Create: `apps/server/package.json`
 - Create: `apps/server/tsconfig.json`
 - Modify: `tsconfig.json` (add reference)
@@ -99,6 +100,7 @@ git commit -m "feat(server): scaffold @awp/server package"
 ### Task 2: Environment configuration
 
 **Files:**
+
 - Create: `apps/server/src/env.ts`
 - Test: `apps/server/src/env.test.ts`
 
@@ -171,11 +173,8 @@ export type Env = {
 
 export const resolveEnv = (): Env => ({
   port: Number(process.env.PORT ?? 5180),
-  dataDir:
-    process.env.DATA_DIR ?? resolve(__dirname, "..", "..", "..", "data"),
-  pluginsDir:
-    process.env.PLUGINS_DIR ??
-    resolve(__dirname, "..", "..", "..", "plugins"),
+  dataDir: process.env.DATA_DIR ?? resolve(__dirname, "..", "..", "..", "data"),
+  pluginsDir: process.env.PLUGINS_DIR ?? resolve(__dirname, "..", "..", "..", "plugins"),
   deepseekApiKey: process.env.DEEPSEEK_API_KEY,
   deepseekModel: process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash",
   nodeEnv: process.env.NODE_ENV ?? "development",
@@ -199,6 +198,7 @@ git commit -m "feat(server): add env configuration with defaults"
 ### Task 3: JSON store service
 
 **Files:**
+
 - Create: `apps/server/src/services/jsonStore.ts`
 - Test: `apps/server/src/services/jsonStore.test.ts`
 
@@ -318,19 +318,12 @@ export const readEntries = async (filePath: string): Promise<Entry[]> => {
   }
 };
 
-export const writeEntries = async (
-  filePath: string,
-  entries: Entry[],
-): Promise<void> => {
+export const writeEntries = async (filePath: string, entries: Entry[]): Promise<void> => {
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, `${JSON.stringify(entries, null, 2)}\n`, "utf8");
 };
 
-export const createEntry = (
-  body: EntryDraft,
-  prefix: string,
-  fallbackTitle: string,
-): Entry => ({
+export const createEntry = (body: EntryDraft, prefix: string, fallbackTitle: string): Entry => ({
   id: `${prefix}_${Date.now()}`,
   title: String(body.title ?? fallbackTitle),
   content: String(body.content ?? ""),
@@ -364,6 +357,7 @@ git commit -m "feat(server): add jsonStore service for file-based persistence"
 ### Task 4: Hono app entry point
 
 **Files:**
+
 - Create: `apps/server/src/index.ts`
 
 - [ ] **Step 1: Write minimal entry point**
@@ -376,18 +370,14 @@ import { resolveEnv } from "./env.js";
 
 const app = new Hono();
 
-app.get("/api/health", (c) =>
-  c.json({ status: "ok", timestamp: new Date().toISOString() }),
-);
+app.get("/api/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 
 const env = resolveEnv();
 
 serve({ fetch: app.fetch, port: env.port }, (info) => {
   console.log(`@awp/server running at http://127.0.0.1:${info.port}`);
   console.log(
-    env.deepseekApiKey
-      ? "DeepSeek Agent: enabled"
-      : "DeepSeek Agent: missing DEEPSEEK_API_KEY",
+    env.deepseekApiKey ? "DeepSeek Agent: enabled" : "DeepSeek Agent: missing DEEPSEEK_API_KEY",
   );
 });
 
@@ -415,6 +405,7 @@ git commit -m "feat(server): add Hono app entry point with health check"
 ### Task 5: Memories routes
 
 **Files:**
+
 - Create: `apps/server/src/routes/memories.ts`
 - Modify: `apps/server/src/index.ts` (register route)
 - Test: `apps/server/src/routes/memories.test.ts`
@@ -486,9 +477,7 @@ describe("memories routes", () => {
     });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.memories.find((m: { id: string }) => m.id === id).title).toBe(
-      "New",
-    );
+    expect(body.memories.find((m: { id: string }) => m.id === id).title).toBe("New");
   });
 
   it("DELETE /api/memories/:id deletes a memory", async () => {
@@ -531,12 +520,7 @@ Expected: FAIL — module not found
 ```typescript
 // apps/server/src/routes/memories.ts
 import { Hono } from "hono";
-import {
-  readEntries,
-  writeEntries,
-  createEntry,
-  updateEntry,
-} from "../services/jsonStore.js";
+import { readEntries, writeEntries, createEntry, updateEntry } from "../services/jsonStore.js";
 
 export const createMemoriesRoutes = (memoryFile: string) => {
   const app = new Hono();
@@ -611,6 +595,7 @@ git commit -m "feat(server): add memories CRUD routes"
 ### Task 6: Worldbook routes
 
 **Files:**
+
 - Create: `apps/server/src/routes/worldbook.ts`
 - Modify: `apps/server/src/index.ts` (register route)
 - Test: `apps/server/src/routes/worldbook.test.ts`
@@ -685,9 +670,7 @@ describe("worldbook routes", () => {
     });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(
-      body.entries.find((e: { id: string }) => e.id === id).title,
-    ).toBe("Updated");
+    expect(body.entries.find((e: { id: string }) => e.id === id).title).toBe("Updated");
   });
 
   it("DELETE /api/worldbook/:id deletes an entry", async () => {
@@ -720,12 +703,7 @@ Expected: FAIL — module not found
 ```typescript
 // apps/server/src/routes/worldbook.ts
 import { Hono } from "hono";
-import {
-  readEntries,
-  writeEntries,
-  createEntry,
-  updateEntry,
-} from "../services/jsonStore.js";
+import { readEntries, writeEntries, createEntry, updateEntry } from "../services/jsonStore.js";
 
 export const createWorldbookRoutes = (worldbookFile: string) => {
   const app = new Hono();
@@ -800,6 +778,7 @@ git commit -m "feat(server): add worldbook CRUD routes"
 ### Task 7: Plugin loader service
 
 **Files:**
+
 - Create: `apps/server/src/services/pluginLoader.ts`
 - Test: `apps/server/src/services/pluginLoader.test.ts`
 
@@ -832,9 +811,7 @@ const validNodeManifest = {
     {
       type: "testNode",
       label: "Test Node",
-      ports: [
-        { id: "in", label: "In", direction: "input", dataType: "text" },
-      ],
+      ports: [{ id: "in", label: "In", direction: "input", dataType: "text" }],
     },
   ],
 };
@@ -858,10 +835,7 @@ describe("loadNodePlugins", () => {
   it("loads valid node plugins", async () => {
     const pluginDir = join(tmpDir, "test-plugin");
     await mkdir(pluginDir, { recursive: true });
-    await writeFile(
-      join(pluginDir, "node.plugin.json"),
-      JSON.stringify(validNodeManifest),
-    );
+    await writeFile(join(pluginDir, "node.plugin.json"), JSON.stringify(validNodeManifest));
     const plugins = await loadNodePlugins(tmpDir);
     expect(plugins).toHaveLength(1);
     expect(plugins[0].manifest.id).toBe("test.plugin");
@@ -897,10 +871,7 @@ describe("loadSkillPlugins", () => {
   it("loads valid skill plugins", async () => {
     const pluginDir = join(tmpDir, "test-skills");
     await mkdir(pluginDir, { recursive: true });
-    await writeFile(
-      join(pluginDir, "skill.plugin.json"),
-      JSON.stringify(validSkillManifest),
-    );
+    await writeFile(join(pluginDir, "skill.plugin.json"), JSON.stringify(validSkillManifest));
     const skills = await loadSkillPlugins(tmpDir);
     expect(skills).toHaveLength(1);
     expect(skills[0].id).toBe("test_skill");
@@ -925,10 +896,7 @@ Expected: FAIL — module not found
 // apps/server/src/services/pluginLoader.ts
 import { readdir, readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
-import {
-  validateNodePluginManifest,
-  validateSkillPluginManifest,
-} from "@awp/plugin-sdk";
+import { validateNodePluginManifest, validateSkillPluginManifest } from "@awp/plugin-sdk";
 import type { NodeDefinition } from "@awp/workflow-core";
 
 export type NodePlugin = {
@@ -963,9 +931,7 @@ export type SkillItem = {
   pluginId: string;
 };
 
-export const loadNodePlugins = async (
-  pluginsDir: string,
-): Promise<NodePlugin[]> => {
+export const loadNodePlugins = async (pluginsDir: string): Promise<NodePlugin[]> => {
   let entries: import("node:fs").Dirent[] = [];
   try {
     entries = await readdir(pluginsDir, { withFileTypes: true });
@@ -978,14 +944,10 @@ export const loadNodePlugins = async (
   for (const entry of entries.filter((e) => e.isDirectory())) {
     const manifestPath = join(pluginsDir, entry.name, "node.plugin.json");
     try {
-      const manifest = JSON.parse(
-        await readFile(manifestPath, "utf8"),
-      ) as NodePluginManifest;
+      const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as NodePluginManifest;
       const issues = validateNodePluginManifest(manifest);
       if (issues.length > 0) {
-        console.warn(
-          `Skipped node plugin ${entry.name}: ${issues.join("; ")}`,
-        );
+        console.warn(`Skipped node plugin ${entry.name}: ${issues.join("; ")}`);
         continue;
       }
       if (manifest.enabled === false) continue;
@@ -1006,9 +968,7 @@ export const loadNodePlugins = async (
   return plugins;
 };
 
-export const loadSkillPlugins = async (
-  pluginsDir: string,
-): Promise<SkillItem[]> => {
+export const loadSkillPlugins = async (pluginsDir: string): Promise<SkillItem[]> => {
   let entries: import("node:fs").Dirent[] = [];
   try {
     entries = await readdir(pluginsDir, { withFileTypes: true });
@@ -1024,9 +984,7 @@ export const loadSkillPlugins = async (
       const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
       const issues = validateSkillPluginManifest(manifest);
       if (issues.length > 0) {
-        console.warn(
-          `Skipped skill plugin ${entry.name}: ${issues.join("; ")}`,
-        );
+        console.warn(`Skipped skill plugin ${entry.name}: ${issues.join("; ")}`);
         continue;
       }
       if (manifest.enabled === false) continue;
@@ -1081,6 +1039,7 @@ git commit -m "feat(server): add plugin loader service"
 ### Task 8: Plugins and Skills routes
 
 **Files:**
+
 - Create: `apps/server/src/routes/plugins.ts`
 - Modify: `apps/server/src/index.ts` (register route)
 - Test: `apps/server/src/routes/plugins.test.ts`
@@ -1117,9 +1076,7 @@ const nodeManifest = {
     {
       type: "testNode",
       label: "Test",
-      ports: [
-        { id: "in", label: "In", direction: "input", dataType: "text" },
-      ],
+      ports: [{ id: "in", label: "In", direction: "input", dataType: "text" }],
     },
   ],
 };
@@ -1242,7 +1199,9 @@ import {
   type SkillItem,
 } from "../services/pluginLoader.js";
 
-const loadPluginState = async (stateFile: string): Promise<Record<string, { enabled: boolean; updatedAt?: string }>> => {
+const loadPluginState = async (
+  stateFile: string,
+): Promise<Record<string, { enabled: boolean; updatedAt?: string }>> => {
   try {
     return JSON.parse(await readFile(stateFile, "utf8"));
   } catch {
@@ -1258,10 +1217,7 @@ const savePluginState = async (
   await writeFile(stateFile, `${JSON.stringify(state, null, 2)}\n`, "utf8");
 };
 
-export const createPluginsRoutes = (
-  pluginsDir: string,
-  stateFile: string,
-) => {
+export const createPluginsRoutes = (pluginsDir: string, stateFile: string) => {
   const app = new Hono();
 
   app.get("/api/plugins", async (c) => {
@@ -1270,11 +1226,8 @@ export const createPluginsRoutes = (
     const pluginList = nodePlugins.map((plugin) => {
       const state = pluginState[plugin.manifest.id];
       const manifestEnabled = plugin.manifest.enabled !== false;
-      const userOverride =
-        state && typeof state.enabled === "boolean";
-      const effectiveEnabled = userOverride
-        ? state.enabled
-        : manifestEnabled;
+      const userOverride = state && typeof state.enabled === "boolean";
+      const effectiveEnabled = userOverride ? state.enabled : manifestEnabled;
       return {
         id: plugin.manifest.id,
         label: plugin.manifest.label,
@@ -1297,14 +1250,11 @@ export const createPluginsRoutes = (
       for (const dirEntry of entries.filter((e) => e.isDirectory())) {
         const skillPath = join(pluginsDir, dirEntry.name, "skill.plugin.json");
         try {
-          const skillManifest = JSON.parse(
-            await readDirFile(skillPath, "utf8"),
-          );
+          const skillManifest = JSON.parse(await readDirFile(skillPath, "utf8"));
           if (validateSkillPluginManifest(skillManifest).length > 0) continue;
           const state = pluginState[skillManifest.id];
           const manifestEnabled = skillManifest.enabled !== false;
-          const userOverride =
-            state && typeof state.enabled === "boolean";
+          const userOverride = state && typeof state.enabled === "boolean";
           pluginList.push({
             id: skillManifest.id,
             label: skillManifest.label,
@@ -1378,18 +1328,14 @@ export const createPluginsRoutes = (
 
   app.get("/api/skills", async (c) => {
     const skills = await loadSkillPlugins(pluginsDir);
-    const categories = [
-      ...new Set(skills.map((s) => s.category).filter(Boolean)),
-    ];
+    const categories = [...new Set(skills.map((s) => s.category).filter(Boolean))];
     return c.json({ skills, categories });
   });
 
   app.get("/api/nodes", async (c) => {
     const nodePlugins = await loadNodePlugins(pluginsDir);
     const pluginCatalog = Object.fromEntries(
-      nodePlugins.flatMap((p) =>
-        p.manifest.nodes.map((n) => [n.type, n]),
-      ),
+      nodePlugins.flatMap((p) => p.manifest.nodes.map((n) => [n.type, n])),
     );
     const allNodes = { ...nodeRegistry, ...pluginCatalog };
     return c.json({
@@ -1415,10 +1361,7 @@ export const createPluginsRoutes = (
 ```typescript
 import { createPluginsRoutes } from "./routes/plugins.js";
 // ...
-app.route(
-  "/",
-  createPluginsRoutes(env.pluginsDir, env.pluginsDir + "/../plugin-state.json"),
-);
+app.route("/", createPluginsRoutes(env.pluginsDir, env.pluginsDir + "/../plugin-state.json"));
 ```
 
 Note: `plugin-state.json` lives in the `plugins/` directory. The state file path should be `join(env.pluginsDir, "plugin-state.json")` — adjust the index.ts call accordingly.
@@ -1440,6 +1383,7 @@ git commit -m "feat(server): add plugins, skills, and nodes routes"
 ### Task 9: Templates route
 
 **Files:**
+
 - Create: `apps/server/src/routes/templates.ts`
 - Modify: `apps/server/src/index.ts` (register route)
 - Test: `apps/server/src/routes/templates.test.ts`
@@ -1496,9 +1440,7 @@ export type WorkflowTemplate = {
   workflow: import("@awp/workflow-core").WorkflowDefinition;
 };
 
-export const createTemplatesRoutes = (
-  templates: WorkflowTemplate[],
-) => {
+export const createTemplatesRoutes = (templates: WorkflowTemplate[]) => {
   const app = new Hono();
 
   app.get("/api/templates", (c) => {
@@ -1539,6 +1481,7 @@ git commit -m "feat(server): add templates route"
 ### Task 10: Workflow runner service
 
 **Files:**
+
 - Create: `apps/server/src/services/workflowRunner.ts`
 - Test: `apps/server/src/services/workflowRunner.test.ts`
 
@@ -1560,9 +1503,7 @@ describe("collectInputs", () => {
         { id: "a", type: "userInput", position: { x: 0, y: 0 }, config: { text: "hello" } },
         { id: "b", type: "textOutput", position: { x: 200, y: 0 }, config: {} },
       ],
-      edges: [
-        { id: "e1", source: "a", sourcePort: "text", target: "b", targetPort: "text" },
-      ],
+      edges: [{ id: "e1", source: "a", sourcePort: "text", target: "b", targetPort: "text" }],
     };
     const outputsByNode = new Map<string, Record<string, unknown>>();
     outputsByNode.set("a", { text: "hello" });
@@ -1578,17 +1519,10 @@ describe("runWorkflowStreaming", () => {
       name: "Test",
       version: 1,
       nodes: [],
-      edges: [
-        { id: "e1", source: "x", sourcePort: "a", target: "y", targetPort: "b" },
-      ],
+      edges: [{ id: "e1", source: "x", sourcePort: "a", target: "y", targetPort: "b" }],
     };
     const events: unknown[] = [];
-    const result = await runWorkflowStreaming(
-      workflow,
-      {},
-      {},
-      (event) => events.push(event),
-    );
+    const result = await runWorkflowStreaming(workflow, {}, {}, (event) => events.push(event));
     expect(result.status).toBe("error");
     expect(events).toHaveLength(1);
     expect(events[0]).toHaveProperty("type", "done");
@@ -1668,8 +1602,7 @@ export const runWorkflowStreaming = async (
         const inputs = collectInputs(workflow, nodeId, outputsByNode);
         const startedAt = Date.now();
         try {
-          const executor =
-            executors[node.type] ?? (async () => ({ outputs: {} }));
+          const executor = executors[node.type] ?? (async () => ({ outputs: {} }));
           const execution = await executor({ node, inputs });
           outputsByNode.set(nodeId, execution.outputs);
           return {
@@ -1733,6 +1666,7 @@ git commit -m "feat(server): add workflow runner service with streaming"
 ### Task 11: Workflow routes
 
 **Files:**
+
 - Create: `apps/server/src/routes/workflow.ts`
 - Modify: `apps/server/src/index.ts` (register route)
 - Test: `apps/server/src/routes/workflow.test.ts`
@@ -1755,16 +1689,12 @@ const mockCatalog = {
   userInput: {
     type: "userInput",
     label: "User Input",
-    ports: [
-      { id: "text", label: "Text", direction: "output", dataType: "text" },
-    ],
+    ports: [{ id: "text", label: "Text", direction: "output", dataType: "text" }],
   },
   textOutput: {
     type: "textOutput",
     label: "Text Output",
-    ports: [
-      { id: "text", label: "Text", direction: "input", dataType: "text" },
-    ],
+    ports: [{ id: "text", label: "Text", direction: "input", dataType: "text" }],
   },
 };
 
@@ -1811,7 +1741,13 @@ Expected: FAIL — module not found
 ```typescript
 // apps/server/src/routes/workflow.ts
 import { Hono } from "hono";
-import { runWorkflow, validateWorkflow, type NodeCatalog, type NodeExecutor, type WorkflowDefinition } from "@awp/workflow-core";
+import {
+  runWorkflow,
+  validateWorkflow,
+  type NodeCatalog,
+  type NodeExecutor,
+  type WorkflowDefinition,
+} from "@awp/workflow-core";
 import { runWorkflowStreaming } from "../services/workflowRunner.js";
 
 type WorkflowContext = {
@@ -1901,6 +1837,7 @@ git commit -m "feat(server): add workflow execution routes (sync + stream)"
 ### Task 12: LLM status and proxy route
 
 **Files:**
+
 - Create: `apps/server/src/routes/llm.ts`
 - Modify: `apps/server/src/index.ts` (register route)
 - Test: `apps/server/src/routes/llm.test.ts`
@@ -1998,6 +1935,7 @@ git commit -m "feat(server): add LLM status route"
 ### Task 13: Wire full executor factory into workflow routes
 
 **Files:**
+
 - Modify: `apps/server/src/index.ts` (replace placeholder with real executor factory)
 
 This task ports the executor creation logic from `serve.mjs` lines 395-611 into the server context. The executor factory uses `createDeepSeekAdapter` from `@awp/agent-runtime`, `rankMemories` from `@awp/memory-core`, and the plugin loader.
@@ -2025,10 +1963,30 @@ const pluginCatalog: NodeCatalog = Object.fromEntries(
 const runtimeNodeCatalog: NodeCatalog = { ...nodeRegistry, ...pluginCatalog };
 
 const agentToolDescriptions = [
-  { id: "mock_search", label: "Mock Search", description: "Read simulated worldbook entries.", tools: [] },
-  { id: "memory_read", label: "Memory Read", description: "Read simulated long-term memory.", tools: [] },
-  { id: "worldbook_read", label: "Worldbook Read", description: "Provides retrieved worldbook entries.", tools: [] },
-  { id: "rp_memory_read", label: "RP Memory Read", description: "Provides long-term roleplay memory.", tools: [] },
+  {
+    id: "mock_search",
+    label: "Mock Search",
+    description: "Read simulated worldbook entries.",
+    tools: [],
+  },
+  {
+    id: "memory_read",
+    label: "Memory Read",
+    description: "Read simulated long-term memory.",
+    tools: [],
+  },
+  {
+    id: "worldbook_read",
+    label: "Worldbook Read",
+    description: "Provides retrieved worldbook entries.",
+    tools: [],
+  },
+  {
+    id: "rp_memory_read",
+    label: "RP Memory Read",
+    description: "Provides long-term roleplay memory.",
+    tools: [],
+  },
 ];
 
 const extractQuery = (workflow: import("@awp/workflow-core").WorkflowDefinition) =>
@@ -2038,7 +1996,9 @@ const extractQuery = (workflow: import("@awp/workflow-core").WorkflowDefinition)
     .join("\n");
 
 const serializeSearchResults = (entries: { title: string; content: string; tags: string[] }[]) =>
-  entries.map((e) => `${e.title}: ${e.content}${e.tags.length ? ` [${e.tags.join(", ")}]` : ""}`).join("\n");
+  entries
+    .map((e) => `${e.title}: ${e.content}${e.tags.length ? ` [${e.tags.join(", ")}]` : ""}`)
+    .join("\n");
 
 const createExecutors = async (
   workflow: import("@awp/workflow-core").WorkflowDefinition,
@@ -2056,29 +2016,61 @@ const createExecutors = async (
     userInput: async ({ node }: { node: { config: { text?: string } } }) => ({
       outputs: { text: node.config.text ?? "" },
     }),
-    promptTemplate: async ({ node, inputs }: { node: { config: { template?: string } }; inputs: Record<string, unknown> }) => ({
-      outputs: { prompt: `${String(node.config.template ?? "")}\n${String(inputs.source ?? "")}`.trim() },
+    promptTemplate: async ({
+      node,
+      inputs,
+    }: {
+      node: { config: { template?: string } };
+      inputs: Record<string, unknown>;
+    }) => ({
+      outputs: {
+        prompt: `${String(node.config.template ?? "")}\n${String(inputs.source ?? "")}`.trim(),
+      },
     }),
     mockSearch: async ({ inputs }: { inputs: Record<string, unknown> }) => ({
       outputs: { results: `Mock search result for: ${String(inputs.query ?? "")}` },
     }),
-    worldbookSearch: async ({ node, inputs }: { node: { config: { query?: string; limit?: number } }; inputs: Record<string, unknown> }) => {
+    worldbookSearch: async ({
+      node,
+      inputs,
+    }: {
+      node: { config: { query?: string; limit?: number } };
+      inputs: Record<string, unknown>;
+    }) => {
       const query = String(inputs.query ?? node.config.query ?? extractQuery(workflow));
       const results = rankMemories(query, worldbookEntries, Number(node.config.limit ?? 4));
       return {
         outputs: { results: serializeSearchResults(results) },
-        metadata: { matchedWorldbookIds: results.map((e) => e.id), matchedWorldbookTitles: results.map((e) => e.title) },
+        metadata: {
+          matchedWorldbookIds: results.map((e) => e.id),
+          matchedWorldbookTitles: results.map((e) => e.title),
+        },
       };
     },
-    memoryRecall: async ({ node, inputs }: { node: { config: { query?: string; limit?: number } }; inputs: Record<string, unknown> }) => {
+    memoryRecall: async ({
+      node,
+      inputs,
+    }: {
+      node: { config: { query?: string; limit?: number } };
+      inputs: Record<string, unknown>;
+    }) => {
       const query = String(inputs.query ?? node.config.query ?? extractQuery(workflow));
       const results = rankMemories(query, memories, Number(node.config.limit ?? 4));
       return {
         outputs: { memories: serializeSearchResults(results) },
-        metadata: { matchedMemoryIds: results.map((e) => e.id), matchedMemoryTitles: results.map((e) => e.title) },
+        metadata: {
+          matchedMemoryIds: results.map((e) => e.id),
+          matchedMemoryTitles: results.map((e) => e.title),
+        },
       };
     },
-    agent: async ({ node, inputs }: { node: { id: string; config: Record<string, unknown> }; inputs: Record<string, unknown> }) => {
+    agent: async ({
+      node,
+      inputs,
+    }: {
+      node: { id: string; config: Record<string, unknown> };
+      inputs: Record<string, unknown>;
+    }) => {
       if (!adapter) throw new Error("Missing DEEPSEEK_API_KEY");
       const selectedModel = String(node.config.model ?? model).startsWith("mock-")
         ? model
@@ -2093,7 +2085,14 @@ const createExecutors = async (
             plugins: Array.isArray(node.config.plugins) ? node.config.plugins.map(String) : [],
             outputType: String(node.config.outputType ?? "draft"),
           },
-          inputs: { ...inputs, longTermMemory: relevantMemories.map((m) => ({ title: m.title, content: m.content, tags: m.tags })) },
+          inputs: {
+            ...inputs,
+            longTermMemory: relevantMemories.map((m) => ({
+              title: m.title,
+              content: m.content,
+              tags: m.tags,
+            })),
+          },
           availableSkills: skillCatalog,
           availablePlugins: agentToolDescriptions,
         },
@@ -2148,6 +2147,7 @@ git commit -m "feat(server): wire full executor factory into workflow routes"
 ### Task 14: Add Vite proxy config and production static serving
 
 **Files:**
+
 - Modify: `apps/web/vite.config.ts` (add proxy)
 - Modify: `apps/server/src/index.ts` (add serveStatic)
 - Modify: `apps/web/package.json` (update serve script)
@@ -2219,6 +2219,7 @@ git commit -m "feat(server): add Vite proxy and production static serving"
 ### Task 15: Final verification — remove old serve.mjs
 
 **Files:**
+
 - Delete: `apps/web/scripts/serve.mjs`
 - Modify: `apps/web/scripts/build.mjs` (remove server bundle step)
 - Modify: `apps/web/package.json` (update serve script)
@@ -2281,23 +2282,23 @@ git commit -m "feat(server): remove legacy serve.mjs, wire new @awp/server as pr
 
 ### Spec Coverage
 
-| Spec Requirement | Task |
-|-----------------|------|
-| Package scaffold + tsconfig | Task 1 |
-| Environment configuration with DATA_DIR | Task 2 |
-| JSON file store service | Task 3 |
-| Hono entry point | Task 4 |
-| Memories CRUD routes | Task 5 |
-| Worldbook CRUD routes | Task 6 |
-| Plugin loader service | Task 7 |
-| Plugins/Skills/Nodes routes | Task 8 |
-| Templates route | Task 9 |
-| Workflow runner service | Task 10 |
+| Spec Requirement                          | Task    |
+| ----------------------------------------- | ------- |
+| Package scaffold + tsconfig               | Task 1  |
+| Environment configuration with DATA_DIR   | Task 2  |
+| JSON file store service                   | Task 3  |
+| Hono entry point                          | Task 4  |
+| Memories CRUD routes                      | Task 5  |
+| Worldbook CRUD routes                     | Task 6  |
+| Plugin loader service                     | Task 7  |
+| Plugins/Skills/Nodes routes               | Task 8  |
+| Templates route                           | Task 9  |
+| Workflow runner service                   | Task 10 |
 | Workflow execution routes (sync + stream) | Task 11 |
-| LLM status route | Task 12 |
-| Full executor factory wiring | Task 13 |
-| Vite proxy + production static serving | Task 14 |
-| Remove old serve.mjs | Task 15 |
+| LLM status route                          | Task 12 |
+| Full executor factory wiring              | Task 13 |
+| Vite proxy + production static serving    | Task 14 |
+| Remove old serve.mjs                      | Task 15 |
 
 All spec requirements covered. ✅
 

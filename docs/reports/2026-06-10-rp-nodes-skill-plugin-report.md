@@ -29,12 +29,12 @@
 
 ### 新增类型与校验（`packages/plugin-sdk/src/index.ts`）
 
-| 类型 | 说明 |
-|------|------|
-| `LocalizedText` | `{ zh: string; en: string }` 双语文本 |
-| `SkillDefinition` | skill 定义：`id`、`label`/`content`（`LocalizedText`）、`category`?、`tags`? |
-| `SkillPluginManifest` | `skill.plugin.json` manifest 类型：`schemaVersion: 1`、`id`/`label`/`version`、`skills: SkillDefinition[]` |
-| `validateSkillPluginManifest()` | 纯函数校验 manifest 结构合法性 |
+| 类型                            | 说明                                                                                                       |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `LocalizedText`                 | `{ zh: string; en: string }` 双语文本                                                                      |
+| `SkillDefinition`               | skill 定义：`id`、`label`/`content`（`LocalizedText`）、`category`?、`tags`?                               |
+| `SkillPluginManifest`           | `skill.plugin.json` manifest 类型：`schemaVersion: 1`、`id`/`label`/`version`、`skills: SkillDefinition[]` |
+| `validateSkillPluginManifest()` | 纯函数校验 manifest 结构合法性                                                                             |
 
 ### 新建 skill 插件（`plugins/rp-skills/skill.plugin.json`）
 
@@ -96,10 +96,10 @@
 
 在 `nodeRegistry.ts` 的 `areTypesCompatible` 中新增两个兼容对：
 
-| 对 | 用途 |
-|----|------|
-| `user_input:json` | userInput.text → rpInputParser.parsed 等 |
-| `draft:json` | rpDialogueDirector.reply → rpMemoryWrite.reply 等 |
+| 对                | 用途                                              |
+| ----------------- | ------------------------------------------------- |
+| `user_input:json` | userInput.text → rpInputParser.parsed 等          |
+| `draft:json`      | rpDialogueDirector.reply → rpMemoryWrite.reply 等 |
 
 ### 工作流模板
 
@@ -119,17 +119,17 @@ userInput → rpInputParser ──→ rpContextAssembler ──→ rpDialogueDir
 
 ## 验证结果
 
-| 检查项 | 结果 |
-|--------|------|
-| TypeScript 类型检查 | ✅ `tsc -b` 零错误（全 6 个 workspace） |
-| 测试套件 | ✅ 61 个测试全部通过 |
-| Build | ✅ 全 workspace 构建成功 |
-| Prettier 格式化 | ✅ 全部文件符合规范 |
-| 服务启动 | ✅ `npm run serve` 正常启动 |
-| API `/api/skills` | ✅ 返回 7 个 skill + 4 个 category |
-| API `/api/plugins` | ✅ 正确区分 `node-plugin` 和 `skill-plugin` |
-| API `/api/nodes` | ✅ 包含 3 个新 RP 节点 |
-| 新节点 registry | ✅ `rp-core` 插件 9 个 node type（原 5 + 新增 3 + rpLoreRecall） |
+| 检查项              | 结果                                                             |
+| ------------------- | ---------------------------------------------------------------- |
+| TypeScript 类型检查 | ✅ `tsc -b` 零错误（全 6 个 workspace）                          |
+| 测试套件            | ✅ 61 个测试全部通过                                             |
+| Build               | ✅ 全 workspace 构建成功                                         |
+| Prettier 格式化     | ✅ 全部文件符合规范                                              |
+| 服务启动            | ✅ `npm run serve` 正常启动                                      |
+| API `/api/skills`   | ✅ 返回 7 个 skill + 4 个 category                               |
+| API `/api/plugins`  | ✅ 正确区分 `node-plugin` 和 `skill-plugin`                      |
+| API `/api/nodes`    | ✅ 包含 3 个新 RP 节点                                           |
+| 新节点 registry     | ✅ `rp-core` 插件 9 个 node type（原 5 + 新增 3 + rpLoreRecall） |
 
 ---
 

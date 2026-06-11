@@ -22,10 +22,10 @@
 
 **端口：**
 
-| 方向 | ID | dataType | 说明 |
-|------|-----|----------|------|
-| input | text | user_input | 玩家原始输入文本 |
-| output | parsed | json | 结构化解析结果 |
+| 方向   | ID     | dataType   | 说明             |
+| ------ | ------ | ---------- | ---------------- |
+| input  | text   | user_input | 玩家原始输入文本 |
+| output | parsed | json       | 结构化解析结果   |
 
 **输出结构：**
 
@@ -42,10 +42,10 @@
 
 **配置字段：**
 
-| key | kind | 说明 | 默认值 |
-|-----|------|------|--------|
+| key        | kind     | 说明     | 默认值                                                   |
+| ---------- | -------- | -------- | -------------------------------------------------------- |
 | parseRules | textarea | 解析指令 | "分析玩家输入，提取发言、动作、意图、情绪、实体、触发词" |
-| language | select | 语言 | ["zh", "en"] |
+| language   | select   | 语言     | ["zh", "en"]                                             |
 
 **实现方式**：调用 agent-runtime 的 LLM 调用完成解析（system prompt 为解析指令，user prompt 为输入文本）。
 
@@ -55,21 +55,21 @@
 
 **端口：**
 
-| 方向 | ID | dataType | 说明 |
-|------|-----|----------|------|
-| input | parsed | json | 来自 rpInputParser |
-| input | character | character_profile | 角色卡 |
-| input | scene | scene_state | 场景状态 |
-| input | worldbook | context | 世界书命中 |
-| input | memory | context | 记忆召回 |
-| output | context | context | 组装后的完整 RP 上下文 |
+| 方向   | ID        | dataType          | 说明                   |
+| ------ | --------- | ----------------- | ---------------------- |
+| input  | parsed    | json              | 来自 rpInputParser     |
+| input  | character | character_profile | 角色卡                 |
+| input  | scene     | scene_state       | 场景状态               |
+| input  | worldbook | context           | 世界书命中             |
+| input  | memory    | context           | 记忆召回               |
+| output | context   | context           | 组装后的完整 RP 上下文 |
 
 **配置字段：**
 
-| key | kind | 说明 | 默认值 |
-|-----|------|------|--------|
-| assemblyTemplate | textarea | 组装模板 | 预置中文 RP 上下文模板 |
-| maxTokens | number | token 上限 | 2000（min 500, max 4000） |
+| key              | kind     | 说明       | 默认值                    |
+| ---------------- | -------- | ---------- | ------------------------- |
+| assemblyTemplate | textarea | 组装模板   | 预置中文 RP 上下文模板    |
+| maxTokens        | number   | token 上限 | 2000（min 500, max 4000） |
 
 **实现方式**：纯文本模板拼接，不需要 LLM 调用。按模板将各部分拼成一段完整 RP context 文本。
 
@@ -79,13 +79,13 @@
 
 **端口：**
 
-| 方向 | ID | dataType | 说明 |
-|------|-----|----------|------|
-| input | reply | draft | 导演输出 |
-| input | notes | analysis | 连续性检查结果 |
-| input | parsed | json | 玩家输入解析（可选） |
-| input | state | scene_state | 场景状态（可选） |
-| output | candidates | json | 建议写入的记忆候选列表 |
+| 方向   | ID         | dataType    | 说明                   |
+| ------ | ---------- | ----------- | ---------------------- |
+| input  | reply      | draft       | 导演输出               |
+| input  | notes      | analysis    | 连续性检查结果         |
+| input  | parsed     | json        | 玩家输入解析（可选）   |
+| input  | state      | scene_state | 场景状态（可选）       |
+| output | candidates | json        | 建议写入的记忆候选列表 |
 
 **输出结构：**
 
@@ -105,11 +105,11 @@
 
 **配置字段：**
 
-| key | kind | 说明 | 默认值 |
-|-----|------|------|--------|
-| autoWrite | boolean | 是否自动写入 | false |
-| maxCandidates | number | 最大候选数 | 5（min 1, max 10） |
-| memoryTypes | multiselect | 启用类型 | ["relationship", "preference", "promise", "lore", "hook"] |
+| key           | kind        | 说明         | 默认值                                                    |
+| ------------- | ----------- | ------------ | --------------------------------------------------------- |
+| autoWrite     | boolean     | 是否自动写入 | false                                                     |
+| maxCandidates | number      | 最大候选数   | 5（min 1, max 10）                                        |
+| memoryTypes   | multiselect | 启用类型     | ["relationship", "preference", "promise", "lore", "hook"] |
 
 **实现方式**：调用 LLM 分析本轮对话，提取值得记忆的变化。输出候选 JSON 数组，不直接写文件。后续可在前端展示候选列表让用户确认。
 
@@ -168,23 +168,23 @@ scene_state:json → true
 
 **Skill 字段：**
 
-| 字段 | 类型 | 必须 | 说明 |
-|------|------|------|------|
-| id | string | 是 | 唯一标识，agent 节点 config.skills 引用 |
-| label | LocalizedText | 是 | 显示名称 |
-| content | LocalizedText | 是 | 注入 LLM prompt 的指令文本 |
-| category | string | 否 | 分类，用于前端分组 |
-| tags | string[] | 否 | 标签 |
+| 字段     | 类型          | 必须 | 说明                                    |
+| -------- | ------------- | ---- | --------------------------------------- |
+| id       | string        | 是   | 唯一标识，agent 节点 config.skills 引用 |
+| label    | LocalizedText | 是   | 显示名称                                |
+| content  | LocalizedText | 是   | 注入 LLM prompt 的指令文本              |
+| category | string        | 否   | 分类，用于前端分组                      |
+| tags     | string[]      | 否   | 标签                                    |
 
 **与 node.plugin.json 的区别：**
 
-| | node.plugin.json | skill.plugin.json |
-|---|---|---|
-| 核心字段 | nodes[] + executor | skills[] |
-| 执行逻辑 | 有（executor adapter） | 无（纯文本注入） |
-| 权限 | permissions[] | 不需要 |
-| 插件管理面板 | 节点列表 | skill 列表 |
-| 启用/禁用 | 影响节点目录 | 影响可用 skill 列表 |
+|              | node.plugin.json       | skill.plugin.json   |
+| ------------ | ---------------------- | ------------------- |
+| 核心字段     | nodes[] + executor     | skills[]            |
+| 执行逻辑     | 有（executor adapter） | 无（纯文本注入）    |
+| 权限         | permissions[]          | 不需要              |
+| 插件管理面板 | 节点列表               | skill 列表          |
+| 启用/禁用    | 影响节点目录           | 影响可用 skill 列表 |
 
 ### 2.2 加载流程
 

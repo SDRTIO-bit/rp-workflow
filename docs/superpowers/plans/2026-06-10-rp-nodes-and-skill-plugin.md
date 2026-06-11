@@ -29,6 +29,7 @@ apps/web/src/state/sampleWorkflows.ts      — Modify: 新增 rpFullPipeline 模
 ### Task 1: 新增 Skill 插件类型定义和校验
 
 **Files:**
+
 - Modify: `packages/plugin-sdk/src/index.ts`
 - Modify: `packages/plugin-sdk/src/plugin-sdk.test.ts`
 
@@ -128,10 +129,18 @@ export const validateSkillPluginManifest = (manifest: unknown): string[] => {
       if (typeof skill.id !== "string" || skill.id.trim() === "") {
         issues.push(`skills[${index}].id must be a non-empty string`);
       }
-      if (!isObject(skill.label) || typeof skill.label.zh !== "string" || typeof skill.label.en !== "string") {
+      if (
+        !isObject(skill.label) ||
+        typeof skill.label.zh !== "string" ||
+        typeof skill.label.en !== "string"
+      ) {
         issues.push(`skills[${index}].label must have zh and en strings`);
       }
-      if (!isObject(skill.content) || typeof skill.content.zh !== "string" || typeof skill.content.en !== "string") {
+      if (
+        !isObject(skill.content) ||
+        typeof skill.content.zh !== "string" ||
+        typeof skill.content.en !== "string"
+      ) {
         issues.push(`skills[${index}].content must have zh and en strings`);
       }
     }
@@ -213,6 +222,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 2: 创建 rp-skills skill 插件
 
 **Files:**
+
 - Create: `plugins/rp-skills/skill.plugin.json`
 
 **Goal:** 创建包含 7 个 RP skill 的 skill.plugin.json。
@@ -330,6 +340,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 3: 服务端 skill 加载和 /api/skills 端点
 
 **Files:**
+
 - Modify: `apps/web/scripts/serve.mjs`
 
 **Goal:** 新增 `loadSkillPlugins()` 函数、`skillCatalog` 全局变量、`GET /api/skills` 端点，扩展 `GET /api/plugins` 返回 skill 插件。
@@ -343,11 +354,13 @@ import { validateNodePluginManifest, validateSkillPluginManifest } from "@awp/pl
 ```
 
 Replace the import line 3:
+
 ```js
 import { validateNodePluginManifest } from "@awp/plugin-sdk";
 ```
 
 With:
+
 ```js
 import { validateNodePluginManifest, validateSkillPluginManifest } from "@awp/plugin-sdk";
 ```
@@ -416,8 +429,9 @@ skillCatalog = await loadSkillPlugins();
 Update `reloadPluginRuntime` to also reload skills (after line 277):
 
 Add at the end of `reloadPluginRuntime`:
+
 ```js
-  skillCatalog = await loadSkillPlugins();
+skillCatalog = await loadSkillPlugins();
 ```
 
 - [ ] **Step 3: 新增 GET /api/skills 端点**
@@ -468,9 +482,13 @@ try {
         compatibility: skillManifest.compatibility ?? null,
         skillCount: skillManifest.skills.length,
       });
-    } catch { /* no skill.plugin.json in this dir */ }
+    } catch {
+      /* no skill.plugin.json in this dir */
+    }
   }
-} catch { /* ignore read errors */ }
+} catch {
+  /* ignore read errors */
+}
 ```
 
 - [ ] **Step 5: 在 createExecutors 中使用 skillCatalog**
@@ -478,11 +496,13 @@ try {
 In `createExecutors`, replace the usage of `sampleSkills` and `samplePlugins` with `skillCatalog`. Find all places where `sampleSkills` is used:
 
 Replace:
+
 ```js
 availableSkills: sampleSkills,
 ```
 
 With:
+
 ```js
 availableSkills: skillCatalog,
 ```
@@ -507,6 +527,7 @@ npm run serve
 ```
 
 Then in another terminal:
+
 ```bash
 curl http://127.0.0.1:5180/api/skills
 ```
@@ -533,6 +554,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 4: 前端 skill 动态加载
 
 **Files:**
+
 - Modify: `apps/web/src/runWorkflowClient.ts`
 - Modify: `apps/web/src/App.tsx`
 
@@ -610,6 +632,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 5: 移除 serve.mjs 硬编码 skill
 
 **Files:**
+
 - Modify: `apps/web/scripts/serve.mjs`
 
 **Goal:** 删除 `sampleSkills` 和 `samplePlugins` 硬编码数组，重命名为 `agentToolDescriptions`。所有 agent 节点改为使用 `skillCatalog`。
@@ -635,13 +658,15 @@ const agentToolDescriptions = [
   {
     id: "worldbook_read",
     label: "Worldbook Read",
-    description: "Provides retrieved worldbook entries as canon setting, character, location, and rule context.",
+    description:
+      "Provides retrieved worldbook entries as canon setting, character, location, and rule context.",
     tools: [],
   },
   {
     id: "rp_memory_read",
     label: "RP Memory Read",
-    description: "Provides long-term roleplay memory such as player preferences, relationship state, promises, and unresolved hooks.",
+    description:
+      "Provides long-term roleplay memory such as player preferences, relationship state, promises, and unresolved hooks.",
     tools: [],
   },
 ];
@@ -652,6 +677,7 @@ const agentToolDescriptions = [
 In `createExecutors`, replace all `availableSkills: sampleSkills` with `availableSkills: skillCatalog`. Replace all `availablePlugins: samplePlugins` with `availablePlugins: agentToolDescriptions`.
 
 Search and update:
+
 - `executeAgent` context: `availableSkills: skillCatalog`
 - `rpDialogueDirector`: `availableSkills: skillCatalog`
 - `rpContinuityCheck`: `availableSkills: skillCatalog`
@@ -678,6 +704,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 6: 补充 json dataType 兼容对
 
 **Files:**
+
 - Modify: `packages/workflow-core/src/nodeRegistry.ts`
 
 **Goal:** 确保新增节点所需的 dataType 兼容对全部注册。
@@ -688,8 +715,8 @@ In `areTypesCompatible` (line 393), the `compatible` set already has many json p
 
 ```ts
 const compatible = new Set([
-  "user_input:json",    // ADD: for userInput → rpInputParser
-  "draft:json",         // ADD: for rpDialogueDirector → rpMemoryWrite
+  "user_input:json", // ADD: for userInput → rpInputParser
+  "draft:json", // ADD: for rpDialogueDirector → rpMemoryWrite
   // ... existing pairs kept as-is
   "user_input:text",
   "user_input:context",
@@ -721,6 +748,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 7: 新增 rpInputParser 节点定义和 executor
 
 **Files:**
+
 - Modify: `plugins/rp-core/node.plugin.json`
 - Modify: `plugins/rp-core/executor.mjs`
 
@@ -762,7 +790,13 @@ In `plugins/rp-core/node.plugin.json`, add before the `worldbookSearch` entry in
   ],
   "quickAdd": true,
   "ports": [
-    { "id": "text", "label": "Text", "direction": "input", "dataType": "user_input", "required": true },
+    {
+      "id": "text",
+      "label": "Text",
+      "direction": "input",
+      "dataType": "user_input",
+      "required": true
+    },
     { "id": "parsed", "label": "Parsed", "direction": "output", "dataType": "json" }
   ]
 }
@@ -857,6 +891,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 8: 新增 rpContextAssembler 节点定义和 executor
 
 **Files:**
+
 - Modify: `plugins/rp-core/node.plugin.json`
 - Modify: `plugins/rp-core/executor.mjs`
 
@@ -900,7 +935,12 @@ Add after `rpInputParser` in the `nodes` array:
   "quickAdd": true,
   "ports": [
     { "id": "parsed", "label": "Parsed", "direction": "input", "dataType": "json" },
-    { "id": "character", "label": "Character", "direction": "input", "dataType": "character_profile" },
+    {
+      "id": "character",
+      "label": "Character",
+      "direction": "input",
+      "dataType": "character_profile"
+    },
     { "id": "scene", "label": "Scene", "direction": "input", "dataType": "scene_state" },
     { "id": "worldbook", "label": "Worldbook", "direction": "input", "dataType": "context" },
     { "id": "memory", "label": "Memory", "direction": "input", "dataType": "context" },
@@ -968,6 +1008,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 9: 新增 rpMemoryWrite 节点定义和 executor
 
 **Files:**
+
 - Modify: `plugins/rp-core/node.plugin.json`
 - Modify: `plugins/rp-core/executor.mjs`
 
@@ -1023,8 +1064,20 @@ Add as the last entry in the `nodes` array:
   ],
   "quickAdd": true,
   "ports": [
-    { "id": "reply", "label": "Reply", "direction": "input", "dataType": "draft", "required": true },
-    { "id": "notes", "label": "Notes", "direction": "input", "dataType": "analysis", "required": true },
+    {
+      "id": "reply",
+      "label": "Reply",
+      "direction": "input",
+      "dataType": "draft",
+      "required": true
+    },
+    {
+      "id": "notes",
+      "label": "Notes",
+      "direction": "input",
+      "dataType": "analysis",
+      "required": true
+    },
     { "id": "parsed", "label": "Parsed", "direction": "input", "dataType": "json" },
     { "id": "state", "label": "State", "direction": "input", "dataType": "scene_state" },
     { "id": "candidates", "label": "Candidates", "direction": "output", "dataType": "json" }
@@ -1134,6 +1187,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>"
 ### Task 10: 更新工作流模板
 
 **Files:**
+
 - Modify: `apps/web/src/state/sampleWorkflows.ts`
 
 **Goal:** 新增 `rpFullPipeline` 工作流模板，包含完整的 RP 工作流链路（第一批可用节点）。
@@ -1158,40 +1212,145 @@ export const rpFullPipeline: WorkflowTemplate = {
     version: 1,
     nodes: [
       { id: "user_1", type: "userInput", position: { x: 100, y: 100 }, config: { text: "" } },
-      { id: "parser_1", type: "rpInputParser", position: { x: 360, y: 100 }, config: { language: "zh" } },
-      { id: "worldbook_1", type: "worldbookSearch", position: { x: 620, y: 20 }, config: { limit: 4 } },
+      {
+        id: "parser_1",
+        type: "rpInputParser",
+        position: { x: 360, y: 100 },
+        config: { language: "zh" },
+      },
+      {
+        id: "worldbook_1",
+        type: "worldbookSearch",
+        position: { x: 620, y: 20 },
+        config: { limit: 4 },
+      },
       { id: "memory_1", type: "memoryRecall", position: { x: 620, y: 180 }, config: { limit: 4 } },
       { id: "char_1", type: "rpCharacterCard", position: { x: 360, y: 280 }, config: {} },
       { id: "scene_1", type: "rpSceneState", position: { x: 100, y: 280 }, config: {} },
       { id: "assembler_1", type: "rpContextAssembler", position: { x: 880, y: 100 }, config: {} },
       { id: "director_1", type: "rpDialogueDirector", position: { x: 1140, y: 100 }, config: {} },
-      { id: "check_1", type: "rpContinuityCheck", position: { x: 1400, y: 30 }, config: { strictness: "medium" } },
+      {
+        id: "check_1",
+        type: "rpContinuityCheck",
+        position: { x: 1400, y: 30 },
+        config: { strictness: "medium" },
+      },
       { id: "output_1", type: "textOutput", position: { x: 1660, y: 100 }, config: {} },
-      { id: "memwrite_1", type: "rpMemoryWrite", position: { x: 1400, y: 230 }, config: { maxCandidates: 5 } },
+      {
+        id: "memwrite_1",
+        type: "rpMemoryWrite",
+        position: { x: 1400, y: 230 },
+        config: { maxCandidates: 5 },
+      },
     ],
     edges: [
       { id: "e1", source: "user_1", sourcePort: "text", target: "parser_1", targetPort: "text" },
-      { id: "e2", source: "parser_1", sourcePort: "parsed", target: "worldbook_1", targetPort: "query" },
-      { id: "e3", source: "parser_1", sourcePort: "parsed", target: "memory_1", targetPort: "query" },
-      { id: "e4", source: "parser_1", sourcePort: "parsed", target: "assembler_1", targetPort: "parsed" },
-      { id: "e5", source: "char_1", sourcePort: "profile", target: "assembler_1", targetPort: "character" },
-      { id: "e6", source: "scene_1", sourcePort: "state", target: "assembler_1", targetPort: "scene" },
-      { id: "e7", source: "worldbook_1", sourcePort: "results", target: "assembler_1", targetPort: "worldbook" },
-      { id: "e8", source: "memory_1", sourcePort: "memories", target: "assembler_1", targetPort: "memory" },
-      { id: "e9", source: "assembler_1", sourcePort: "context", target: "director_1", targetPort: "memory" },
-      { id: "e10", source: "char_1", sourcePort: "profile", target: "director_1", targetPort: "character" },
-      { id: "e11", source: "scene_1", sourcePort: "state", target: "director_1", targetPort: "scene" },
-      { id: "e12", source: "user_1", sourcePort: "text", target: "director_1", targetPort: "player" },
-      { id: "e13", source: "director_1", sourcePort: "reply", target: "check_1", targetPort: "draft" },
+      {
+        id: "e2",
+        source: "parser_1",
+        sourcePort: "parsed",
+        target: "worldbook_1",
+        targetPort: "query",
+      },
+      {
+        id: "e3",
+        source: "parser_1",
+        sourcePort: "parsed",
+        target: "memory_1",
+        targetPort: "query",
+      },
+      {
+        id: "e4",
+        source: "parser_1",
+        sourcePort: "parsed",
+        target: "assembler_1",
+        targetPort: "parsed",
+      },
+      {
+        id: "e5",
+        source: "char_1",
+        sourcePort: "profile",
+        target: "assembler_1",
+        targetPort: "character",
+      },
+      {
+        id: "e6",
+        source: "scene_1",
+        sourcePort: "state",
+        target: "assembler_1",
+        targetPort: "scene",
+      },
+      {
+        id: "e7",
+        source: "worldbook_1",
+        sourcePort: "results",
+        target: "assembler_1",
+        targetPort: "worldbook",
+      },
+      {
+        id: "e8",
+        source: "memory_1",
+        sourcePort: "memories",
+        target: "assembler_1",
+        targetPort: "memory",
+      },
+      {
+        id: "e9",
+        source: "assembler_1",
+        sourcePort: "context",
+        target: "director_1",
+        targetPort: "memory",
+      },
+      {
+        id: "e10",
+        source: "char_1",
+        sourcePort: "profile",
+        target: "director_1",
+        targetPort: "character",
+      },
+      {
+        id: "e11",
+        source: "scene_1",
+        sourcePort: "state",
+        target: "director_1",
+        targetPort: "scene",
+      },
+      {
+        id: "e12",
+        source: "user_1",
+        sourcePort: "text",
+        target: "director_1",
+        targetPort: "player",
+      },
+      {
+        id: "e13",
+        source: "director_1",
+        sourcePort: "reply",
+        target: "check_1",
+        targetPort: "draft",
+      },
       { id: "e14", source: "check_1", sourcePort: "notes", target: "output_1", targetPort: "text" },
-      { id: "e15", source: "director_1", sourcePort: "reply", target: "memwrite_1", targetPort: "reply" },
-      { id: "e16", source: "check_1", sourcePort: "notes", target: "memwrite_1", targetPort: "notes" },
+      {
+        id: "e15",
+        source: "director_1",
+        sourcePort: "reply",
+        target: "memwrite_1",
+        targetPort: "reply",
+      },
+      {
+        id: "e16",
+        source: "check_1",
+        sourcePort: "notes",
+        target: "memwrite_1",
+        targetPort: "notes",
+      },
     ],
   },
 };
 ```
 
 Note: The port type compatibility must be verified. Check:
+
 - `parser_1.parsed` (json) → `worldbook_1.query` (user_input): needs `json:user_input` — NOT registered! This will fail.
 
 Let me reconsider the edge structure. The `parser_1.parsed` is json type, but `worldbookSearch.query` is `user_input` type. We'd need `json:user_input` compatibility.
@@ -1222,6 +1381,7 @@ edges: [
 ```
 
 Also check port compatibility:
+
 - `worldbook_1.results` (search_result) → `assembler_1.worldbook` (context): `search_result:context` ✓
 - `memory_1.memories` (context) → `assembler_1.memory` (context): same type ✓
 - `assembler_1.context` (context) → `director_1.memory` (context): same type ✓
@@ -1293,6 +1453,7 @@ curl http://127.0.0.1:5180/api/nodes
 - [ ] **Step 4: Browser manual verification**
 
 Open `http://127.0.0.1:5180`:
+
 1. 节点库中出现 `rpInputParser`、`rpContextAssembler`、`rpMemoryWrite`（橘色，roleplay/memory 分类）
 2. 加载 `rpFullPipeline` 模板，工作流完整渲染
 3. 运行工作流（需要 DEEPSEEK_API_KEY），验证节点输出

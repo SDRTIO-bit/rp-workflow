@@ -12,6 +12,7 @@ const dataTypes: DataType[] = [
   "final_text",
   "debug_info",
   "json",
+  "memory",
 ];
 
 describe("portPresentation", () => {

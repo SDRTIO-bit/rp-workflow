@@ -147,4 +147,7 @@ export const createLocalNodeExecutors = ({
   assetPreview: async ({ inputs }) => ({
     outputs: { preview: JSON.stringify(inputs, null, 2) },
   }),
+  preview: async ({ inputs }) => ({
+    outputs: { preview: JSON.stringify(inputs.data ?? inputs, null, 2) },
+  }),
 });

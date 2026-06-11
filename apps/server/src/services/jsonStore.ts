@@ -23,19 +23,12 @@ export const readEntries = async (filePath: string): Promise<Entry[]> => {
   }
 };
 
-export const writeEntries = async (
-  filePath: string,
-  entries: Entry[],
-): Promise<void> => {
+export const writeEntries = async (filePath: string, entries: Entry[]): Promise<void> => {
   await mkdir(dirname(filePath), { recursive: true });
   await writeFile(filePath, `${JSON.stringify(entries, null, 2)}\n`, "utf8");
 };
 
-export const createEntry = (
-  body: EntryDraft,
-  prefix: string,
-  fallbackTitle: string,
-): Entry => ({
+export const createEntry = (body: EntryDraft, prefix: string, fallbackTitle: string): Entry => ({
   id: `${prefix}_${Date.now()}`,
   title: String(body.title ?? fallbackTitle),
   content: String(body.content ?? ""),

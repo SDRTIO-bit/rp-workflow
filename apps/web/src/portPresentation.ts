@@ -22,6 +22,7 @@ export const dataTypePresentation: Record<DataType, DataTypePresentation> = {
   final_text: { labelZh: "正文", labelEn: "Final text", color: "#dc2626" },
   debug_info: { labelZh: "调试", labelEn: "Debug", color: "#64748b" },
   json: { labelZh: "JSON", labelEn: "JSON", color: "#475569" },
+  memory: { labelZh: "记忆", labelEn: "Memory", color: "#0e7490" },
   media_asset: { labelZh: "媒体资产", labelEn: "Media asset", color: "#db2777" },
   video_composition: { labelZh: "视频合成", labelEn: "Video composition", color: "#be185d" },
   ui_spec: { labelZh: "界面规格", labelEn: "UI spec", color: "#16a34a" },
@@ -31,7 +32,12 @@ export const dataTypePresentation: Record<DataType, DataTypePresentation> = {
   scene_state: { labelZh: "场景状态", labelEn: "Scene state", color: "#7e22ce" },
 };
 
-export const getDataTypePresentation = (dataType: DataType) => dataTypePresentation[dataType];
+export const getDataTypePresentation = (dataType: DataType) =>
+  dataTypePresentation[dataType] ?? {
+    labelZh: String(dataType),
+    labelEn: String(dataType),
+    color: "#64748b",
+  };
 
 export const getNodePorts = (
   nodeType: string,

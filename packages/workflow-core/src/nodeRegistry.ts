@@ -612,6 +612,10 @@ export const areTypesCompatible = (sourceType: DataType, targetType: DataType): 
     return true;
   }
 
+  if (targetType === "json") {
+    return true;
+  }
+
   const compatible = new Set([
     "user_input:text",
     "user_input:json",
@@ -639,6 +643,8 @@ export const areTypesCompatible = (sourceType: DataType, targetType: DataType): 
     "character_profile:json",
     "scene_state:context",
     "scene_state:json",
+    "memory:context",
+    "memory:json",
     "analysis:json",
     "text:json",
     "context:json",
