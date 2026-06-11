@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/workflow-core" },
+    { "path": "../../packages/agent-runtime" },
+    { "path": "../../packages/memory-core" },
+    { "path": "../../packages/plugin-sdk" }
+  ]
+}

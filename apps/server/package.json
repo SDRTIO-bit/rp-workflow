@@ -1,0 +1,25 @@
+{
+  "name": "@awp/server",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -b",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@awp/agent-runtime": "*",
+    "@awp/memory-core": "*",
+    "@awp/plugin-sdk": "*",
+    "@awp/workflow-core": "*",
+    "hono": "^4.7.0",
+    "@hono/node-server": "^1.14.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.2"
+  }
+}
