@@ -3,6 +3,7 @@ import { serve } from "@hono/node-server";
 import { resolve } from "node:path";
 import { resolveEnv } from "./env.js";
 import { createMemoriesRoutes } from "./routes/memories.js";
+import { createWorldbookRoutes } from "./routes/worldbook.js";
 
 const app = new Hono();
 
@@ -13,6 +14,7 @@ app.get("/api/health", (c) =>
 const env = resolveEnv();
 
 app.route("/", createMemoriesRoutes(resolve(env.dataDir, "memories.json")));
+app.route("/", createWorldbookRoutes(resolve(env.dataDir, "worldbook.json")));
 
 serve({ fetch: app.fetch, port: env.port }, (info) => {
   console.log(`@awp/server running at http://127.0.0.1:${info.port}`);
