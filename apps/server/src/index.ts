@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
+import { serveStatic } from "@hono/node-server/serve-static";
 import { resolve, join } from "node:path";
 import { resolveEnv } from "./env.js";
 import { createMemoriesRoutes } from "./routes/memories.js";
@@ -101,6 +102,11 @@ app.route("/", createNodesRoutes(getNodesRuntime));
 app.route("/", createTemplatesRoutes());
 app.route("/", createWorkflowRoutes(getWorkflowRuntime));
 app.route("/", createLlmRoutes(getLlmConfig));
+
+// Production static serving
+if (env.nodeEnv === "production") {
+  app.use("/*", serveStatic({ root: "../web/dist" }));
+}
 
 // Start server
 const start = async () => {

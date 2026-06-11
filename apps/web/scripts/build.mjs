@@ -55,13 +55,3 @@ await writeFile(
 </html>
 `,
 );
-
-await build({
-  entryPoints: [resolve(root, "scripts/serve.mjs")],
-  bundle: true,
-  format: "esm",
-  platform: "node",
-  target: ["node22"],
-  outfile: resolve(dist, "server.mjs"),
-  minify: false,
-});

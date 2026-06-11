@@ -10,7 +10,8 @@
   ],
   "scripts": {
     "dev": "npm --workspace @awp/web run dev",
-    "serve": "npm --workspace @awp/web run serve",
+    "dev:server": "npm --workspace @awp/server run dev",
+    "serve": "npm run build --workspaces && NODE_ENV=production npm --workspace @awp/server run start",
     "build": "npm run build --workspaces",
     "test": "npm run test --workspaces",
     "format": "prettier . --write",
