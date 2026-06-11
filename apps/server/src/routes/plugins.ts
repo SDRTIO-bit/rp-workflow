@@ -3,11 +3,7 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import { validateSkillPluginManifest } from "@awp/plugin-sdk";
 import {
-  loadNodePlugins,
-  loadSkillPlugins,
-  loadPluginState,
   savePluginState,
-  createPluginCatalog,
   reloadPluginRuntime,
   type NodePlugin,
   type PluginState,

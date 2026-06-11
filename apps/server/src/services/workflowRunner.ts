@@ -1,22 +1,15 @@
 import {
   createExecutionBatches,
-  nodeRegistry,
-  runWorkflow,
   validateWorkflow,
   type WorkflowDefinition,
   type WorkflowRunResult,
-  type WorkflowValidationIssue,
   type NodeExecutor,
   type NodeCatalog,
 } from "@awp/workflow-core";
 import { createDeepSeekAdapter, executeAgentNode } from "@awp/agent-runtime";
 import { rankMemories } from "@awp/memory-core";
 import { readEntries } from "./jsonStore.js";
-import {
-  createPluginExecutors,
-  type NodePlugin,
-  type SkillItem,
-} from "./pluginLoader.js";
+import { createPluginExecutors, type NodePlugin, type SkillItem } from "./pluginLoader.js";
 
 const agentToolDescriptions = [
   {
@@ -53,7 +46,9 @@ const extractQuery = (workflow: WorkflowDefinition) =>
     .filter(Boolean)
     .join("\n");
 
-const serializeSearchResults = (entries: Array<{ title: string; content: string; tags: string[] }>) =>
+const serializeSearchResults = (
+  entries: Array<{ title: string; content: string; tags: string[] }>,
+) =>
   entries
     .map(
       (entry) =>
@@ -88,8 +83,13 @@ export const createExecutors = async (
     readMemories: () => readEntries(context.memoryFile),
     readWorldbook: () => readEntries(context.worldbookFile),
     rankEntries: (query, entries, limit) =>
-      rankMemories(query || extractQuery(workflow), entries as Parameters<typeof rankMemories>[1], limit),
-    serializeEntries: (entries) => serializeSearchResults(entries as Parameters<typeof serializeSearchResults>[0]),
+      rankMemories(
+        query || extractQuery(workflow),
+        entries as Parameters<typeof rankMemories>[1],
+        limit,
+      ),
+    serializeEntries: (entries) =>
+      serializeSearchResults(entries as Parameters<typeof serializeSearchResults>[0]),
     executeAgent: async ({ nodeId, config, inputs }) => {
       const selectedModel = String(config.model ?? context.model).startsWith("mock-")
         ? String(config.model)

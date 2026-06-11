@@ -1,6 +1,10 @@
 import { Hono } from "hono";
-import { validateWorkflow, type WorkflowDefinition, type NodeCatalog } from "@awp/workflow-core";
-import { createExecutors, runWorkflowStreaming, type WorkflowRunnerContext } from "../services/workflowRunner.js";
+import { validateWorkflow, type NodeCatalog } from "@awp/workflow-core";
+import {
+  createExecutors,
+  runWorkflowStreaming,
+  type WorkflowRunnerContext,
+} from "../services/workflowRunner.js";
 import type { NodePlugin, SkillItem } from "../services/pluginLoader.js";
 
 export type WorkflowRuntime = {
@@ -58,15 +62,16 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
     const stream = new ReadableStream({
       async start(controller) {
         const executors = await createExecutors(body.workflow, context, (event) => {
-          controller.enqueue(
-            encoder.encode(`${JSON.stringify({ type: "token", ...event })}\n`),
-          );
+          controller.enqueue(encoder.encode(`${JSON.stringify({ type: "token", ...event })}\n`));
         });
-        await runWorkflowStreaming(body.workflow, executors, runtime.runtimeNodeCatalog, (event) => {
-          controller.enqueue(
-            encoder.encode(`${JSON.stringify(event)}\n`),
-          );
-        });
+        await runWorkflowStreaming(
+          body.workflow,
+          executors,
+          runtime.runtimeNodeCatalog,
+          (event) => {
+            controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+          },
+        );
         controller.close();
       },
     });
@@ -75,7 +80,7 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
       headers: {
         "Content-Type": "application/x-ndjson; charset=utf-8",
         "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        Connection: "keep-alive",
       },
     });
   });
