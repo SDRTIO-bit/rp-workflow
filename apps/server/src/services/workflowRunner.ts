@@ -263,7 +263,7 @@ export const createExecutors = async (
           nodeId: node.id,
           config: {
             model: String(node.config.model ?? context.model).startsWith("mock-")
-              ? context.model
+              ? String(node.config.model ?? context.model)
               : String(node.config.model ?? context.model),
             systemPrompt: String(node.config.systemPrompt ?? ""),
             skills: Array.isArray(node.config.skills) ? node.config.skills.map(String) : [],

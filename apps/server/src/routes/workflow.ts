@@ -25,7 +25,13 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
   app.post("/api/workflows/validate", async (c) => {
     const body = await c.req.json();
     const runtime = getRuntime();
-    const issues = validateWorkflow(body.workflow, runtime.runtimeNodeCatalog);
+    const workflow = body.workflow;
+    if (!workflow || !Array.isArray(workflow.nodes) || !Array.isArray(workflow.edges)) {
+      return c.json({
+        issues: [{ level: "error", message: "Invalid workflow: missing nodes or edges" }],
+      });
+    }
+    const issues = validateWorkflow(workflow, runtime.runtimeNodeCatalog);
     return c.json({ issues });
   });
 
