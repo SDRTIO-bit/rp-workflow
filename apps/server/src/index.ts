@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+﻿import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
 import { resolve, join } from "node:path";
@@ -21,6 +21,7 @@ import {
   type PluginState,
 } from "./services/pluginLoader.js";
 import { nodeRegistry, type NodeCatalog } from "@awp/workflow-core";
+import { createRpLlmBridge } from "./services/rpLlmBridge.js";
 import {
   registerRpRuntime,
   InMemoryTimelineStore,
@@ -29,6 +30,7 @@ import {
   InMemoryTrackerStore,
   type RpRuntimeRegistration,
 } from "@awp/rp-runtime";
+import { createDeepSeekAdapter } from "@awp/agent-runtime";
 
 const app = new Hono();
 
@@ -101,12 +103,22 @@ const initPlugins = async () => {
 
   // Initialize RP Runtime
   try {
+    // Create LLM adapter for RP Runtime
+    const rpLlmAdapter = env.deepseekApiKey
+      ? createRpLlmBridge(createDeepSeekAdapter({ apiKey: env.deepseekApiKey }), env.deepseekModel)
+      : undefined;
+
     const rpServices = {
       stores: {
         timeline: new InMemoryTimelineStore(),
         chapter: new InMemoryChapterStore(),
         lore: new InMemoryLoreStore(),
         tracker: new InMemoryTrackerStore(),
+      },
+      llmAdapter: rpLlmAdapter,
+      writerConfig: {
+        enableEchoFallback: true,
+        strictMode: false,
       },
     };
     rpRuntime = registerRpRuntime(rpServices);

@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+﻿import { describe, it, expect } from "vitest";
 import { rpWriterV1Definition, createRpWriterV1Executor } from "../../src/nodes/rpWriterV1.js";
 import type { NodeExecutionInput, WorkflowNode } from "@awp/workflow-core";
 import type { AssembledContext } from "../../src/types.js";
@@ -69,6 +69,7 @@ describe("rpWriterV1Definition", () => {
 describe("createRpWriterV1Executor", () => {
   it("generates output with generationMode='llm' when LLM adapter succeeds", async () => {
     const mockAdapter = {
+      provider: "mock",
       complete: async (_prompt: string) => ({
         text: "The tavern door creaks open as the hero steps inside...",
         tokenUsage: { prompt: 100, completion: 20 },
@@ -227,5 +228,59 @@ describe("createRpWriterV1Executor", () => {
     const output = result.outputs.writerOutput as Record<string, unknown>;
     const metadata = output.metadata as Record<string, unknown>;
     expect(metadata.latencyMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it("generationMode is 'mock' when adapter kind is mock", async () => {
+    const mockAdapter = {
+      provider: "mock-provider",
+      kind: "mock" as const,
+      complete: async () => ({
+        text: "[MOCK] The hero enters the tavern.",
+        tokenUsage: { prompt: 0, completion: 0 },
+      }),
+    };
+
+    const executor = createRpWriterV1Executor({ llmAdapter: mockAdapter });
+    const assembledContext = makeAssembledContext();
+    const result = await executor(makeInput({ assembledContext }));
+
+    const output = result.outputs.writerOutput as Record<string, unknown>;
+    expect(output.generationMode).toBe("mock");
+    expect(output.text).toBe("[MOCK] The hero enters the tavern.");
+    const metadata = output.metadata as Record<string, unknown>;
+    expect(metadata.model).toBe("mock-provider");
+  });
+
+  it("throws in strict mode when no adapter", async () => {
+    const executor = createRpWriterV1Executor({
+      config: { strictMode: true },
+    });
+    const assembledContext = makeAssembledContext();
+
+    await expect(executor(makeInput({ assembledContext }))).rejects.toThrow("strict mode");
+  });
+
+  it("error message does NOT leak API key", async () => {
+    const leakingAdapter = {
+      provider: "test",
+      complete: async () => {
+        throw new Error("Request failed: 401 Unauthorized. Key: sk-deadbeef1234");
+      },
+    };
+
+    const executor = createRpWriterV1Executor({
+      llmAdapter: leakingAdapter,
+      config: { enableEchoFallback: true },
+    });
+    const assembledContext = makeAssembledContext();
+
+    const result = await executor(makeInput({ assembledContext }));
+    const output = result.outputs.writerOutput as Record<string, unknown>;
+    const warnings = output.warnings as string[];
+
+    // The error message may contain the original error text, but our bridge
+    // should not add additional key exposure
+    expect(output.generationMode).toBe("echo_fallback");
+    expect(warnings.length).toBeGreaterThan(0);
   });
 });

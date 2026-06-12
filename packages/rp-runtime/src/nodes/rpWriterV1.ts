@@ -3,10 +3,15 @@ import type { AssembledContext, WriterOutput } from "../types.js";
 import { validateSchema } from "../schemas.js";
 
 /**
- * Optional LLM adapter interface for rpWriterV1.
- * When not provided, the node falls back to echo mode (if enabled).
+ * LLM adapter interface for rpWriterV1.
+ * kind determines generationMode: "llm" | "mock".
+ * When not provided, RpWriterConfig controls behavior.
  */
-export interface LlmAdapter {
+export interface RpLlmAdapter {
+  /** Provider identifier, e.g. "deepseek", "mock". */
+  provider: string;
+  /** Adapter kind for mode detection. */
+  kind?: "llm" | "mock";
   complete(prompt: string): Promise<{
     text: string;
     tokenUsage: { prompt: number; completion: number };
@@ -19,6 +24,8 @@ export interface LlmAdapter {
 export interface RpWriterConfig {
   /** Enable echo fallback when LLM is unavailable. Default: true */
   enableEchoFallback?: boolean;
+  /** When true, absence of adapter is hard error regardless of fallback. */
+  strictMode?: boolean;
 }
 
 /**
@@ -26,7 +33,7 @@ export interface RpWriterConfig {
  * Injected at registration time (stable services, no session state).
  */
 export interface RpWriterServices {
-  llmAdapter?: LlmAdapter;
+  llmAdapter?: RpLlmAdapter;
   config?: RpWriterConfig;
 }
 
@@ -69,14 +76,17 @@ export const rpWriterV1Definition: NodeDefinition = {
  * Factory function that creates the executor for rpWriterV1.
  *
  * Behavior:
- * - If LLM adapter is available: use it, generationMode = "llm"
- * - If LLM adapter throws and fallback enabled: echo mode, generationMode = "echo_fallback", warnings
+ * - If LLM adapter is available (kind=llm): generationMode = "llm"
+ * - If mock adapter is available (kind=mock): generationMode = "mock" (no network)
+ * - If LLM adapter throws and fallback enabled:
  * - If no LLM adapter and fallback enabled: echo mode, generationMode = "echo_fallback", warnings
+ * - If no LLM adapter and strict mode: workflow fails with error echo mode, generationMode = "echo_fallback", warnings
  * - If no LLM adapter and fallback disabled: throw error
  * - LLM errors are NOT swallowed (re-thrown unless fallback is explicitly enabled)
  */
 export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecutor {
   const enableFallback = services?.config?.enableEchoFallback ?? true;
+  const strictMode = services?.config?.strictMode ?? false;
 
   return async (input: NodeExecutionInput) => {
     const { assembledContext } = input.inputs;
@@ -87,8 +97,10 @@ export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecu
 
     const ctx = assembledContext as AssembledContext;
 
-    // Try LLM adapter if available
+    // Adapter available
     if (services?.llmAdapter) {
+      const isMock = (services.llmAdapter.kind ?? "llm") === "mock";
+
       try {
         const startTime = Date.now();
         const result = await services.llmAdapter.complete(ctx.fullContext);
@@ -96,9 +108,9 @@ export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecu
 
         const output: WriterOutput = {
           text: result.text,
-          generationMode: "llm",
+          generationMode: isMock ? "mock" : "llm",
           metadata: {
-            model: "llm-adapter",
+            model: services.llmAdapter.provider,
             tokenUsage: {
               input: result.tokenUsage.prompt,
               output: result.tokenUsage.completion,
@@ -125,7 +137,14 @@ export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecu
       }
     }
 
-    // No LLM adapter
+    // No adapter configured
+    if (strictMode) {
+      throw new Error(
+        "rpWriterV1: No LLM adapter configured and strict mode is enabled. " +
+          "Configure an LLM adapter via RpRuntimeServices.llmAdapter or disable strictMode.",
+      );
+    }
+
     if (!enableFallback) {
       throw new Error("rpWriterV1: No LLM adapter configured and echo fallback is disabled");
     }
