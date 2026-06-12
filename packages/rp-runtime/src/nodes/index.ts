@@ -9,7 +9,7 @@ export {
 export type { RpAssemblerConfig, RpAssemblerServices } from "./rpContextAssemblerV1.js";
 
 export { rpWriterV1Definition, createRpWriterV1Executor } from "./rpWriterV1.js";
-export type { LlmAdapter, RpWriterServices, RpWriterConfig } from "./rpWriterV1.js";
+export type { RpLlmAdapter, RpWriterServices, RpWriterConfig } from "./rpWriterV1.js";
 
 export {
   rpTimelineQueryV1Definition,

@@ -1,7 +1,7 @@
 // Store Interfaces - RP Runtime
 
 import type { MemoryEvent, Chapter, LoreEntry, TrackerState, TrackerPatch } from "../types.js";
-import type { LlmAdapter } from "../nodes/rpWriterV1.js";
+import type { RpLlmAdapter } from "../nodes/rpWriterV1.js";
 import type { RpWriterConfig } from "../nodes/rpWriterV1.js";
 import type { RpAssemblerConfig } from "../nodes/rpContextAssemblerV1.js";
 
@@ -118,7 +118,7 @@ export interface RpRuntimeServices {
     tracker: TrackerStore;
   };
   /** Optional LLM adapter for writer node. Injected at registration. */
-  llmAdapter?: LlmAdapter;
+  llmAdapter?: RpLlmAdapter;
   /** Optional config for writer node (fallback behavior). */
   writerConfig?: RpWriterConfig;
   /** Optional config for assembler node (budget limits). */
