@@ -6,6 +6,7 @@
     { "path": "./packages/agent-runtime" },
     { "path": "./packages/workflow-core" },
     { "path": "./packages/db" },
+    { "path": "./packages/rp-runtime" },
     { "path": "./apps/web" },
     { "path": "./apps/server" }
   ]

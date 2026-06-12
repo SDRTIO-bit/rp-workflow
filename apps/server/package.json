@@ -12,6 +12,7 @@
     "@awp/agent-runtime": "*",
     "@awp/memory-core": "*",
     "@awp/plugin-sdk": "*",
+    "@awp/rp-runtime": "*",
     "@awp/workflow-core": "*",
     "hono": "^4.7.0",
     "@hono/node-server": "^1.14.0"

@@ -5,7 +5,7 @@
     "jsx": "react-jsx",
     "noEmit": true
   },
-  "include": ["src", "vite.config.ts"],
+  "include": ["src"],
   "references": [
     { "path": "../../packages/plugin-sdk" },
     { "path": "../../packages/memory-core" },

@@ -1,11 +1,12 @@
 import { Hono } from "hono";
-import { validateWorkflow, type NodeCatalog } from "@awp/workflow-core";
+import { validateWorkflow, type NodeCatalog, type WorkflowRunContext } from "@awp/workflow-core";
 import {
   createExecutors,
   runWorkflowStreaming,
   type WorkflowRunnerContext,
 } from "../services/workflowRunner.js";
 import type { NodePlugin, SkillItem } from "../services/pluginLoader.js";
+import type { RpRuntimeRegistration } from "@awp/rp-runtime";
 
 export type WorkflowRuntime = {
   apiKey: string;
@@ -15,6 +16,7 @@ export type WorkflowRuntime = {
   plugins: NodePlugin[];
   skillCatalog: SkillItem[];
   runtimeNodeCatalog: NodeCatalog;
+  rpRuntime: RpRuntimeRegistration | null;
 };
 
 export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
@@ -38,10 +40,18 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
       plugins: runtime.plugins,
       skillCatalog: runtime.skillCatalog,
       pluginCatalog: runtime.runtimeNodeCatalog,
+      rpRuntime: runtime.rpRuntime,
     };
     const executors = await createExecutors(body.workflow, context);
     const { runWorkflow } = await import("@awp/workflow-core");
-    const result = await runWorkflow(body.workflow, executors, runtime.runtimeNodeCatalog);
+    // Extract WorkflowRunContext from request body if provided
+    const workflowContext: WorkflowRunContext | undefined = body.context;
+    const result = await runWorkflow(
+      body.workflow,
+      executors,
+      runtime.runtimeNodeCatalog,
+      workflowContext,
+    );
     return c.json(result);
   });
 
@@ -56,7 +66,11 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
       plugins: runtime.plugins,
       skillCatalog: runtime.skillCatalog,
       pluginCatalog: runtime.runtimeNodeCatalog,
+      rpRuntime: runtime.rpRuntime,
     };
+
+    // Extract WorkflowRunContext from request body if provided
+    const workflowContext: WorkflowRunContext | undefined = body.context;
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
@@ -71,6 +85,7 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
           (event) => {
             controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
           },
+          workflowContext,
         );
         controller.close();
       },

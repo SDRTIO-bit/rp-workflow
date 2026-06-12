@@ -21,6 +21,14 @@ import {
   type PluginState,
 } from "./services/pluginLoader.js";
 import { nodeRegistry, type NodeCatalog } from "@awp/workflow-core";
+import {
+  registerRpRuntime,
+  InMemoryTimelineStore,
+  InMemoryChapterStore,
+  InMemoryLoreStore,
+  InMemoryTrackerStore,
+  type RpRuntimeRegistration,
+} from "@awp/rp-runtime";
 
 const app = new Hono();
 
@@ -35,6 +43,7 @@ const pluginStateFile = join(env.pluginsDir, "plugin-state.json");
 let pluginState: PluginState = {};
 let plugins: NodePlugin[] = [];
 let pluginCatalog: NodeCatalog = {};
+let rpRuntime: RpRuntimeRegistration | null = null;
 let runtimeNodeCatalog: NodeCatalog = { ...nodeRegistry };
 let skillCatalog: SkillItem[] = [];
 
@@ -64,13 +73,14 @@ const getWorkflowRuntime = () => ({
   plugins,
   skillCatalog,
   runtimeNodeCatalog,
+  rpRuntime,
 });
 const getLlmConfig = () => ({
   apiKey: env.deepseekApiKey,
   model: env.deepseekModel,
 });
 
-// Initialize plugins
+// Initialize plugins and RP runtime
 const initPlugins = async () => {
   try {
     pluginState = await loadPluginState(pluginStateFile);
@@ -84,10 +94,49 @@ const initPlugins = async () => {
     }
 
     pluginCatalog = createPluginCatalog(plugins);
-    runtimeNodeCatalog = { ...nodeRegistry, ...pluginCatalog };
     skillCatalog = await loadSkillPlugins(env.pluginsDir);
   } catch (error) {
     console.warn("Failed to load plugins:", error);
+  }
+
+  // Initialize RP Runtime
+  try {
+    const rpServices = {
+      stores: {
+        timeline: new InMemoryTimelineStore(),
+        chapter: new InMemoryChapterStore(),
+        lore: new InMemoryLoreStore(),
+        tracker: new InMemoryTrackerStore(),
+      },
+    };
+    rpRuntime = registerRpRuntime(rpServices);
+
+    // Check for node type conflicts
+    const rpNodeTypes = Object.keys(rpRuntime.catalog);
+    const existingNodeTypes = new Set([
+      ...Object.keys(nodeRegistry),
+      ...Object.keys(pluginCatalog),
+    ]);
+
+    const conflicts = rpNodeTypes.filter((type) => existingNodeTypes.has(type));
+    if (conflicts.length > 0) {
+      throw new Error(
+        `RP Runtime node type conflicts with existing nodes: ${conflicts.join(", ")}. ` +
+          "Cannot register RP runtime with conflicting node types.",
+      );
+    }
+
+    // Merge catalogs: nodeRegistry + rpCatalog + pluginCatalog
+    runtimeNodeCatalog = {
+      ...nodeRegistry,
+      ...rpRuntime.catalog,
+      ...pluginCatalog,
+    };
+
+    console.log(`RP Runtime: registered ${rpNodeTypes.length} node types`);
+  } catch (error) {
+    console.error("Failed to initialize RP Runtime:", error);
+    throw error; // Fail fast on RP runtime initialization error
   }
 };
 

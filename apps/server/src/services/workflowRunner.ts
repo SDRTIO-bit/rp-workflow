@@ -5,9 +5,11 @@ import {
   type WorkflowRunResult,
   type NodeExecutor,
   type NodeCatalog,
+  type WorkflowRunContext,
 } from "@awp/workflow-core";
 import { createDeepSeekAdapter, executeAgentNode } from "@awp/agent-runtime";
 import { rankMemories } from "@awp/memory-core";
+import type { RpRuntimeRegistration } from "@awp/rp-runtime";
 import { readEntries } from "./jsonStore.js";
 import { createPluginExecutors, type NodePlugin, type SkillItem } from "./pluginLoader.js";
 
@@ -64,6 +66,7 @@ export type WorkflowRunnerContext = {
   plugins: NodePlugin[];
   skillCatalog: SkillItem[];
   pluginCatalog: NodeCatalog;
+  rpRuntime: RpRuntimeRegistration | null;
 };
 
 export const createExecutors = async (
@@ -292,6 +295,8 @@ export const createExecutors = async (
     textOutput: async ({ inputs }) => ({ outputs: { final: inputs.text ?? "" } }),
     debugLog: async ({ inputs }) => ({ outputs: { debug: JSON.stringify(inputs, null, 2) } }),
     ...pluginExecutors,
+    // Merge RP Runtime executors
+    ...(context.rpRuntime?.executors ?? {}),
   };
 };
 
@@ -314,6 +319,7 @@ export const runWorkflowStreaming = async (
   executors: Record<string, NodeExecutor>,
   runtimeNodeCatalog: NodeCatalog,
   onEvent: (event: { type: string; run?: unknown; result?: WorkflowRunResult }) => void,
+  workflowContext?: WorkflowRunContext,
 ): Promise<WorkflowRunResult> => {
   const validationIssues = validateWorkflow(workflow, runtimeNodeCatalog);
   const errorIssues = validationIssues.filter((issue) => issue.level === "error");
@@ -348,7 +354,7 @@ export const runWorkflowStreaming = async (
 
         try {
           const executor = executors[node.type] ?? (async () => ({ outputs: {}, metadata: {} }));
-          const execution = await executor({ node, inputs });
+          const execution = await executor({ node, inputs, context: workflowContext });
           outputsByNode.set(nodeId, execution.outputs);
           return {
             nodeId,

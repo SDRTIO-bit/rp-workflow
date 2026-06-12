@@ -6,6 +6,7 @@ import type {
   NodeExecutor,
   NodeRunResult,
   WorkflowDefinition,
+  WorkflowRunContext,
   WorkflowRunResult,
 } from "./types";
 
@@ -13,6 +14,7 @@ export const runWorkflow = async (
   workflow: WorkflowDefinition,
   executors: Record<string, NodeExecutor>,
   catalog: NodeCatalog = nodeRegistry,
+  context?: WorkflowRunContext,
 ): Promise<WorkflowRunResult> => {
   const validationIssues = validateWorkflow(workflow, catalog);
   const errorIssues = validationIssues.filter((issue) => issue.level === "error");
@@ -45,7 +47,7 @@ export const runWorkflow = async (
 
         try {
           const executor = executors[node.type] ?? defaultExecutor;
-          const result = await executor({ node, inputs });
+          const result = await executor({ node, inputs, context });
           outputsByNode.set(nodeId, result.outputs);
 
           return {

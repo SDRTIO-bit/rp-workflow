@@ -1,0 +1,19 @@
+{
+  "name": "@awp/rp-runtime",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@awp/workflow-core": "*",
+    "@awp/agent-runtime": "*",
+    "@awp/plugin-sdk": "*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.2"
+  }
+}

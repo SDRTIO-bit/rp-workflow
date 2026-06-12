@@ -14,13 +14,15 @@
     "@awp/memory-core": "*",
     "@awp/plugin-sdk": "*",
     "@awp/workflow-core": "*",
-    "vite": "^5.4.19",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "vite": "^5.4.19"
   },
   "devDependencies": {
+    "@awp/rp-runtime": "*",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.8.3",
     "vitest": "^3.2.2"
   }

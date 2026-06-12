@@ -1,4 +1,9 @@
-import { areTypesCompatible, findPortInCatalog, nodeRegistry } from "./nodeRegistry";
+import {
+  areTypesCompatible,
+  findPortInCatalog,
+  nodeRegistry,
+  validatePortSchemaId,
+} from "./nodeRegistry";
 import type { NodeCatalog, WorkflowDefinition, WorkflowValidationIssue } from "./types";
 
 export const validateWorkflow = (
@@ -66,10 +71,42 @@ export const validateWorkflow = (
       continue;
     }
 
-    if (!areTypesCompatible(sourcePort.dataType, targetPort.dataType)) {
+    // Validate schemaId constraints
+    const sourceSchemaError = validatePortSchemaId(sourcePort);
+    if (sourceSchemaError) {
       issues.push({
         level: "error",
-        message: `Incompatible edge types: ${sourcePort.dataType} -> ${targetPort.dataType}`,
+        message: sourceSchemaError,
+        nodeId: source.id,
+        portId: sourcePort.id,
+      });
+    }
+
+    const targetSchemaError = validatePortSchemaId(targetPort);
+    if (targetSchemaError) {
+      issues.push({
+        level: "error",
+        message: targetSchemaError,
+        nodeId: target.id,
+        portId: targetPort.id,
+      });
+    }
+
+    if (
+      !areTypesCompatible(
+        sourcePort.dataType,
+        targetPort.dataType,
+        sourcePort.schemaId,
+        targetPort.schemaId,
+      )
+    ) {
+      const schemaInfo =
+        sourcePort.schemaId || targetPort.schemaId
+          ? ` [source schemaId: ${sourcePort.schemaId ?? "none"}, target schemaId: ${targetPort.schemaId ?? "none"}]`
+          : "";
+      issues.push({
+        level: "error",
+        message: `Incompatible edge types: ${sourcePort.dataType} -> ${targetPort.dataType}${schemaInfo}`,
         edgeId: edge.id,
       });
     }

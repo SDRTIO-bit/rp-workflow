@@ -13,6 +13,7 @@ import {
   type WorkflowDefinition,
   type WorkflowEdge,
   type WorkflowNode,
+  type WorkflowRunResult,
 } from "@awp/workflow-core";
 import {
   useEffect,
@@ -82,11 +83,11 @@ type CanvasMenu =
   | { kind: "node"; x: number; y: number; nodeId: string }
   | { kind: "canvas"; x: number; y: number; point: Point };
 
-const canvasWorld = { width: 2400, height: 1400 };
-const nodeWidth = 286;
-const nodeBaseHeight = 156;
-const portTop = 104;
-const portGap = 30;
+const canvasWorld = { width: 4800, height: 3200 };
+const nodeWidth = 240;
+const nodeBaseHeight = 130;
+const portTop = 82;
+const portGap = 24;
 const portCenterOffset = 8;
 
 const builtinNodeDefinitions = Object.values(nodeRegistry);
@@ -128,8 +129,8 @@ const copy = {
     runMetadata: "运行元数据",
     streamingOutput: "流式输出",
     emptyLog: "运行工作流后，这里会显示节点执行、缓存 hash 和流式顺序。",
-    runtimeServer: "真实 DeepSeek Agent",
-    runtimeMock: "本地 mock Agent",
+    runtimeServer: "服务端执行",
+    runtimeMock: "本地模拟",
     runtimeIdle: "尚未运行",
     errorTitle: "运行提示",
     memoryLibrary: "长时记忆",
@@ -162,6 +163,31 @@ const copy = {
     addPreviewNode: "添加预览节点",
     nodePreview: "节点预览",
     externalNodeHint: "按外部扩展节点规范注册：声明端口、默认配置、预览和 mock 输出。",
+    workflowOutput: "工作流输出",
+    runComplete: "运行完成",
+    runFailed: "运行失败",
+    workflowServerOffline: "工作流执行服务未启动，请使用 npm run serve 启动。",
+    panelAgent: "Agent",
+    panelWorldbookSearch: "世界书检索",
+    panelMemory: "记忆",
+    panelOutput: "输出",
+    panelPreview: "预览",
+    panelModel: "模型: ",
+    panelSkills: "技能: ",
+    panelPlugins: "插件: ",
+    panelLimit: "上限: ",
+    panelScope: "范围: ",
+    panelMode: "模式: ",
+    sendToUser: "发送给用户",
+    exportAsFile: "导出为文件",
+    previewOnly: "仅预览",
+    pluginManagement: "插件管理",
+    noPluginsInstalled: "没有已安装的插件。",
+    nodesLabel: "节点: ",
+    disablePlugin: "禁用",
+    enablePlugin: "启用",
+    advancedParams: "高级参数",
+    durationLabel: "耗时 ",
   },
   en: {
     appName: "Agent Workflow Platform",
@@ -199,8 +225,8 @@ const copy = {
     runMetadata: "Run metadata",
     streamingOutput: "Streaming output",
     emptyLog: "Run the workflow to inspect node execution, cache hashes, and stream order.",
-    runtimeServer: "Real DeepSeek Agent",
-    runtimeMock: "Local mock Agent",
+    runtimeServer: "Server execution",
+    runtimeMock: "Local mock",
     runtimeIdle: "Not run yet",
     errorTitle: "Run notice",
     memoryLibrary: "Long-term memory",
@@ -234,6 +260,31 @@ const copy = {
     nodePreview: "Node preview",
     externalNodeHint:
       "Registered like an external extension: ports, default config, preview, and mock output.",
+    workflowOutput: "Workflow Output",
+    runComplete: "Run complete",
+    runFailed: "Run failed",
+    workflowServerOffline: "Workflow execution server is not running. Use npm run serve to start.",
+    panelAgent: "Agent",
+    panelWorldbookSearch: "Worldbook Search",
+    panelMemory: "Memory",
+    panelOutput: "Output",
+    panelPreview: "Preview",
+    panelModel: "Model: ",
+    panelSkills: "Skills: ",
+    panelPlugins: "Plugins: ",
+    panelLimit: "Limit: ",
+    panelScope: "Scope: ",
+    panelMode: "Mode: ",
+    sendToUser: "Send to User",
+    exportAsFile: "Export as File",
+    previewOnly: "Preview Only",
+    pluginManagement: "Plugin Management",
+    noPluginsInstalled: "No plugins installed.",
+    nodesLabel: "Nodes: ",
+    disablePlugin: "Disable",
+    enablePlugin: "Enable",
+    advancedParams: "Advanced",
+    durationLabel: "Duration ",
   },
 };
 
@@ -310,12 +361,14 @@ export function App() {
   const [nodeDefinitions, setNodeDefinitions] = useState(builtinNodeDefinitions);
   const [templateDefinitions, setTemplateDefinitions] = useState(workflowTemplates);
   const [selectedNodeId, setSelectedNodeId] = useState("");
+  const [nodeConfigOpenId, setNodeConfigOpenId] = useState("");
   const [runs, setRuns] = useState<NodeRunResult[]>([]);
   const [streamText, setStreamText] = useState("");
+  const [workflowResult, setWorkflowResult] = useState<WorkflowRunResult | undefined>();
   const [isRunning, setIsRunning] = useState(false);
   const [runtimeMode, setRuntimeMode] = useState<"server" | "mock" | "idle">("idle");
   const [language, setLanguage] = useState<Language>("zh");
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
   const [runNotice, setRunNotice] = useState("");
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [worldbookEntries, setWorldbookEntries] = useState<MemoryEntry[]>([]);
@@ -323,7 +376,7 @@ export function App() {
   const [worldbookDraft, setWorldbookDraft] = useState<Draft>(emptyDraft);
   const [editingMemoryId, setEditingMemoryId] = useState<string>();
   const [editingWorldbookId, setEditingWorldbookId] = useState<string>();
-  const [viewport, setViewport] = useState<Viewport>({ x: 20, y: 55, scale: 0.72 });
+  const [viewport, setViewport] = useState<Viewport>({ x: 40, y: 30, scale: 0.55 });
   const [connectionDraft, setConnectionDraft] = useState<ConnectionDraft>();
   const [canvasMenu, setCanvasMenu] = useState<CanvasMenu>();
   const [isPanning, setIsPanning] = useState(false);
@@ -363,7 +416,10 @@ export function App() {
   );
 
   const selectedNode = workflow.nodes.find((node) => node.id === selectedNodeId);
-  const selectedNodeRun = [...runs].reverse().find((run) => run.nodeId === selectedNodeId);
+  const configOpenNode = workflow.nodes.find((node) => node.id === nodeConfigOpenId);
+  const selectedNodeRun = [...runs]
+    .reverse()
+    .find((run) => run.nodeId === (nodeConfigOpenId || selectedNodeId));
   const quickAddNodes = useMemo(
     () => nodeDefinitions.filter((definition) => definition.quickAdd),
     [nodeDefinitions],
@@ -433,7 +489,11 @@ export function App() {
       setPluginSummaries(loaded);
       setPluginPanelError("");
     } else {
-      setPluginPanelError("插件服务不可用，当前使用本地内置节点。");
+      setPluginPanelError(
+        language === "zh"
+          ? "插件服务不可用，当前使用本地内置节点。"
+          : "Plugin service unavailable. Using built-in local nodes.",
+      );
     }
   };
 
@@ -549,16 +609,13 @@ export function App() {
     );
     setRuns(result.nodeRuns);
     setRuntimeMode("mock");
-    setRunNotice(
-      language === "zh"
-        ? "本地 DeepSeek 服务不可用，已回退到 mock Agent。请使用 npm run serve 运行真实 Agent。"
-        : "Local DeepSeek server unavailable. Fell back to mock Agent. Use npm run serve for real agents.",
-    );
+    setRunNotice(language === "zh" ? text.workflowServerOffline : text.workflowServerOffline);
   };
 
   const runCurrentWorkflow = async () => {
     setRuns([]);
     setStreamText("");
+    setWorkflowResult(undefined);
     setRuntimeMode("idle");
     setRunNotice("");
     setIsRunning(true);
@@ -574,6 +631,7 @@ export function App() {
       });
 
       if (streamed) {
+        setWorkflowResult(streamed);
         setRuntimeMode("server");
         return;
       }
@@ -581,6 +639,7 @@ export function App() {
       const serverResult = await runWorkflowViaServer(workflow);
       if (serverResult) {
         setRuns(serverResult.nodeRuns);
+        setWorkflowResult(serverResult);
         setRuntimeMode("server");
         return;
       }
@@ -647,7 +706,7 @@ export function App() {
     setRuns([]);
     setStreamText("");
     setRuntimeMode("idle");
-    setRunNotice(language === "zh" ? "已加载工作流模板。" : "Loaded workflow template.");
+    setRunNotice(language === "zh" ? "已加载工作流模板。" : "Workflow template loaded.");
   };
 
   const loadMemories = async () => {
@@ -995,89 +1054,73 @@ export function App() {
       <section className="panel-type-summary">
         {layout === "agent" ? (
           <div className="type-summary agent-summary-panel">
-            <span className="panel-badge agent-panel-badge">
-              {language === "zh" ? "Agent" : "Agent"}
-            </span>
+            <span className="panel-badge agent-panel-badge">{text.panelAgent}</span>
             {node.config.model !== undefined ? (
               <span className="type-chip">
-                {language === "zh" ? "模型: " : "Model: "}
+                {text.panelModel}
                 {String(node.config.model)}
               </span>
             ) : null}
             {Array.isArray(node.config.skills) && node.config.skills.length > 0 ? (
               <span className="type-chip">
-                {language === "zh" ? "Skill: " : "Skills: "}
+                {text.panelSkills}
                 {node.config.skills.length}
               </span>
             ) : null}
             {Array.isArray(node.config.plugins) && node.config.plugins.length > 0 ? (
               <span className="type-chip">
-                {language === "zh" ? "插件: " : "Plugins: "}
+                {text.panelPlugins}
                 {node.config.plugins.length}
               </span>
             ) : null}
           </div>
         ) : layout === "worldbook" ? (
           <div className="type-summary worldbook-summary-panel">
-            <span className="panel-badge worldbook-panel-badge">
-              {language === "zh" ? "世界书检索" : "Worldbook Search"}
-            </span>
+            <span className="panel-badge worldbook-panel-badge">{text.panelWorldbookSearch}</span>
             {node.config.limit !== undefined ? (
               <span className="type-chip">
-                {language === "zh" ? "上限: " : "Limit: "}
+                {text.panelLimit}
                 {String(node.config.limit)}
               </span>
             ) : null}
           </div>
         ) : layout === "memory" ? (
           <div className="type-summary memory-summary-panel">
-            <span className="panel-badge memory-panel-badge">
-              {language === "zh" ? "记忆" : "Memory"}
-            </span>
+            <span className="panel-badge memory-panel-badge">{text.panelMemory}</span>
             {node.config.limit !== undefined ? (
               <span className="type-chip">
-                {language === "zh" ? "上限: " : "Limit: "}
+                {text.panelLimit}
                 {String(node.config.limit)}
               </span>
             ) : null}
             {node.config.scope !== undefined ? (
               <span className="type-chip">
-                {language === "zh" ? "范围: " : "Scope: "}
+                {text.panelScope}
                 {String(node.config.scope)}
               </span>
             ) : null}
           </div>
         ) : layout === "output" ? (
           <div className="type-summary output-summary-panel">
-            <span className="panel-badge output-panel-badge">
-              {language === "zh" ? "输出" : "Output"}
-            </span>
+            <span className="panel-badge output-panel-badge">{text.panelOutput}</span>
             {node.config.destination !== undefined ? (
               <span className="type-chip">
                 {String(
                   node.config.destination === "user"
-                    ? language === "zh"
-                      ? "发送给用户"
-                      : "Send to User"
+                    ? text.sendToUser
                     : node.config.destination === "export"
-                      ? language === "zh"
-                        ? "导出为文件"
-                        : "Export as File"
-                      : language === "zh"
-                        ? "仅预览"
-                        : "Preview Only",
+                      ? text.exportAsFile
+                      : text.previewOnly,
                 )}
               </span>
             ) : null}
           </div>
         ) : layout === "preview" ? (
           <div className="type-summary preview-summary-panel">
-            <span className="panel-badge preview-panel-badge">
-              {language === "zh" ? "预览" : "Preview"}
-            </span>
+            <span className="panel-badge preview-panel-badge">{text.panelPreview}</span>
             {node.config.displayMode !== undefined ? (
               <span className="type-chip">
-                {language === "zh" ? "模式: " : "Mode: "}
+                {text.panelMode}
                 {String(node.config.displayMode)}
               </span>
             ) : null}
@@ -1533,7 +1576,7 @@ export function App() {
             setShowPluginPanel(true);
           }}
         >
-          {language === "zh" ? "插件" : "Plugins"}
+          {text.plugins}
         </button>
 
         <button className="secondary-button" type="button">
@@ -1679,6 +1722,7 @@ export function App() {
                       } as CSSProperties
                     }
                     onClick={() => setSelectedNodeId(node.id)}
+                    onDoubleClick={() => setNodeConfigOpenId(node.id)}
                     onPointerDown={(event) => startNodeDrag(event, node)}
                     data-node-id={node.id}
                     role="button"
@@ -1687,13 +1731,15 @@ export function App() {
                     <span className="node-type">
                       {getRuntimeNodeLabel(node.type, nodeLanguage)}
                     </span>
-                    {isAgentNode(node.type) ? <span className="agent-badge">Agent</span> : null}
+                    {isAgentNode(node.type) ? (
+                      <span className="agent-badge">{language === "zh" ? "Agent" : "Agent"}</span>
+                    ) : null}
                     <strong>{node.id}</strong>
                     {isAgentNode(node.type) && node.config.model ? (
                       <span className="agent-summary">
                         {String(node.config.model)}
                         {Array.isArray(node.config.skills) && node.config.skills.length > 0
-                          ? ` / ${node.config.skills.length} skills`
+                          ? ` / ${node.config.skills.length} ${language === "zh" ? "技能" : "skills"}`
                           : ""}
                       </span>
                     ) : null}
@@ -1803,6 +1849,25 @@ export function App() {
         </aside>
       </section>
 
+      {(streamText || workflowResult) && !isRunning ? (
+        <section className="output-panel">
+          <div className="output-panel-header">
+            <h2>{text.workflowOutput}</h2>
+            {workflowResult ? <span className="output-status ok">{text.runComplete}</span> : null}
+          </div>
+          {streamText ? (
+            <div className="output-content">
+              <pre>{streamText}</pre>
+            </div>
+          ) : null}
+          {workflowResult && !streamText ? (
+            <div className="output-content">
+              <pre>{stringifySnapshot(workflowResult)}</pre>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
       <section className="bottom-dock">
         <div className="panel validation">
           <h2>{text.validation}</h2>
@@ -1859,37 +1924,37 @@ export function App() {
         </div>
       </section>
 
-      {selectedNodeId && selectedNode ? (
-        <div className="modal-overlay" onClick={() => setSelectedNodeId("")}>
+      {nodeConfigOpenId && configOpenNode ? (
+        <div className="modal-overlay" onClick={() => setNodeConfigOpenId("")}>
           <div className="modal-content node-config-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>
-                {getRuntimeNodeLabel(selectedNode.type, nodeLanguage)} - {selectedNode.id}
+                {getRuntimeNodeLabel(configOpenNode.type, nodeLanguage)} - {configOpenNode.id}
               </h2>
-              <button className="modal-close" type="button" onClick={() => setSelectedNodeId("")}>
+              <button className="modal-close" type="button" onClick={() => setNodeConfigOpenId("")}>
                 ×
               </button>
             </div>
             <div className="field-stack">
               <section className="node-preview-panel">
                 <p>
-                  {getRuntimeNodeDefinition(selectedNode.type)?.descriptionI18n?.[nodeLanguage] ??
-                    getRuntimeNodeDefinition(selectedNode.type)?.description ??
+                  {getRuntimeNodeDefinition(configOpenNode.type)?.descriptionI18n?.[nodeLanguage] ??
+                    getRuntimeNodeDefinition(configOpenNode.type)?.description ??
                     text.externalNodeHint}
                 </p>
                 <span>
-                  {getRuntimeNodeDefinition(selectedNode.type)?.previewI18n?.[nodeLanguage] ??
-                    getRuntimeNodeDefinition(selectedNode.type)?.preview ??
+                  {getRuntimeNodeDefinition(configOpenNode.type)?.previewI18n?.[nodeLanguage] ??
+                    getRuntimeNodeDefinition(configOpenNode.type)?.preview ??
                     text.externalNodeHint}
                 </span>
               </section>
-              {renderPanelTypeSummary(selectedNode)}
+              {renderPanelTypeSummary(configOpenNode)}
               {(() => {
-                const definition = getRuntimeNodeDefinition(selectedNode.type);
+                const definition = getRuntimeNodeDefinition(configOpenNode.type);
                 const presets = definition?.presets;
-                const allFields = getRuntimeNodeConfigFields(selectedNode.type);
+                const allFields = getRuntimeNodeConfigFields(configOpenNode.type);
                 const visibleFields = allFields.filter((f) =>
-                  isFieldVisible(f, selectedNode.config),
+                  isFieldVisible(f, configOpenNode.config),
                 );
                 const basicFields = visibleFields.filter((f) => !f.advanced);
                 const advancedFields = visibleFields.filter((f) => f.advanced);
@@ -1921,11 +1986,11 @@ export function App() {
                         ))}
                       </div>
                     ) : null}
-                    {basicFields.map((field) => renderConfigField(field, selectedNode))}
+                    {basicFields.map((field) => renderConfigField(field, configOpenNode))}
                     {advancedFields.length > 0 ? (
                       <details className="advanced-params">
                         <summary>
-                          {language === "zh" ? "高级参数" : "Advanced"} ({advancedFields.length})
+                          {text.advancedParams} ({advancedFields.length})
                         </summary>
                         {Array.from(advancedGroups.entries()).map(([group, fields]) => (
                           <div key={group} className="advanced-group">
@@ -1934,7 +1999,7 @@ export function App() {
                                 {fields[0]?.groupLabel?.[nodeLanguage] ?? group}
                               </h4>
                             ) : null}
-                            {fields.map((field) => renderConfigField(field, selectedNode))}
+                            {fields.map((field) => renderConfigField(field, configOpenNode))}
                           </div>
                         ))}
                       </details>
@@ -1954,7 +2019,7 @@ export function App() {
                           : "⊘"}
                     </span>
                     <span>
-                      {language === "zh" ? "耗时 " : "Duration "}
+                      {text.durationLabel}
                       {Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt) < 1000
                         ? `${Math.max(0, selectedNodeRun.endedAt - selectedNodeRun.startedAt)}ms`
                         : `${((selectedNodeRun.endedAt - selectedNodeRun.startedAt) / 1000).toFixed(1)}s`}
@@ -1974,7 +2039,7 @@ export function App() {
         <div className="modal-overlay" onClick={() => setShowPluginPanel(false)}>
           <div className="modal-content plugin-panel" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>{language === "zh" ? "插件管理" : "Plugin Management"}</h2>
+              <h2>{text.pluginManagement}</h2>
               <button
                 className="modal-close"
                 type="button"
@@ -1986,9 +2051,7 @@ export function App() {
             {pluginPanelError ? (
               <p className="notice">{pluginPanelError}</p>
             ) : pluginSummaries.length === 0 ? (
-              <p className="muted">
-                {language === "zh" ? "没有已安装的插件。" : "No plugins installed."}
-              </p>
+              <p className="muted">{text.noPluginsInstalled}</p>
             ) : (
               <div className="plugin-card-list">
                 {pluginSummaries.map((plugin) => (
@@ -2012,10 +2075,21 @@ export function App() {
                       </span>
                     </div>
                     <p className="plugin-state-source">
-                      {plugin.enabled && plugin.stateSource === "manifest" && "默认启用"}
-                      {!plugin.enabled && plugin.stateSource === "manifest" && "默认禁用"}
-                      {plugin.enabled && plugin.stateSource === "user" && "用户手动启用"}
-                      {!plugin.enabled && plugin.stateSource === "user" && "用户手动禁用"}
+                      {plugin.enabled && plugin.stateSource === "manifest"
+                        ? language === "zh"
+                          ? "默认启用"
+                          : "Enabled by default"
+                        : !plugin.enabled && plugin.stateSource === "manifest"
+                          ? language === "zh"
+                            ? "默认禁用"
+                            : "Disabled by default"
+                          : plugin.enabled && plugin.stateSource === "user"
+                            ? language === "zh"
+                              ? "用户手动启用"
+                              : "Manually enabled"
+                            : language === "zh"
+                              ? "用户手动禁用"
+                              : "Manually disabled"}
                     </p>
                     {plugin.description ? (
                       <p className="plugin-desc">{plugin.description}</p>
@@ -2028,7 +2102,7 @@ export function App() {
                       ))}
                     </div>
                     <p className="plugin-node-types">
-                      {language === "zh" ? "节点: " : "Nodes: "}
+                      {text.nodesLabel}
                       {plugin.nodeTypes.slice(0, 3).join(", ")}
                       {plugin.nodeTypes.length > 3 ? ` +${plugin.nodeTypes.length - 3}` : ""}
                     </p>
@@ -2039,7 +2113,7 @@ export function App() {
                           type="button"
                           onClick={() => handleTogglePlugin(plugin, false)}
                         >
-                          {language === "zh" ? "禁用" : "Disable"}
+                          {text.disablePlugin}
                         </button>
                       ) : (
                         <button
@@ -2047,7 +2121,7 @@ export function App() {
                           type="button"
                           onClick={() => handleTogglePlugin(plugin, true)}
                         >
-                          {language === "zh" ? "启用" : "Enable"}
+                          {text.enablePlugin}
                         </button>
                       )}
                     </div>

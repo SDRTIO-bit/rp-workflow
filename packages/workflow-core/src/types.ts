@@ -25,6 +25,7 @@ export type PortDefinition = {
   direction: PortDirection;
   dataType: DataType;
   required?: boolean;
+  schemaId?: string;
 };
 
 export type LocalizedText = {
@@ -126,9 +127,15 @@ export type WorkflowValidationIssue = {
   portId?: string;
 };
 
+export type WorkflowRunContext = {
+  runId?: string;
+  values?: Readonly<Record<string, unknown>>;
+};
+
 export type NodeExecutionInput = {
   node: WorkflowNode;
   inputs: Record<string, unknown>;
+  context?: WorkflowRunContext;
 };
 
 export type NodeExecutionOutput = {

@@ -13,6 +13,7 @@
     { "path": "../../packages/workflow-core" },
     { "path": "../../packages/agent-runtime" },
     { "path": "../../packages/memory-core" },
-    { "path": "../../packages/plugin-sdk" }
+    { "path": "../../packages/plugin-sdk" },
+    { "path": "../../packages/rp-runtime" }
   ]
 }

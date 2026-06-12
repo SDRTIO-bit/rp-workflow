@@ -1,0 +1,75 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-12T00:00:00.000Z",
+  "workflow": {
+    "id": "rp-foundation-smoke-v1",
+    "name": "RP Foundation Smoke Test",
+    "version": 1,
+    "description": "Minimal RP workflow: userInput -> parser -> assembler -> writer -> textOutput",
+    "nodes": [
+      {
+        "id": "input",
+        "type": "userInput",
+        "position": { "x": 100, "y": 200 },
+        "config": {
+          "text": "Alice walks into the dimly lit tavern, her hand resting on the hilt of her sword. The bartender glances up nervously."
+        }
+      },
+      {
+        "id": "parser",
+        "type": "rpInputParserV1",
+        "position": { "x": 400, "y": 200 },
+        "config": {}
+      },
+      {
+        "id": "assembler",
+        "type": "rpContextAssemblerV1",
+        "position": { "x": 700, "y": 200 },
+        "config": {}
+      },
+      {
+        "id": "writer",
+        "type": "rpWriterV1",
+        "position": { "x": 1000, "y": 200 },
+        "config": {}
+      },
+      {
+        "id": "output",
+        "type": "textOutput",
+        "position": { "x": 1300, "y": 200 },
+        "config": {}
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "parser",
+        "targetPort": "rawInput"
+      },
+      {
+        "id": "e2",
+        "source": "parser",
+        "sourcePort": "parsedInput",
+        "target": "assembler",
+        "targetPort": "parsedInput"
+      },
+      {
+        "id": "e3",
+        "source": "assembler",
+        "sourcePort": "assembledContext",
+        "target": "writer",
+        "targetPort": "assembledContext"
+      },
+      {
+        "id": "e4",
+        "source": "writer",
+        "sourcePort": "narrative",
+        "target": "output",
+        "targetPort": "text"
+      }
+    ]
+  }
+}

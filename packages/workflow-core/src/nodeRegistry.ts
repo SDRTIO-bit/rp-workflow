@@ -427,164 +427,13 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     quickAdd: true,
     ports: [input("data", "Data", "json", false), output("preview", "Preview", "debug_info")],
   },
-  rpCharacterCard: {
-    type: "rpCharacterCard",
-    label: "RP Character Card",
-    labelI18n: { zh: "RP 角色卡", en: "RP Character Card" },
-    category: "roleplay",
-    description:
-      "Builds a stable roleplay character profile with persona, voice, boundaries, and secrets.",
-    descriptionI18n: {
-      zh: "创建一个包含人设、口吻、边界和秘密的稳定角色扮演角色档案。",
-      en: "Builds a stable roleplay character profile with persona, voice, boundaries, and secrets.",
-    },
-    color: "#a21caf",
-    preview: "Character seed -> character_profile.",
-    previewI18n: {
-      zh: "角色种子 → character_profile。",
-      en: "Character seed -> character_profile.",
-    },
-    defaultConfig: {
-      name: "雾岛澪",
-      persona: "冷静克制的旧车站管理员，知道广播异常的来历。",
-      voice: "短句、含蓄、偶尔用反问试探玩家。",
-      boundaries: "不替玩家决定行动；不越过已设定关系边界。",
-    },
-    configFields: [
-      { key: "name", label: { zh: "角色名", en: "Name" }, kind: "text" },
-      { key: "persona", label: { zh: "人设", en: "Persona" }, kind: "textarea" },
-      { key: "voice", label: { zh: "口吻", en: "Voice" }, kind: "textarea" },
-      { key: "boundaries", label: { zh: "边界", en: "Boundaries" }, kind: "textarea" },
-    ],
-    ports: [input("seed", "Seed", "user_input"), output("profile", "Profile", "character_profile")],
-  },
-  rpSceneState: {
-    type: "rpSceneState",
-    label: "RP Scene State",
-    labelI18n: { zh: "RP 场景状态", en: "RP Scene State" },
-    category: "roleplay",
-    description:
-      "Tracks the current location, mood, active stakes, known facts, and unresolved hooks.",
-    descriptionI18n: {
-      zh: "跟踪当前地点、氛围、活跃目标、已知事实和未解决的伏笔。",
-      en: "Tracks the current location, mood, active stakes, known facts, and unresolved hooks.",
-    },
-    color: "#7e22ce",
-    preview: "Opening setup + optional lore -> scene_state.",
-    previewI18n: {
-      zh: "开场设定 + 可选设定 → scene_state。",
-      en: "Opening setup + optional lore -> scene_state.",
-    },
-    defaultConfig: {
-      location: "废弃车站候车厅",
-      mood: "雨夜、旧广播、轻微超自然",
-      stakes: "弄清广播为何还在播放，同时避免惊动站内的未知存在。",
-    },
-    configFields: [
-      { key: "location", label: { zh: "地点", en: "Location" }, kind: "text" },
-      { key: "mood", label: { zh: "氛围", en: "Mood" }, kind: "text" },
-      { key: "stakes", label: { zh: "风险/目标", en: "Stakes" }, kind: "textarea" },
-    ],
-    ports: [
-      input("setup", "Setup", "user_input"),
-      input("lore", "Lore", "search_result", false),
-      output("state", "State", "scene_state"),
-    ],
-  },
-  rpLoreRecall: {
-    type: "rpLoreRecall",
-    label: "RP Lore Recall",
-    labelI18n: { zh: "RP 设定召回", en: "RP Lore Recall" },
-    category: "roleplay",
-    description:
-      "Retrieves roleplay lore, relationship facts, canon constraints, and unresolved plot hooks.",
-    descriptionI18n: {
-      zh: "检索角色扮演设定、关系事实、正典约束和未解决的剧情伏笔。",
-      en: "Retrieves roleplay lore, relationship facts, canon constraints, and unresolved plot hooks.",
-    },
-    color: "#6d28d9",
-    preview: "Player turn -> search_result lore context.",
-    previewI18n: {
-      zh: "玩家回合 → search_result 设定上下文。",
-      en: "Player turn -> search_result lore context.",
-    },
-    defaultConfig: { limit: 5, scope: "角色关系、地点设定、未解决伏笔" },
-    configFields: [
-      { key: "limit", label: { zh: "返回数量", en: "Limit" }, kind: "number", min: 1, max: 12 },
-      { key: "scope", label: { zh: "范围", en: "Scope" }, kind: "text" },
-    ],
-    ports: [input("query", "Query", "user_input"), output("lore", "Lore", "search_result")],
-  },
-  rpDialogueDirector: {
-    type: "rpDialogueDirector",
-    label: "RP Dialogue Director",
-    labelI18n: { zh: "RP 对话导演", en: "RP Dialogue Director" },
-    category: "roleplay",
-    description:
-      "Composes the next in-character reply from persona, scene state, player action, and memory.",
-    descriptionI18n: {
-      zh: "从角色人设、场景状态、玩家行动和记忆中编写下一段角色回复。",
-      en: "Composes the next in-character reply from persona, scene state, player action, and memory.",
-    },
-    color: "#be185d",
-    preview: "Character + scene + player turn -> in-character draft.",
-    previewI18n: {
-      zh: "角色 + 场景 + 玩家回合 → 角色扮演草稿。",
-      en: "Character + scene + player turn -> in-character draft.",
-    },
-    panelLayout: "agent",
-    defaultConfig: {
-      style: "沉浸式中文 RP",
-      replyRules: "只扮演 NPC 和环境；保留玩家行动选择；每轮推进一个清晰变化。",
-    },
-    configFields: [
-      { key: "style", label: { zh: "风格", en: "Style" }, kind: "text" },
-      { key: "replyRules", label: { zh: "回复规则", en: "Reply rules" }, kind: "textarea" },
-      { key: "skills", label: { zh: "RP skills", en: "RP skills" }, kind: "tags" },
-      { key: "plugins", label: { zh: "RP 插件", en: "RP plugins" }, kind: "tags" },
-    ],
-    ports: [
-      input("character", "Character", "character_profile"),
-      input("scene", "Scene", "scene_state"),
-      input("player", "Player", "user_input"),
-      input("memory", "Memory", "context", false),
-      output("reply", "Reply", "draft"),
-    ],
-  },
-  rpContinuityCheck: {
-    type: "rpContinuityCheck",
-    label: "RP Continuity Check",
-    labelI18n: { zh: "RP 连续性检查", en: "RP Continuity Check" },
-    category: "roleplay",
-    description:
-      "Checks whether a draft violates persona, world facts, relationship state, or player agency.",
-    descriptionI18n: {
-      zh: "检查草稿是否违反角色人设、世界事实、关系状态或玩家自主权。",
-      en: "Checks whether a draft violates persona, world facts, relationship state, or player agency.",
-    },
-    color: "#dc2626",
-    preview: "RP draft + scene state -> continuity analysis.",
-    previewI18n: {
-      zh: "RP 草稿 + 场景状态 → 连续性分析。",
-      en: "RP draft + scene state -> continuity analysis.",
-    },
-    panelLayout: "agent",
-    defaultConfig: { strictness: "medium" },
-    configFields: [
-      {
-        key: "strictness",
-        label: { zh: "严格度", en: "Strictness" },
-        kind: "select",
-        options: ["low", "medium", "high"],
-      },
-      { key: "skills", label: { zh: "检查 skills", en: "Check skills" }, kind: "tags" },
-    ],
-    ports: [
-      input("draft", "Draft", "draft"),
-      input("scene", "Scene", "scene_state", false),
-      output("notes", "Notes", "analysis"),
-    ],
-  },
+};
+
+export const validatePortSchemaId = (port: PortDefinition): string | null => {
+  if (port.schemaId && port.dataType !== "json") {
+    return `Port "${port.id}" has schemaId but dataType is "${port.dataType}" (must be "json")`;
+  }
+  return null;
 };
 
 export const findPort = (nodeType: string, portId: string, direction?: "input" | "output") => {
@@ -607,7 +456,30 @@ export const findPortInCatalog = (
   return port;
 };
 
-export const areTypesCompatible = (sourceType: DataType, targetType: DataType): boolean => {
+export const areTypesCompatible = (
+  sourceType: DataType,
+  targetType: DataType,
+  sourceSchemaId?: string,
+  targetSchemaId?: string,
+): boolean => {
+  // schemaId 只能参与 JSON 端口兼容
+  if (sourceSchemaId || targetSchemaId) {
+    if (sourceType !== "json" || targetType !== "json") {
+      return false;
+    }
+
+    if (sourceSchemaId && targetSchemaId) {
+      return sourceSchemaId === targetSchemaId;
+    }
+
+    if (sourceSchemaId && !targetSchemaId) {
+      return true;
+    }
+
+    // 普通 JSON 或其他类型不能进入带 schemaId 的输入
+    return false;
+  }
+
   if (sourceType === targetType) {
     return true;
   }

@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "description": "Roleplay nodes for worldbook recall, memory recall, character cards, scene state, dialogue generation, and continuity checks.",
   "author": "Agent Workflow Platform",
-  "enabled": true,
+  "enabled": false,
   "compatibility": {
     "app": ">=0.1.0",
     "workflowSchema": 1
