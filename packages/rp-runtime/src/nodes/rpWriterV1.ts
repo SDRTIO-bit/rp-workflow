@@ -1,5 +1,6 @@
 import type { NodeDefinition, NodeExecutor, NodeExecutionInput } from "@awp/workflow-core";
 import type { AssembledContext, WriterOutput } from "../types.js";
+import type { CompiledPromptV1 } from "../prompt/types.js";
 import { validateSchema } from "../schemas.js";
 
 /**
@@ -45,7 +46,7 @@ export const rpWriterV1Definition: NodeDefinition = {
   type: "rpWriterV1",
   label: "RP Writer",
   category: "roleplay",
-  description: "Generates narrative text from assembled context using LLM",
+  description: "Generates narrative text from compiled prompt using LLM",
   color: "#9333ea",
   ports: [
     {
@@ -53,8 +54,15 @@ export const rpWriterV1Definition: NodeDefinition = {
       label: "Assembled Context",
       dataType: "json",
       direction: "input",
-      required: true,
+      required: false,
       schemaId: "rp.assembled-context.v1",
+    },
+    {
+      id: "compiledPrompt",
+      label: "Compiled Prompt",
+      dataType: "json",
+      direction: "input",
+      required: false,
     },
     {
       id: "writerOutput",
@@ -89,13 +97,35 @@ export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecu
   const strictMode = services?.config?.strictMode ?? false;
 
   return async (input: NodeExecutionInput) => {
-    const { assembledContext } = input.inputs;
+    const { assembledContext, compiledPrompt } = input.inputs;
 
-    if (!assembledContext || typeof assembledContext !== "object") {
-      throw new Error("rpWriterV1: assembledContext is required");
+    // Determine which input path to use
+    const hasCompiledPrompt = compiledPrompt && typeof compiledPrompt === "object";
+    const hasAssembledContext = assembledContext && typeof assembledContext === "object";
+
+    if (!hasCompiledPrompt && !hasAssembledContext) {
+      throw new Error("rpWriterV1: either compiledPrompt or assembledContext is required");
     }
 
-    const ctx = assembledContext as AssembledContext;
+    // Get the prompt to send to LLM
+    let promptToSend: string;
+    const warnings: string[] = [];
+
+    if (hasCompiledPrompt) {
+      // New path: use compiledPrompt.prompt
+      const cp = compiledPrompt as CompiledPromptV1;
+      promptToSend = cp.prompt;
+
+      if (hasAssembledContext) {
+        // Both inputs provided - this is an error in new workflow
+        warnings.push("Both compiledPrompt and assembledContext provided. Using compiledPrompt.");
+      }
+    } else {
+      // Legacy path: use assembledContext.fullContext
+      const ctx = assembledContext as AssembledContext;
+      promptToSend = ctx.fullContext;
+      warnings.push("DEPRECATED: Using assembledContext.fullContext. Migrate to compiledPrompt.");
+    }
 
     // Adapter available
     if (services?.llmAdapter) {
@@ -103,7 +133,7 @@ export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecu
 
       try {
         const startTime = Date.now();
-        const result = await services.llmAdapter.complete(ctx.fullContext);
+        const result = await services.llmAdapter.complete(promptToSend);
         const latencyMs = Date.now() - startTime;
 
         const output: WriterOutput = {
@@ -117,6 +147,7 @@ export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecu
             },
             latencyMs,
           },
+          ...(warnings.length > 0 ? { warnings } : {}),
         };
 
         validateSchema("rp.writer-output.v1", output);
@@ -131,7 +162,7 @@ export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecu
           );
         }
         // Fall through to echo mode with warning
-        return createEchoOutput(ctx, [
+        return createEchoOutput(promptToSend, [
           `LLM adapter failed: ${error instanceof Error ? error.message : String(error)}. Using echo fallback.`,
         ]);
       }
@@ -150,15 +181,18 @@ export function createRpWriterV1Executor(services?: RpWriterServices): NodeExecu
     }
 
     // Echo fallback
-    return createEchoOutput(ctx, ["No LLM adapter configured. Using echo fallback."]);
+    return createEchoOutput(promptToSend, ["No LLM adapter configured. Using echo fallback."]);
   };
 }
 
 function createEchoOutput(
-  ctx: AssembledContext,
+  prompt: string,
   warnings: string[],
 ): { outputs: { writerOutput: WriterOutput; narrative: string } } {
-  const text = ctx.userInputSection || ctx.fullContext;
+  // Extract user input from prompt if possible, otherwise use full prompt
+  const text = prompt.includes("[User Input]")
+    ? prompt.split("[User Input]")[1]?.trim() || prompt
+    : prompt;
 
   const output: WriterOutput = {
     text,

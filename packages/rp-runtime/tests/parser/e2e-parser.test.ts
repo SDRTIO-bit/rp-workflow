@@ -490,9 +490,7 @@ describe("Scenario 2: Invalid Entity IDs", () => {
     expect(parsed.diagnostics.removedInvalidEntryIds).toContain("nonexistent_entry_456");
 
     // Warnings should be present
-    expect(parsed.diagnostics.warnings.some((w) => w.includes("nonexistent_entry_456"))).toBe(
-      true,
-    );
+    expect(parsed.diagnostics.warnings.some((w) => w.includes("nonexistent_entry_456"))).toBe(true);
   });
 });
 

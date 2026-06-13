@@ -4,10 +4,12 @@ import type {
   TimelineContext,
   LoreContext,
   TrackerState,
+  RecentMessage,
   AssembledContext,
   BudgetReport,
   TokenEstimationMethod,
 } from "../types.js";
+import type { PromptDocumentV1, PromptSectionV1 } from "../prompt/types.js";
 import { validateSchema } from "../schemas.js";
 
 /**
@@ -75,11 +77,24 @@ export const rpContextAssemblerV1Definition: NodeDefinition = {
       schemaId: "rp.tracker-state.v1",
     },
     {
+      id: "recentMessages",
+      label: "Recent Messages",
+      dataType: "json",
+      direction: "input",
+      required: false,
+    },
+    {
       id: "assembledContext",
       label: "Assembled Context",
       dataType: "json",
       direction: "output",
       schemaId: "rp.assembled-context.v1",
+    },
+    {
+      id: "promptDocument",
+      label: "Prompt Document",
+      dataType: "json",
+      direction: "output",
     },
     {
       id: "budgetReport",
@@ -114,7 +129,8 @@ export function createRpContextAssemblerV1Executor(services?: RpAssemblerService
   const tokenEstimationMethod: TokenEstimationMethod = "character_ratio";
 
   return async (input: NodeExecutionInput) => {
-    const { parsedInput, timelineContext, loreContext, trackerState } = input.inputs;
+    const { parsedInput, timelineContext, loreContext, trackerState, recentMessages } =
+      input.inputs;
 
     if (!parsedInput || typeof parsedInput !== "object") {
       throw new Error("rpContextAssemblerV1: parsedInput is required");
@@ -124,6 +140,7 @@ export function createRpContextAssemblerV1Executor(services?: RpAssemblerService
     const timeline = timelineContext as TimelineContext | undefined;
     const lore = loreContext as LoreContext | undefined;
     const tracker = trackerState as TrackerState | undefined;
+    const messages = recentMessages as RecentMessage[] | undefined;
 
     // Build raw sections
     const sections: Record<string, string> = {
@@ -131,7 +148,7 @@ export function createRpContextAssemblerV1Executor(services?: RpAssemblerService
       loreSection: buildLoreSection(lore),
       timelineSection: buildTimelineSection(timeline),
       trackerSection: buildTrackerSection(tracker),
-      recentMessagesSection: buildRecentMessagesSection(),
+      recentMessagesSection: buildRecentMessagesSection(messages, targetTokens, charsPerToken),
       userInputSection: buildUserInputSection(parsed),
     };
 
@@ -184,8 +201,90 @@ export function createRpContextAssemblerV1Executor(services?: RpAssemblerService
     validateSchema("rp.assembled-context.v1", assembledContext);
     validateSchema("rp.budget-report.v1", budgetReport);
 
+    // Build PromptDocumentV1 from sections
+    const promptSections: PromptSectionV1[] = [];
+
+    // Add sections from assembled context
+    if (assembledContext.systemPrompt) {
+      promptSections.push({
+        id: "system-prompt",
+        title: "System Prompt",
+        source: "core_rules",
+        content: assembledContext.systemPrompt,
+        priority: 100,
+        visibility: "model_visible",
+        trust: "system",
+      });
+    }
+
+    if (assembledContext.loreSection) {
+      promptSections.push({
+        id: "lore-section",
+        title: "World & Character Lore",
+        source: "worldbook",
+        content: assembledContext.loreSection,
+        priority: 60,
+        visibility: "model_visible",
+        trust: "world_data",
+      });
+    }
+
+    if (assembledContext.timelineSection) {
+      promptSections.push({
+        id: "timeline-section",
+        title: "Story Timeline",
+        source: "timeline",
+        content: assembledContext.timelineSection,
+        priority: 40,
+        visibility: "model_visible",
+        trust: "world_data",
+      });
+    }
+
+    if (assembledContext.trackerSection) {
+      promptSections.push({
+        id: "tracker-section",
+        title: "Current State",
+        source: "state",
+        content: assembledContext.trackerSection,
+        priority: 80,
+        visibility: "model_visible",
+        trust: "runtime",
+      });
+    }
+
+    if (assembledContext.recentMessagesSection) {
+      promptSections.push({
+        id: "recent-messages-section",
+        title: "Recent Messages",
+        source: "recent_messages",
+        content: assembledContext.recentMessagesSection,
+        priority: 20,
+        visibility: "model_visible",
+        trust: "world_data",
+      });
+    }
+
+    if (assembledContext.userInputSection) {
+      promptSections.push({
+        id: "user-input-section",
+        title: "User Input",
+        source: "user_input",
+        content: assembledContext.userInputSection,
+        priority: 99,
+        visibility: "model_visible",
+        trust: "user_content",
+      });
+    }
+
+    const promptDocument: PromptDocumentV1 = {
+      version: "prompt-document-v1",
+      target: "writer",
+      sections: promptSections,
+    };
+
     return {
-      outputs: { assembledContext, budgetReport },
+      outputs: { assembledContext, budgetReport, promptDocument },
     };
   };
 }
@@ -373,9 +472,64 @@ function buildTrackerSection(tracker: TrackerState | undefined): string {
   return lines.join("\n");
 }
 
-function buildRecentMessagesSection(): string {
-  // MVP: no recent messages
-  return "";
+function buildRecentMessagesSection(
+  messages: RecentMessage[] | undefined,
+  targetTokens: number,
+  charsPerToken: number,
+): string {
+  if (!messages || messages.length === 0) {
+    return "";
+  }
+
+  // Sort by timestamp ascending (oldest first)
+  const sorted = [...messages].sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+  );
+
+  // Build lines and apply budget: trim oldest messages first, keep most recent
+  const lines: string[] = ["[Recent Messages]"];
+
+  // Reserve space for at least the most recent message
+  const mostRecent = sorted[sorted.length - 1];
+  if (!mostRecent) {
+    return "";
+  }
+  const mostRecentLine = `${mostRecent.role === "user" ? "User" : "Assistant"} (${mostRecent.turnId}): "${mostRecent.text}"`;
+  const mostRecentTokens = estimateTokens(mostRecentLine, charsPerToken);
+
+  // Budget for recent messages: max 20% of targetTokens
+  const maxRecentTokens = Math.floor(targetTokens * 0.2);
+
+  // If even the most recent message exceeds budget, truncate it
+  if (mostRecentTokens > maxRecentTokens) {
+    const maxChars = maxRecentTokens * charsPerToken;
+    const truncatedText = mostRecent.text.slice(0, maxChars) + "... [truncated]";
+    lines.push(
+      `${mostRecent.role === "user" ? "User" : "Assistant"} (${mostRecent.turnId}): "${truncatedText}"`,
+    );
+    return lines.join("\n");
+  }
+
+  // Add messages from newest to oldest, stopping when budget is exceeded
+  const messageLines: string[] = [];
+  let accumulatedTokens = 0;
+
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    const msg = sorted[i];
+    if (!msg) continue;
+    const line = `${msg.role === "user" ? "User" : "Assistant"} (${msg.turnId}): "${msg.text}"`;
+    const lineTokens = estimateTokens(line, charsPerToken);
+
+    if (accumulatedTokens + lineTokens > maxRecentTokens) {
+      break; // Stop adding older messages
+    }
+
+    messageLines.unshift(line);
+    accumulatedTokens += lineTokens;
+  }
+
+  lines.push(...messageLines);
+  return lines.join("\n");
 }
 
 function buildUserInputSection(parsed: ParsedInput): string {

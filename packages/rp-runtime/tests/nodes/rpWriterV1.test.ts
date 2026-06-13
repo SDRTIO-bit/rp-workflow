@@ -67,7 +67,53 @@ describe("rpWriterV1Definition", () => {
 });
 
 describe("createRpWriterV1Executor", () => {
-  it("generates output with generationMode='llm' when LLM adapter succeeds", async () => {
+  it("generates output with generationMode='llm' when LLM adapter succeeds with compiledPrompt", async () => {
+    const mockAdapter = {
+      provider: "mock",
+      complete: async (_prompt: string) => ({
+        text: "The tavern door creaks open as the hero steps inside...",
+        tokenUsage: { prompt: 100, completion: 20 },
+      }),
+    };
+
+    const executor = createRpWriterV1Executor({ llmAdapter: mockAdapter });
+    const compiledPrompt = {
+      version: "prompt-document-v1" as const,
+      target: "writer" as const,
+      prompt: "You are a creative writing assistant.\n\n[User Input]\nThe hero enters the tavern.",
+      outputContract: {
+        version: "output-contract-v1" as const,
+        mode: "narrative_only" as const,
+        slots: [{ id: "narrative", required: true, order: 10, producer: "writer" as const }],
+        allowExtraText: false,
+      },
+      diagnostics: {
+        documentVersion: "prompt-document-v1" as const,
+        presetId: "test",
+        estimatedTokens: 100,
+        staticPrefixHash: "abc123",
+        includedSectionIds: [],
+        skippedRuntimeOnlySectionIds: [],
+        truncatedSectionIds: [],
+        droppedSectionIds: [],
+      },
+    };
+
+    const result = await executor(makeInput({ compiledPrompt }));
+
+    const output = result.outputs.writerOutput as Record<string, unknown>;
+    expect(output).toBeDefined();
+    expect(output.generationMode).toBe("llm");
+    expect(output.text).toBe("The tavern door creaks open as the hero steps inside...");
+    expect(output.warnings).toBeUndefined();
+
+    const metadata = output.metadata as Record<string, unknown>;
+    expect(typeof metadata.model).toBe("string");
+    expect(typeof metadata.tokenUsage).toBe("object");
+    expect(typeof metadata.latencyMs).toBe("number");
+  });
+
+  it("generates output with generationMode='llm' when LLM adapter succeeds with assembledContext (deprecated)", async () => {
     const mockAdapter = {
       provider: "mock",
       complete: async (_prompt: string) => ({
@@ -85,7 +131,9 @@ describe("createRpWriterV1Executor", () => {
     expect(output).toBeDefined();
     expect(output.generationMode).toBe("llm");
     expect(output.text).toBe("The tavern door creaks open as the hero steps inside...");
-    expect(output.warnings).toBeUndefined();
+    // Deprecated path should have warnings
+    expect(output.warnings).toBeDefined();
+    expect((output.warnings as string[]).some((w) => w.includes("DEPRECATED"))).toBe(true);
 
     const metadata = output.metadata as Record<string, unknown>;
     expect(typeof metadata.model).toBe("string");

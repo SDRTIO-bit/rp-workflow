@@ -7,8 +7,8 @@
  * Degradation path:
  * 1. LLM available → call LLM
  * 2. LLM succeeds → validate JSON structure → Grounding → output
- * 3. LLM fails or unavailable → Regex fallback → output
- * 4. Regex fails (shouldn't happen) → Empty fallback → output
+ * 3. LLM fails or unavailable → Regex fallback → validate structure → Grounding → output
+ * 4. Regex fails or returns invalid structure → Empty fallback → output
  */
 
 import type { NodeDefinition, NodeExecutor, NodeExecutionInput } from "@awp/workflow-core";
@@ -37,6 +37,8 @@ export interface RpInputParserLlmConfig {
 export interface RpInputParserLlmServices {
   llmAdapter?: RpLlmAdapter;
   config?: RpInputParserLlmConfig;
+  /** Optional regex parser function for fallback. Defaults to regexParseInput. */
+  regexParser?: (rawText: string) => ParsedRpInputV1;
 }
 
 /**
@@ -68,6 +70,7 @@ export const rpInputParserLlmV1Definition: NodeDefinition = {
       label: "Parsed Input",
       dataType: "json",
       direction: "output",
+      schemaId: "rp.parsed-input.v1",
     },
   ],
 };
@@ -220,6 +223,17 @@ function parseLlmResponse(response: string): ParsedRpInputV1 | null {
   try {
     const parsed = JSON.parse(jsonStr);
 
+    // Add default diagnostics if missing (LLM doesn't know about this field)
+    if (!parsed.diagnostics) {
+      parsed.diagnostics = {
+        parserMode: "llm",
+        parseAttempts: 1,
+        removedInvalidEntityIds: [],
+        removedInvalidEntryIds: [],
+        warnings: [],
+      };
+    }
+
     // Validate structure
     const validation = validateParsedRpInputV1(parsed);
     if (!validation.valid) {
@@ -262,21 +276,36 @@ export function createRpInputParserLlmV1Executor(
 
     // Path 1: No LLM adapter → Regex fallback
     if (!services?.llmAdapter) {
-      const regexResult = regexParseInput(pi.rawInput);
-      const candidateEntityIds = pi.candidateEntities.map((c) => c.entityId);
-      const groundingResult = validateAndGround(regexResult, entries, candidateEntityIds);
+      const regexParser = services?.regexParser ?? regexParseInput;
+      try {
+        const regexResult = regexParser(pi.rawInput);
+        // Validate regex result structure
+        const validation = validateParsedRpInputV1(regexResult);
+        if (!validation.valid) {
+          throw new Error(`Regex result validation failed: ${validation.errors.join(", ")}`);
+        }
+        const candidateEntityIds = pi.candidateEntities.map((c) => c.entityId);
+        const groundingResult = validateAndGround(regexResult, entries, candidateEntityIds);
 
-      // Update diagnostics
-      groundingResult.validated.diagnostics = {
-        ...groundingResult.validated.diagnostics,
-        parserMode: "regex-fallback",
-        warnings: [
-          ...groundingResult.validated.diagnostics.warnings,
-          "No LLM adapter configured, using regex fallback",
-        ],
-      };
+        // Update diagnostics
+        groundingResult.validated.diagnostics = {
+          ...groundingResult.validated.diagnostics,
+          parserMode: "regex-fallback",
+          warnings: [
+            ...groundingResult.validated.diagnostics.warnings,
+            "No LLM adapter configured, using regex fallback",
+          ],
+        };
 
-      return { outputs: { parsedInput: groundingResult.validated } };
+        return { outputs: { parsedInput: groundingResult.validated } };
+      } catch (error) {
+        // Regex failed → Empty fallback
+        const regexError = error instanceof Error ? error.message : String(error);
+        const emptyResult = emptyFallback(pi.rawInput, undefined, regexError);
+        const candidateEntityIds = pi.candidateEntities.map((c) => c.entityId);
+        const groundingResult = validateAndGround(emptyResult, entries, candidateEntityIds);
+        return { outputs: { parsedInput: groundingResult.validated } };
+      }
     }
 
     // Path 2: LLM available → Call LLM with retry
@@ -318,22 +347,87 @@ export function createRpInputParserLlmV1Executor(
     }
 
     // Path 2b: LLM failed → Regex fallback
-    const regexResult = regexParseInput(pi.rawInput);
-    const candidateEntityIds = pi.candidateEntities.map((c) => c.entityId);
-    const groundingResult = validateAndGround(regexResult, entries, candidateEntityIds);
+    const regexParser = services?.regexParser ?? regexParseInput;
+    try {
+      const regexResult = regexParser(pi.rawInput);
+      // Validate regex result structure
+      const validation = validateParsedRpInputV1(regexResult);
+      if (!validation.valid) {
+        throw new Error(`Regex result validation failed: ${validation.errors.join(", ")}`);
+      }
+      const candidateEntityIds = pi.candidateEntities.map((c) => c.entityId);
+      const groundingResult = validateAndGround(regexResult, entries, candidateEntityIds);
 
-    // Update diagnostics with LLM failure info
-    groundingResult.validated.diagnostics = {
-      ...groundingResult.validated.diagnostics,
-      parserMode: "regex-fallback",
-      model: services.llmAdapter.provider,
-      parseAttempts,
-      warnings: [
-        ...groundingResult.validated.diagnostics.warnings,
-        `LLM failed after ${parseAttempts} attempts: ${lastError?.message}`,
-      ],
-    };
+      // Update diagnostics with LLM failure info
+      groundingResult.validated.diagnostics = {
+        ...groundingResult.validated.diagnostics,
+        parserMode: "regex-fallback",
+        model: services.llmAdapter.provider,
+        parseAttempts,
+        warnings: [
+          ...groundingResult.validated.diagnostics.warnings,
+          `LLM failed after ${parseAttempts} attempts: ${lastError?.message}`,
+        ],
+      };
 
-    return { outputs: { parsedInput: groundingResult.validated } };
+      return { outputs: { parsedInput: groundingResult.validated } };
+    } catch (error) {
+      // Regex failed → Empty fallback
+      const regexError = error instanceof Error ? error.message : String(error);
+      const llmErrorMessage = lastError?.message ?? "Unknown LLM error";
+      const emptyResult = emptyFallback(pi.rawInput, llmErrorMessage, regexError);
+      const candidateEntityIds = pi.candidateEntities.map((c) => c.entityId);
+      const groundingResult = validateAndGround(emptyResult, entries, candidateEntityIds);
+      groundingResult.validated.diagnostics = {
+        ...groundingResult.validated.diagnostics,
+        parserMode: "empty-fallback",
+        model: services.llmAdapter.provider,
+        parseAttempts,
+        warnings: [
+          `LLM failed after ${parseAttempts} attempts: ${llmErrorMessage}`,
+          `Regex failed: ${regexError}`,
+        ],
+      };
+      return { outputs: { parsedInput: groundingResult.validated } };
+    }
+  };
+}
+
+/**
+ * Empty fallback parser - returns minimal ParsedRpInputV1 with rawText preserved.
+ * Used when both LLM and Regex fail.
+ */
+function emptyFallback(rawText: string, llmError?: string, regexError?: string): ParsedRpInputV1 {
+  const warnings: string[] = [];
+  if (llmError) {
+    warnings.push(`LLM failed: ${llmError}`);
+  }
+  if (regexError) {
+    warnings.push(`Regex failed: ${regexError}`);
+  }
+
+  return {
+    version: "parsed-rp-input-v1",
+    rawText,
+    mentions: [],
+    references: [],
+    dialogues: [],
+    actions: [],
+    intents: [],
+    historicalReferences: [],
+    relationshipSignals: [],
+    unresolvedReferences: [
+      {
+        text: rawText,
+        reason: `Both LLM and Regex parsing failed. ${warnings.join("; ")}`,
+      },
+    ],
+    diagnostics: {
+      parserMode: "empty-fallback",
+      parseAttempts: 0,
+      removedInvalidEntityIds: [],
+      removedInvalidEntryIds: [],
+      warnings,
+    },
   };
 }

@@ -186,6 +186,18 @@ export interface LoreEntryResult extends LoreEntry {
   matchedBy: string[];
 }
 
+// ============ Recent Messages ============
+
+export interface RecentMessage {
+  messageId: string;
+  sessionId: string;
+  worldId: string;
+  turnId: string;
+  role: "user" | "assistant";
+  text: string;
+  timestamp: string;
+}
+
 // ============ Assembled Context ============
 
 export interface AssembledContext {

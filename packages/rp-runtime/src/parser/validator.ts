@@ -81,13 +81,13 @@ function validateMention(obj: unknown, errors: string[]): void {
     errors.push("mention.text must be a string");
   }
 
-  // entityId is optional but must be string if present
-  if (obj.entityId !== undefined && !isString(obj.entityId)) {
+  // entityId is optional but must be string if present (null treated as absent)
+  if (obj.entityId != null && !isString(obj.entityId)) {
     errors.push("mention.entityId must be a string");
   }
 
-  // entryId is optional but must be string if present
-  if (obj.entryId !== undefined && !isString(obj.entryId)) {
+  // entryId is optional but must be string if present (null treated as absent)
+  if (obj.entryId != null && !isString(obj.entryId)) {
     errors.push("mention.entryId must be a string");
   }
 
@@ -113,8 +113,8 @@ function validateReference(obj: unknown, errors: string[]): void {
     errors.push("reference.text must be a string");
   }
 
-  // resolvedEntityId is optional but must be string if present
-  if (obj.resolvedEntityId !== undefined && !isString(obj.resolvedEntityId)) {
+  // resolvedEntityId is optional but must be string if present (null treated as absent)
+  if (obj.resolvedEntityId != null && !isString(obj.resolvedEntityId)) {
     errors.push("reference.resolvedEntityId must be a string");
   }
 
@@ -196,8 +196,8 @@ function validateAction(obj: unknown, errors: string[]): void {
     errors.push("action.locationEntityIds must contain only strings");
   }
 
-  // purpose is optional but must be string if present
-  if (obj.purpose !== undefined && !isString(obj.purpose)) {
+  // purpose is optional but must be string if present (null treated as absent)
+  if (obj.purpose != null && !isString(obj.purpose)) {
     errors.push("action.purpose must be a string");
   }
 }
@@ -237,8 +237,8 @@ function validateHistoricalReference(obj: unknown, errors: string[]): void {
     errors.push("historicalReference.text must be a string");
   }
 
-  // entryId is optional but must be string if present
-  if (obj.entryId !== undefined && !isString(obj.entryId)) {
+  // entryId is optional but must be string if present (null treated as absent)
+  if (obj.entryId != null && !isString(obj.entryId)) {
     errors.push("historicalReference.entryId must be a string");
   }
 
@@ -264,7 +264,8 @@ function validateRelationshipSignal(obj: unknown, errors: string[]): void {
     errors.push("relationshipSignal.subjectEntityId must be a string");
   }
 
-  if (!isString(obj.objectEntityId)) {
+  // objectEntityId is optional but must be string if present (null treated as absent)
+  if (obj.objectEntityId != null && !isString(obj.objectEntityId)) {
     errors.push("relationshipSignal.objectEntityId must be a string");
   }
 
@@ -307,8 +308,8 @@ function validateDiagnostics(obj: unknown, errors: string[]): void {
     errors.push("diagnostics.parserMode must be 'llm', 'regex-fallback', or 'empty-fallback'");
   }
 
-  // model is optional but must be string if present
-  if (obj.model !== undefined && !isString(obj.model)) {
+  // model is optional but must be string if present (null treated as absent)
+  if (obj.model != null && !isString(obj.model)) {
     errors.push("diagnostics.model must be a string");
   }
 
