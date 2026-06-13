@@ -21,7 +21,33 @@ import {
   createRpTrackerUpdateV1Executor,
   rpMemoryCommitV1Definition,
   createRpMemoryCommitV1Executor,
+  rpRecentMessagesV1Definition,
+  createRpRecentMessagesV1Executor,
+  rpPresetResolverV1Definition,
+  createRpPresetResolverV1Executor,
+  rpPromptCompilerV1Definition,
+  createRpPromptCompilerV1Executor,
+  rpOutputComposerV1Definition,
+  createRpOutputComposerV1Executor,
+  rpFormatValidatorV1Definition,
+  createRpFormatValidatorV1Executor,
 } from "./nodes/index.js";
+import {
+  rpWorldbookRetrieverV1Definition,
+  createRpWorldbookRetrieverV1Executor,
+} from "./worldbook/rpWorldbookRetrieverV1.js";
+import {
+  rpInputParserLlmV1Definition,
+  createRpInputParserLlmV1Executor,
+} from "./parser/rpInputParserLlmV1.js";
+import {
+  rpSemanticExpanderV1Definition,
+  createRpSemanticExpanderV1Executor,
+} from "./parser/rpSemanticExpanderV1.js";
+import {
+  rpParserInputBuilderV1Definition,
+  createRpParserInputBuilderV1Executor,
+} from "./parser/rpParserInputBuilderV1.js";
 
 export interface RpRuntimeRegistration {
   catalog: NodeCatalog;
@@ -49,6 +75,15 @@ export function registerRpRuntime(services: RpRuntimeServices): RpRuntimeRegistr
     rpChapterSummaryV1: rpChapterSummaryV1Definition,
     rpTrackerUpdateV1: rpTrackerUpdateV1Definition,
     rpMemoryCommitV1: rpMemoryCommitV1Definition,
+    rpRecentMessagesV1: rpRecentMessagesV1Definition,
+    rpPresetResolverV1: rpPresetResolverV1Definition,
+    rpPromptCompilerV1: rpPromptCompilerV1Definition,
+    rpOutputComposerV1: rpOutputComposerV1Definition,
+    rpFormatValidatorV1: rpFormatValidatorV1Definition,
+    rpWorldbookRetrieverV1: rpWorldbookRetrieverV1Definition,
+    rpInputParserLlmV1: rpInputParserLlmV1Definition,
+    rpSemanticExpanderV1: rpSemanticExpanderV1Definition,
+    rpParserInputBuilderV1: rpParserInputBuilderV1Definition,
   };
 
   const executors: Record<string, NodeExecutor> = {
@@ -71,6 +106,17 @@ export function registerRpRuntime(services: RpRuntimeServices): RpRuntimeRegistr
     rpMemoryCommitV1: createRpMemoryCommitV1Executor({
       stores: services.stores,
     }),
+    rpRecentMessagesV1: createRpRecentMessagesV1Executor(),
+    rpPresetResolverV1: createRpPresetResolverV1Executor(),
+    rpPromptCompilerV1: createRpPromptCompilerV1Executor(),
+    rpOutputComposerV1: createRpOutputComposerV1Executor(),
+    rpFormatValidatorV1: createRpFormatValidatorV1Executor(),
+    rpWorldbookRetrieverV1: createRpWorldbookRetrieverV1Executor(),
+    rpInputParserLlmV1: createRpInputParserLlmV1Executor({
+      llmAdapter: services.llmAdapter,
+    }),
+    rpSemanticExpanderV1: createRpSemanticExpanderV1Executor(),
+    rpParserInputBuilderV1: createRpParserInputBuilderV1Executor(),
   };
 
   return {

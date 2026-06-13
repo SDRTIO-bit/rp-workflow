@@ -1,0 +1,266 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-13T00:00:00.000Z",
+  "workflow": {
+    "id": "rp-semantic-retrieval-v1",
+    "name": "RP Semantic Retrieval Workflow",
+    "version": 1,
+    "description": "Full RP workflow with B-2.8 semantic parsing: userInput -> worldbookRetriever -> parserInputBuilder -> llmParser -> semanticExpander -> assembler -> writer -> textOutput",
+    "nodes": [
+      {
+        "id": "input",
+        "type": "userInput",
+        "position": { "x": 100, "y": 300 },
+        "config": {
+          "text": "我没有立刻接过阿绫递来的银铃，而是盯着铃身上那道被火烧过的白塔纹章。三年前钟楼失火时，沈砚也带着同样的东西。楼下忽然传来巡夜司的敲门声。我压低声音问她："教会的人为什么会知道我们在这里？"说完，我把失踪名单塞进外套，示意她从地下水道离开，自己则走向门口拖延时间。"
+        }
+      },
+      {
+        "id": "worldbookRetriever",
+        "type": "rpWorldbookRetrieverV1",
+        "position": { "x": 400, "y": 150 },
+        "config": {}
+      },
+      {
+        "id": "parserInputBuilder",
+        "type": "rpParserInputBuilderV1",
+        "position": { "x": 400, "y": 450 },
+        "config": {}
+      },
+      {
+        "id": "llmParser",
+        "type": "rpInputParserLlmV1",
+        "position": { "x": 700, "y": 300 },
+        "config": {
+          "temperature": 0.1,
+          "maxOutputTokens": 1400,
+          "maxParseAttempts": 2
+        }
+      },
+      {
+        "id": "semanticExpander",
+        "type": "rpSemanticExpanderV1",
+        "position": { "x": 1000, "y": 300 },
+        "config": {
+          "maxSemanticEntries": 10
+        }
+      },
+      {
+        "id": "timeline",
+        "type": "rpTimelineQueryV1",
+        "position": { "x": 1300, "y": 150 },
+        "config": {}
+      },
+      {
+        "id": "lore",
+        "type": "rpLoreRetrieverV1",
+        "position": { "x": 1300, "y": 450 },
+        "config": {}
+      },
+      {
+        "id": "recentMessages",
+        "type": "rpRecentMessagesV1",
+        "position": { "x": 1300, "y": 600 },
+        "config": { "messages": [] }
+      },
+      {
+        "id": "assembler",
+        "type": "rpContextAssemblerV1",
+        "position": { "x": 1600, "y": 300 },
+        "config": {}
+      },
+      {
+        "id": "presetResolver",
+        "type": "rpPresetResolverV1",
+        "position": { "x": 1900, "y": 150 },
+        "config": {
+          "preset": {
+            "version": "rp-preset-v1",
+            "id": "rp-default-v1",
+            "name": "默认 RP 写作",
+            "model": { "temperature": 0.8, "maxOutputTokens": 2048 },
+            "prompt": {
+              "coreRules": [
+                { "id": "core-no-player-control", "content": "1. 不替玩家决定新的行动、对白或心理。只有玩家能控制自己的角色。", "priority": 100 },
+                { "id": "core-cognitive-boundary", "content": "2. 保持角色的认知边界。角色不能知道他们没有亲身经历或被告知的信息。", "priority": 100 },
+                { "id": "core-no-leak-secrets", "content": "3. 不以旁白说明方式直接泄露隐藏世界书或 Runtime 内部信息。秘密可以影响角色行为，但不能直接陈述。", "priority": 100 },
+                { "id": "core-continuity", "content": "4. 保持地点、时间、人物和动作的连续性。不要瞬移角色或跳过逻辑后果。", "priority": 100 },
+                { "id": "core-rp-visible-only", "content": "5. 只输出玩家可见的角色扮演内容。不输出状态栏、JSON、分析或元评论。", "priority": 100 }
+              ],
+              "styleRules": [
+                { "id": "style-show-dont-tell", "content": "通过动作、肢体语言和对白来展示情感，而不是直接陈述。", "priority": 80 },
+                { "id": "style-sensory-detail", "content": "包含感官细节（视觉、听觉、嗅觉、触觉）来增强场景沉浸感。", "priority": 70 },
+                { "id": "style-voice-consistency", "content": "在整个回复中保持角色声音和说话模式的一致性。", "priority": 75 }
+              ],
+              "additionalInstructions": [
+                { "id": "inst-respond-to-actions", "content": "回应玩家最近的行动和对白。确认他们做了什么、说了什么或观察到了什么。", "priority": 90 },
+                { "id": "inst-npc-reactions", "content": "提供与 NPC 性格、知识和当前情绪状态一致的反应。", "priority": 85 },
+                { "id": "inst-scene-ending", "content": "在自然的断点结束回复，引导玩家进行下一步行动。", "priority": 60 }
+              ]
+            },
+            "outputContract": {
+              "version": "output-contract-v1",
+              "mode": "narrative_only",
+              "slots": [{ "id": "narrative", "required": true, "order": 10, "producer": "writer" }],
+              "forbiddenPatterns": ["```json", "<analysis>", "思考过程：", "[Status:", "```yaml"],
+              "allowExtraText": false
+            },
+            "retryPolicy": { "maxWriterRetries": 2, "maxFormatRepairs": 1 }
+          }
+        }
+      },
+      {
+        "id": "promptCompiler",
+        "type": "rpPromptCompilerV1",
+        "position": { "x": 1900, "y": 300 },
+        "config": {}
+      },
+      {
+        "id": "writer",
+        "type": "rpWriterV1",
+        "position": { "x": 2200, "y": 300 },
+        "config": {}
+      },
+      {
+        "id": "outputComposer",
+        "type": "rpOutputComposerV1",
+        "position": { "x": 2500, "y": 300 },
+        "config": {}
+      },
+      {
+        "id": "formatValidator",
+        "type": "rpFormatValidatorV1",
+        "position": { "x": 2800, "y": 300 },
+        "config": {}
+      },
+      {
+        "id": "output",
+        "type": "textOutput",
+        "position": { "x": 3100, "y": 300 },
+        "config": {}
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "worldbookRetriever",
+        "targetPort": "rawInput"
+      },
+      {
+        "id": "e2",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "parserInputBuilder",
+        "targetPort": "rawInput"
+      },
+      {
+        "id": "e3",
+        "source": "worldbookRetriever",
+        "sourcePort": "retrievalResult",
+        "target": "parserInputBuilder",
+        "targetPort": "retrievalResult"
+      },
+      {
+        "id": "e4",
+        "source": "worldbookRetriever",
+        "sourcePort": "retrievalResult",
+        "target": "semanticExpander",
+        "targetPort": "deterministicResult"
+      },
+      {
+        "id": "e5",
+        "source": "parserInputBuilder",
+        "sourcePort": "parserInput",
+        "target": "llmParser",
+        "targetPort": "parserInput"
+      },
+      {
+        "id": "e6",
+        "source": "worldbookRetriever",
+        "sourcePort": "retrievalResult",
+        "target": "llmParser",
+        "targetPort": "worldbookEntries"
+      },
+      {
+        "id": "e7",
+        "source": "llmParser",
+        "sourcePort": "parsedInput",
+        "target": "semanticExpander",
+        "targetPort": "parsedInput"
+      },
+      {
+        "id": "e8",
+        "source": "semanticExpander",
+        "sourcePort": "mergedResult",
+        "target": "assembler",
+        "targetPort": "loreContext"
+      },
+      {
+        "id": "e9",
+        "source": "timeline",
+        "sourcePort": "timelineContext",
+        "target": "assembler",
+        "targetPort": "timelineContext"
+      },
+      {
+        "id": "e10",
+        "source": "recentMessages",
+        "sourcePort": "recentMessages",
+        "target": "assembler",
+        "targetPort": "recentMessages"
+      },
+      {
+        "id": "e11",
+        "source": "llmParser",
+        "sourcePort": "parsedInput",
+        "target": "assembler",
+        "targetPort": "parsedInput"
+      },
+      {
+        "id": "e12",
+        "source": "assembler",
+        "sourcePort": "promptDocument",
+        "target": "promptCompiler",
+        "targetPort": "promptDocument"
+      },
+      {
+        "id": "e13",
+        "source": "presetResolver",
+        "sourcePort": "resolvedPreset",
+        "target": "promptCompiler",
+        "targetPort": "resolvedPreset"
+      },
+      {
+        "id": "e14",
+        "source": "promptCompiler",
+        "sourcePort": "compiledPrompt",
+        "target": "writer",
+        "targetPort": "compiledPrompt"
+      },
+      {
+        "id": "e15",
+        "source": "writer",
+        "sourcePort": "narrative",
+        "target": "outputComposer",
+        "targetPort": "writerContent"
+      },
+      {
+        "id": "e16",
+        "source": "outputComposer",
+        "sourcePort": "composedOutput",
+        "target": "formatValidator",
+        "targetPort": "composedOutput"
+      },
+      {
+        "id": "e17",
+        "source": "outputComposer",
+        "sourcePort": "text",
+        "target": "output",
+        "targetPort": "text"
+      }
+    ]
+  }
+}

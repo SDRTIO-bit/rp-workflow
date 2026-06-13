@@ -43,7 +43,16 @@ describe("registerRpRuntime", () => {
     expect(catalogKeys).toContain("rpChapterSummaryV1");
     expect(catalogKeys).toContain("rpTrackerUpdateV1");
     expect(catalogKeys).toContain("rpMemoryCommitV1");
-    expect(catalogKeys).toHaveLength(8);
+    expect(catalogKeys).toContain("rpRecentMessagesV1");
+    expect(catalogKeys).toContain("rpPresetResolverV1");
+    expect(catalogKeys).toContain("rpPromptCompilerV1");
+    expect(catalogKeys).toContain("rpOutputComposerV1");
+    expect(catalogKeys).toContain("rpFormatValidatorV1");
+    expect(catalogKeys).toContain("rpWorldbookRetrieverV1");
+    expect(catalogKeys).toContain("rpInputParserLlmV1");
+    expect(catalogKeys).toContain("rpSemanticExpanderV1");
+    expect(catalogKeys).toContain("rpParserInputBuilderV1");
+    expect(catalogKeys).toHaveLength(17);
 
     const executorKeys = Object.keys(registration.executors);
     expect(executorKeys).toContain("rpInputParserV1");
@@ -54,7 +63,16 @@ describe("registerRpRuntime", () => {
     expect(executorKeys).toContain("rpChapterSummaryV1");
     expect(executorKeys).toContain("rpTrackerUpdateV1");
     expect(executorKeys).toContain("rpMemoryCommitV1");
-    expect(executorKeys).toHaveLength(8);
+    expect(executorKeys).toContain("rpRecentMessagesV1");
+    expect(executorKeys).toContain("rpPresetResolverV1");
+    expect(executorKeys).toContain("rpPromptCompilerV1");
+    expect(executorKeys).toContain("rpOutputComposerV1");
+    expect(executorKeys).toContain("rpFormatValidatorV1");
+    expect(executorKeys).toContain("rpWorldbookRetrieverV1");
+    expect(executorKeys).toContain("rpInputParserLlmV1");
+    expect(executorKeys).toContain("rpSemanticExpanderV1");
+    expect(executorKeys).toContain("rpParserInputBuilderV1");
+    expect(executorKeys).toHaveLength(17);
   });
 
   it("returns all schema validators", () => {
