@@ -5,6 +5,7 @@
     { "path": "./packages/memory-core" },
     { "path": "./packages/agent-runtime" },
     { "path": "./packages/workflow-core" },
+    { "path": "./packages/workflow-persistence" },
     { "path": "./packages/db" },
     { "path": "./packages/rp-runtime" },
     { "path": "./apps/web" },

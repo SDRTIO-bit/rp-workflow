@@ -191,7 +191,7 @@ describe("schemaId compatibility", () => {
     expect(areTypesCompatible("json", "json")).toBe(true);
     expect(areTypesCompatible("text", "context")).toBe(true);
     expect(areTypesCompatible("draft", "final_text")).toBe(true);
-    expect(areTypesCompatible("text", "draft")).toBe(false);
+    expect(areTypesCompatible("text", "draft")).toBe(true);
   });
 
   it("reports schemaId in validation error messages", () => {
@@ -406,8 +406,7 @@ describe("Phase I-2.1: Type compatibility regression", () => {
     expect(areTypesCompatible("draft", "json")).toBe(true);
   });
 
-  it("text can connect to draft (existing compatibility via text:context → json → draft? No)", () => {
-    // text → draft is NOT directly allowed
-    expect(areTypesCompatible("text", "draft")).toBe(false);
+  it("text can connect to draft (now allowed for textOutput compatibility)", () => {
+    expect(areTypesCompatible("text", "draft")).toBe(true);
   });
 });

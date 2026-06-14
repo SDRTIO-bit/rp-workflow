@@ -525,6 +525,7 @@ export const areTypesCompatible = (
     "user_input:context",
     "draft:json",
     "text:context",
+    "text:draft",
     "search_result:context",
     "analysis:context",
     "draft:context",
