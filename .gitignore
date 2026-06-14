@@ -7,3 +7,4 @@ artifacts
 data
 apps/data
 .omo/run-continuation/
+.claude/
