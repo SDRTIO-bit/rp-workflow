@@ -63,7 +63,6 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     quickAdd: true,
     panelLayout: "agent",
     defaultConfig: {
-      model: "deepseek-v4-flash",
       systemPrompt: "根据上游信息完成当前 Agent 任务。",
       skills: [],
       plugins: [],
@@ -73,8 +72,12 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       {
         key: "model",
         label: { zh: "模型", en: "Model" },
-        kind: "select",
-        options: ["deepseek-v4-flash", "deepseek-v4-pro", "deepseek-reasoner", "mock-pro"],
+        kind: "text",
+        placeholder: { zh: "例如: deepseek-v4-flash", en: "e.g. deepseek-v4-flash" },
+        help: {
+          zh: "模型名称由 agent-runtime 的 Provider 配置管理",
+          en: "Model name managed by agent-runtime provider config",
+        },
       },
       { key: "systemPrompt", label: { zh: "系统提示词", en: "System prompt" }, kind: "textarea" },
       { key: "skills", label: { zh: "可见 skill", en: "Skills" }, kind: "tags" },
@@ -126,6 +129,34 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
       },
     ],
     ports: [input("text", "Text", "draft"), output("final", "Final", "final_text")],
+  },
+  resourceSource: {
+    type: "resourceSource",
+    label: "Resource Source",
+    labelI18n: { zh: "资源源", en: "Resource Source" },
+    category: "core",
+    description:
+      "Provides data from an external resource identified by resourceRef. The actual data is bound at runtime by a resource resolver.",
+    descriptionI18n: {
+      zh: "从 resourceRef 标识的外部资源提供数据。实际数据由运行时资源解析器绑定。",
+      en: "Provides data from an external resource identified by resourceRef. The actual data is bound at runtime by a resource resolver.",
+    },
+    color: "#0ea5e9",
+    preview: "Binds external data (worldbook, config, fixtures) into the workflow graph.",
+    previewI18n: {
+      zh: "将外部数据（世界书、配置、测试数据）绑定到工作流图中。",
+      en: "Binds external data (worldbook, config, fixtures) into the workflow graph.",
+    },
+    defaultConfig: { resourceRef: "" },
+    configFields: [
+      {
+        key: "resourceRef",
+        label: { zh: "资源引用", en: "Resource Ref" },
+        kind: "text",
+        placeholder: { zh: "例如：worldbook:b29-test-world", en: "e.g. worldbook:b29-test-world" },
+      },
+    ],
+    ports: [output("entries", "Entries", "json")],
   },
   debugLog: {
     type: "debugLog",

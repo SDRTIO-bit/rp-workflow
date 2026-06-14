@@ -6,3 +6,4 @@ coverage
 artifacts
 data
 apps/data
+.omo/run-continuation/
