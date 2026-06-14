@@ -1,0 +1,39 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-14T00:00:00.000Z",
+  "workflow": {
+    "id": "agent-stateless-v1",
+    "name": "Stateless Agent Workflow",
+    "version": 1,
+    "description": "Minimal stateless agent: userInput -> agentV2 -> textOutput. No session load/commit.",
+    "nodes": [
+      {
+        "id": "input",
+        "type": "userInput",
+        "position": { "x": 100, "y": 200 },
+        "config": { "text": "" }
+      },
+      {
+        "id": "agent",
+        "type": "agentV2",
+        "position": { "x": 400, "y": 200 },
+        "config": {
+          "systemPrompt": "You are a helpful assistant.",
+          "model": "mock-model",
+          "sessionConfig": { "mode": "stateless" }
+        }
+      },
+      {
+        "id": "output",
+        "type": "textOutput",
+        "position": { "x": 700, "y": 200 },
+        "config": {}
+      }
+    ],
+    "edges": [
+      { "id": "e1", "source": "input", "sourcePort": "text", "target": "agent", "targetPort": "instruction" },
+      { "id": "e2", "source": "agent", "sourcePort": "result", "target": "output", "targetPort": "text" }
+    ]
+  }
+}

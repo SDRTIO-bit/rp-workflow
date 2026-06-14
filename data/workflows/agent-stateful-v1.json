@@ -1,0 +1,69 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-14T00:00:00.000Z",
+  "workflow": {
+    "id": "agent-stateful-v1",
+    "name": "Stateful Agent Workflow",
+    "version": 1,
+    "description": "Stateful agent with session memory: sessionKey/input -> agentSessionLoadV1 -> agentV2 -> agentSessionCommitV1 -> textOutput.",
+    "nodes": [
+      {
+        "id": "sessionKeyInput",
+        "type": "sessionKeyProvider",
+        "position": { "x": 100, "y": 100 },
+        "config": {
+          "tenantId": "demo",
+          "workflowInstanceId": "wf-demo",
+          "conversationId": "conv-demo",
+          "agentNodeId": "agent-1"
+        }
+      },
+      {
+        "id": "input",
+        "type": "userInput",
+        "position": { "x": 100, "y": 300 },
+        "config": { "text": "" }
+      },
+      {
+        "id": "sessionLoad",
+        "type": "agentSessionLoadV1",
+        "position": { "x": 400, "y": 100 },
+        "config": {
+          "sessionConfig": { "mode": "stateful", "maxTurns": 20, "maxTokens": 16000 }
+        }
+      },
+      {
+        "id": "agent",
+        "type": "agentV2",
+        "position": { "x": 700, "y": 200 },
+        "config": {
+          "systemPrompt": "You are a helpful assistant with memory.",
+          "model": "mock-model",
+          "sessionConfig": { "mode": "stateful", "maxTurns": 20, "maxTokens": 16000 }
+        }
+      },
+      {
+        "id": "sessionCommit",
+        "type": "agentSessionCommitV1",
+        "position": { "x": 1000, "y": 100 },
+        "config": {
+          "sessionConfig": { "mode": "stateful" }
+        }
+      },
+      {
+        "id": "output",
+        "type": "textOutput",
+        "position": { "x": 1000, "y": 300 },
+        "config": {}
+      }
+    ],
+    "edges": [
+      { "id": "e_key_load", "source": "sessionKeyInput", "sourcePort": "sessionKey", "target": "sessionLoad", "targetPort": "sessionKey" },
+      { "id": "e_load_agent", "source": "sessionLoad", "sourcePort": "sessionContext", "target": "agent", "targetPort": "sessionContext" },
+      { "id": "e_input_agent", "source": "input", "sourcePort": "text", "target": "agent", "targetPort": "instruction" },
+      { "id": "e_agent_delta", "source": "agent", "sourcePort": "sessionDelta", "target": "sessionCommit", "targetPort": "sessionDelta" },
+      { "id": "e_agent_output", "source": "agent", "sourcePort": "result", "target": "output", "targetPort": "text" }
+    ]
+  }
+}

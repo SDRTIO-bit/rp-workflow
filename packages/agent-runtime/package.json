@@ -9,7 +9,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@awp/plugin-sdk": "*"
+    "@awp/plugin-sdk": "*",
+    "@awp/workflow-core": "*"
   },
   "devDependencies": {
     "vitest": "^3.2.2"

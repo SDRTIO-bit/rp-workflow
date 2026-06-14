@@ -8,5 +8,5 @@
     "rootDir": "src"
   },
   "include": ["src"],
-  "references": [{ "path": "../plugin-sdk" }]
+  "references": [{ "path": "../plugin-sdk" }, { "path": "../workflow-core" }]
 }
