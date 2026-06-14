@@ -1,0 +1,234 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 2,
+  "exportedAt": "2026-06-14T00:00:00.000Z",
+  "workflow": {
+    "id": "rp-b29-semantic-context-v1",
+    "name": "RP B-2.9 Semantic Context Workflow",
+    "version": 1,
+    "description": "B-2.9: userInput -> worldbookRetriever -> parserInputBuilder -> llmParser -> semanticExpander -> contextAssemblerV2 -> promptCompiler -> writer -> textOutput. Worldbook data loaded via resource binding (worldbookSource).",
+    "resources": {
+      "worldbook:b29-test-world": {
+        "resourceType": "worldbook",
+        "description": "B-2.9 test worldbook entries (wugangWorldbook)"
+      }
+    },
+    "nodes": [
+      {
+        "id": "input",
+        "type": "userInput",
+        "position": { "x": 100, "y": 300 },
+        "config": {
+          "text": "\u6211\u6ca1\u6709\u7acb\u523b\u63a5\u8fc7\u963f\u7eeb\u9012\u6765\u7684\u94f6\u94c3\uff0c\u800c\u662f\u76ef\u7740\u94c3\u8eab\u4e0a\u90a3\u9053\u88ab\u706b\u70e7\u8fc7\u7684\u767d\u5854\u7eb9\u7ae0\u3002\u4e09\u5e74\u524d\u949f\u697c\u5931\u706b\u65f6\uff0c\u6c88\u781a\u4e5f\u5e26\u7740\u540c\u6837\u7684\u4e1c\u897f\u3002\u697c\u4e0b\u5ffd\u7136\u4f20\u6765\u5de1\u591c\u53f8\u7684\u6572\u95e8\u58f0\u3002\u6211\u538b\u4f4e\u58f0\u97f3\u95ee\u5979\uff1a\u201c\u6559\u4f1a\u7684\u4eba\u4e3a\u4ec0\u4e48\u4f1a\u77e5\u9053\u6211\u4eec\u5728\u8fd9\u91cc\uff1f\u201d\u8bf4\u5b8c\uff0c\u6211\u628a\u5931\u8e2a\u540d\u5355\u585e\u8fdb\u5916\u5957\uff0c\u793a\u610f\u5979\u4ece\u5730\u4e0b\u6c34\u9053\u79bb\u5f00\uff0c\u81ea\u5df1\u5219\u8d70\u5411\u95e8\u53e3\u62d6\u5ef6\u65f6\u95f4\u3002"
+        }
+      },
+      {
+        "id": "worldbookSource",
+        "type": "resourceSource",
+        "position": { "x": 100, "y": 100 },
+        "config": {
+          "resourceRef": "worldbook:b29-test-world"
+        }
+      },
+      {
+        "id": "worldbookRetriever",
+        "type": "rpWorldbookRetrieverV1",
+        "position": { "x": 400, "y": 150 },
+        "config": {}
+      },
+      {
+        "id": "parserInputBuilder",
+        "type": "rpParserInputBuilderV1",
+        "position": { "x": 400, "y": 450 },
+        "config": {}
+      },
+      {
+        "id": "llmParser",
+        "type": "rpInputParserLlmV1",
+        "position": { "x": 700, "y": 300 },
+        "config": {
+          "temperature": 0.1,
+          "maxOutputTokens": 1400,
+          "maxParseAttempts": 2
+        }
+      },
+      {
+        "id": "semanticExpander",
+        "type": "rpSemanticExpanderV1",
+        "position": { "x": 1000, "y": 300 },
+        "config": {
+          "maxSemanticEntries": 10
+        }
+      },
+      {
+        "id": "assemblerV2",
+        "type": "rpContextAssemblerV2",
+        "position": { "x": 1300, "y": 300 },
+        "config": {}
+      },
+      {
+        "id": "presetResolver",
+        "type": "rpPresetResolverV1",
+        "position": { "x": 1600, "y": 150 },
+        "config": {
+          "preset": {
+            "version": "rp-preset-v1",
+            "id": "rp-default-v1",
+            "name": "\u9ed8\u8ba4 RP \u5199\u4f5c",
+            "model": { "temperature": 0.8, "maxOutputTokens": 2048 },
+            "prompt": {
+              "coreRules": [
+                { "id": "core-no-player-control", "content": "\u4e0d\u66ff\u73a9\u5bb6\u51b3\u5b9a", "priority": 100 },
+                { "id": "core-continuity", "content": "\u4fdd\u6301\u8fde\u7eed\u6027", "priority": 100 }
+              ],
+              "styleRules": [
+                { "id": "style-show", "content": "\u901a\u8fc7\u52a8\u4f5c\u5c55\u793a\u60c5\u611f", "priority": 80 }
+              ],
+              "additionalInstructions": [
+                { "id": "inst-end", "content": "\u5728\u81ea\u7136\u65ad\u70b9\u7ed3\u675f", "priority": 60 }
+              ]
+            },
+            "outputContract": {
+              "version": "output-contract-v1",
+              "mode": "narrative_only",
+              "slots": [{ "id": "narrative", "required": true, "order": 10, "producer": "writer" }],
+              "allowExtraText": false
+            }
+          }
+        }
+      },
+      {
+        "id": "promptCompiler",
+        "type": "rpPromptCompilerV1",
+        "position": { "x": 1600, "y": 300 },
+        "config": {}
+      },
+      {
+        "id": "writer",
+        "type": "rpWriterV1",
+        "position": { "x": 1900, "y": 300 },
+        "config": {}
+      },
+      {
+        "id": "output",
+        "type": "textOutput",
+        "position": { "x": 2200, "y": 300 },
+        "config": {}
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_wb_src",
+        "source": "worldbookSource",
+        "sourcePort": "entries",
+        "target": "worldbookRetriever",
+        "targetPort": "worldbookEntries"
+      },
+      {
+        "id": "e_wb_pib",
+        "source": "worldbookSource",
+        "sourcePort": "entries",
+        "target": "parserInputBuilder",
+        "targetPort": "worldbookEntries"
+      },
+      {
+        "id": "e_wb_llm",
+        "source": "worldbookSource",
+        "sourcePort": "entries",
+        "target": "llmParser",
+        "targetPort": "worldbookEntries"
+      },
+      {
+        "id": "e_wb_se",
+        "source": "worldbookSource",
+        "sourcePort": "entries",
+        "target": "semanticExpander",
+        "targetPort": "worldbookEntries"
+      },
+      {
+        "id": "e1",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "worldbookRetriever",
+        "targetPort": "rawInput"
+      },
+      {
+        "id": "e2",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "parserInputBuilder",
+        "targetPort": "rawInput"
+      },
+      {
+        "id": "e3",
+        "source": "worldbookRetriever",
+        "sourcePort": "retrievalResult",
+        "target": "parserInputBuilder",
+        "targetPort": "retrievalResult"
+      },
+      {
+        "id": "e4",
+        "source": "worldbookRetriever",
+        "sourcePort": "retrievalResult",
+        "target": "semanticExpander",
+        "targetPort": "deterministicResult"
+      },
+      {
+        "id": "e5",
+        "source": "parserInputBuilder",
+        "sourcePort": "parserInput",
+        "target": "llmParser",
+        "targetPort": "parserInput"
+      },
+      {
+        "id": "e6",
+        "source": "llmParser",
+        "sourcePort": "parsedInput",
+        "target": "semanticExpander",
+        "targetPort": "parsedInput"
+      },
+      {
+        "id": "e7",
+        "source": "llmParser",
+        "sourcePort": "parsedInput",
+        "target": "assemblerV2",
+        "targetPort": "parsedRpInput"
+      },
+      {
+        "id": "e8",
+        "source": "semanticExpander",
+        "sourcePort": "mergedResult",
+        "target": "assemblerV2",
+        "targetPort": "worldbookRetrieval"
+      },
+      {
+        "id": "e9",
+        "source": "assemblerV2",
+        "sourcePort": "promptDocument",
+        "target": "promptCompiler",
+        "targetPort": "promptDocument"
+      },
+      {
+        "id": "e10",
+        "source": "presetResolver",
+        "sourcePort": "resolvedPreset",
+        "target": "promptCompiler",
+        "targetPort": "resolvedPreset"
+      },
+      {
+        "id": "e11",
+        "source": "promptCompiler",
+        "sourcePort": "compiledPrompt",
+        "target": "writer",
+        "targetPort": "compiledPrompt"
+      },
+      {
+        "id": "e12",
+        "source": "writer",
+        "sourcePort": "narrative",
+        "target": "output",
+        "targetPort": "text"
+      }
+    ]
+  }
+}
