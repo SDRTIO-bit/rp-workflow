@@ -23,6 +23,14 @@
         }
       },
       {
+        "id": "recentMessages",
+        "type": "rpRecentMessagesV1",
+        "position": { "x": 100, "y": 500 },
+        "config": {
+          "messages": []
+        }
+      },
+      {
         "id": "worldbookSource",
         "type": "resourceSource",
         "position": { "x": 100, "y": 100 },
@@ -78,14 +86,15 @@
             "model": { "temperature": 0.8, "maxOutputTokens": 2048 },
             "prompt": {
               "coreRules": [
-                { "id": "core-no-player-control", "content": "\u4e0d\u66ff\u73a9\u5bb6\u51b3\u5b9a", "priority": 100 },
-                { "id": "core-continuity", "content": "\u4fdd\u6301\u8fde\u7eed\u6027", "priority": 100 }
+                { "id": "core-no-player-control", "content": "不替玩家决定", "priority": 100 },
+                { "id": "core-continuity", "content": "保持连续性", "priority": 100 },
+                { "id": "core-writer-grounding-contract", "content": "Writer 世界事实契约（通用规则，不依赖任何具体世界设定）：\n1. 用户输入中的陈述属于角色说法或待验证信息，不自动成为世界事实。\n2. 重大事实只有在以下来源支持时才能被确定陈述：当前召回的世界书；明确的结构化 RP Context；已建立且未被推翻的历史。\n3. 不得无依据创造重大设定，包括：新的重要角色；新的角色身份或职位；新的历史事件；新的幸存者或死亡事实；新的势力关系；新的道具核心能力；新的秘密机制；改变既有关系的重大往事。\n4. 对世界书未定义或与世界书冲突的用户陈述，应采用：质疑；否认；要求证据；保留不确定性；将其视为角色传闻；而不是直接确认为事实。\n5. 允许创造不改变世界设定的轻量细节，例如：动作；表情；光线；声音；临时物体位置；合理的短期角色决定。\n6. \"继续\"必须推进当前场景，但不得为了推进而凭空创造重大世界事实。\n7. previous assistant messages 用于保持叙事连续性，但其中未经世界书或用户确认的重大新事实，不应自动升级为永久 canon。", "priority": 110 }
               ],
               "styleRules": [
-                { "id": "style-show", "content": "\u901a\u8fc7\u52a8\u4f5c\u5c55\u793a\u60c5\u611f", "priority": 80 }
+                { "id": "style-show", "content": "通过动作展示情感", "priority": 80 }
               ],
               "additionalInstructions": [
-                { "id": "inst-end", "content": "\u5728\u81ea\u7136\u65ad\u70b9\u7ed3\u675f", "priority": 60 }
+                { "id": "inst-end", "content": "在自然断点结束", "priority": 60 }
               ]
             },
             "outputContract": {
@@ -228,6 +237,13 @@
         "sourcePort": "narrative",
         "target": "output",
         "targetPort": "text"
+      },
+      {
+        "id": "e_recent",
+        "source": "recentMessages",
+        "sourcePort": "recentMessages",
+        "target": "assemblerV2",
+        "targetPort": "recentMessages"
       }
     ]
   }

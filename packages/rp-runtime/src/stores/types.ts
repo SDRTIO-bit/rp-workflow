@@ -117,8 +117,12 @@ export interface RpRuntimeServices {
     lore: LoreStore;
     tracker: TrackerStore;
   };
-  /** Optional LLM adapter for writer node. Injected at registration. */
+  /** Optional shared LLM adapter. Used as fallback for parser/writer. */
   llmAdapter?: RpLlmAdapter;
+  /** Optional dedicated LLM adapter for Parser node. Falls back to llmAdapter. */
+  parserLlmAdapter?: RpLlmAdapter;
+  /** Optional dedicated LLM adapter for Writer node. Falls back to llmAdapter. */
+  writerLlmAdapter?: RpLlmAdapter;
   /** Optional config for writer node (fallback behavior). */
   writerConfig?: RpWriterConfig;
   /** Optional config for assembler node (budget limits). */

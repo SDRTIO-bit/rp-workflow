@@ -14,6 +14,7 @@
     "@awp/plugin-sdk": "*"
   },
   "devDependencies": {
-    "vitest": "^3.2.2"
+    "vitest": "^3.2.2",
+    "@awp/workflow-persistence": "*"
   }
 }

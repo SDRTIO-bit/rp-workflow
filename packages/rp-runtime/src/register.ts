@@ -102,7 +102,7 @@ export function registerRpRuntime(services: RpRuntimeServices): RpRuntimeRegistr
     }),
     rpContextAssemblerV2: createRpContextAssemblerV2Executor(),
     rpWriterV1: createRpWriterV1Executor({
-      llmAdapter: services.llmAdapter,
+      llmAdapter: services.writerLlmAdapter ?? services.llmAdapter,
       config: services.writerConfig,
     }),
     rpChapterSummaryV1: createRpChapterSummaryV1Executor(),
@@ -117,7 +117,7 @@ export function registerRpRuntime(services: RpRuntimeServices): RpRuntimeRegistr
     rpFormatValidatorV1: createRpFormatValidatorV1Executor(),
     rpWorldbookRetrieverV1: createRpWorldbookRetrieverV1Executor(),
     rpInputParserLlmV1: createRpInputParserLlmV1Executor({
-      llmAdapter: services.llmAdapter,
+      llmAdapter: services.parserLlmAdapter ?? services.llmAdapter,
     }),
     rpSemanticExpanderV1: createRpSemanticExpanderV1Executor(),
     rpParserInputBuilderV1: createRpParserInputBuilderV1Executor(),
