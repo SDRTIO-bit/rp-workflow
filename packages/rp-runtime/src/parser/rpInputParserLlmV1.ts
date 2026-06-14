@@ -70,7 +70,10 @@ export const rpInputParserLlmV1Definition: NodeDefinition = {
       label: "Parsed Input",
       dataType: "json",
       direction: "output",
-      schemaId: "rp.parsed-input.v1",
+      // B-2.9: this port emits ParsedRpInputV1, not the legacy ParsedInput.
+      // The legacy schemaId was a B-2.8 misnomer; corrected here so the
+      // output can be connected to rpContextAssemblerV2.parsedRpInput.
+      schemaId: "rp.parsed-rp-input.v1",
     },
   ],
 };

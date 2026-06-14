@@ -45,3 +45,19 @@ export {
   rpSemanticExpanderV1Definition,
   createRpSemanticExpanderV1Executor,
 } from "./parser/rpSemanticExpanderV1.js";
+
+// B-2.9: Context Assembler V2 + shared budget + section builders
+export {
+  rpContextAssemblerV2Definition,
+  createRpContextAssemblerV2Executor,
+} from "./nodes/rpContextAssemblerV2.js";
+export type { RpAssemblerV2Config, RpAssemblerV2Services } from "./nodes/rpContextAssemblerV2.js";
+export type { AssembledContextV2 } from "./assembler/types.js";
+export { enforceBudget, estimateTokens, buildBudgetWarnings } from "./assembler/budget.js";
+export {
+  V2_SECTION_REGISTRY,
+  V2_SECTION_PRIORITY,
+  buildAllV2Sections,
+  buildV2PromptDocument,
+  collectParserFieldsCovered,
+} from "./assembler/sectionsV2.js";

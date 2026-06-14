@@ -58,7 +58,12 @@ export interface PromptSectionV1 {
   visibility: PromptSectionVisibility;
   /** Trust level */
   trust: PromptTrust;
-  /** Provenance tracking */
+  /** Provenance tracking.
+   * All fields are optional for backward compatibility.
+   * B-2.9 added:
+   * - retrievalSource: which retrieval path produced this section's data
+   * - parserFields: which ParsedRpInputV1 fields fed this section (deduped, stable order)
+   */
   provenance?: {
     /** Node that produced this section */
     nodeId?: string;
@@ -66,6 +71,14 @@ export interface PromptSectionV1 {
     entryIds?: string[];
     /** Preset fragment ID if from preset */
     presetId?: string;
+    /** B-2.9: retrieval source for worldbook-derived sections */
+    retrievalSource?: "directHit" | "deterministicExpansion" | "semanticExpansion";
+    /** B-2.9: which ParsedRpInputV1 fields contributed to this section.
+     *  Valid values: "mentions" | "references" | "dialogues" | "actions"
+     *  | "intents" | "historicalReferences" | "relationshipSignals"
+     *  | "unresolvedReferences" | "rawText"
+     */
+    parserFields?: string[];
   };
 }
 

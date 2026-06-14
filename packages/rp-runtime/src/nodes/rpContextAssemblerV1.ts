@@ -11,6 +11,7 @@ import type {
 } from "../types.js";
 import type { PromptDocumentV1, PromptSectionV1 } from "../prompt/types.js";
 import { validateSchema } from "../schemas.js";
+import { enforceBudget, estimateTokens, buildBudgetWarnings } from "../assembler/budget.js";
 
 /**
  * Configuration for rpContextAssemblerV1 executor.
@@ -152,20 +153,23 @@ export function createRpContextAssemblerV1Executor(services?: RpAssemblerService
       userInputSection: buildUserInputSection(parsed),
     };
 
-    // Calculate token estimates for each section
-    const sectionTokens: Record<string, number> = {};
-    for (const [key, content] of Object.entries(sections)) {
-      sectionTokens[key] = estimateTokens(content, charsPerToken);
-    }
-
-    // Apply budget enforcement
-    const { finalSections, truncatedSections, droppedSections } = enforceBudget(
+    // Apply budget enforcement (B-2.9: shared with V2 via ../assembler/budget).
+    // Behavior is identical to the pre-refactor inline implementation;
+    // see ../assembler/budget.ts for the algorithm.
+    const { finalSections, truncatedSections, droppedSections } = enforceBudget({
       sections,
-      sectionTokens,
+      priorities: SECTION_PRIORITY,
       targetTokens,
       hardLimitTokens,
       charsPerToken,
-    );
+      protectedSections: ["userInputSection"],
+    });
+
+    // Compute allocated tokens from the original sections (pre-truncation)
+    const allocated: Record<string, number> = {};
+    for (const [key, content] of Object.entries(sections)) {
+      allocated[key] = estimateTokens(content, charsPerToken);
+    }
 
     // Assemble final context
     const assembledContext: AssembledContext = {
@@ -183,12 +187,12 @@ export function createRpContextAssemblerV1Executor(services?: RpAssemblerService
     const budgetReport: BudgetReport = {
       targetTokens,
       hardLimitTokens,
-      allocated: sectionTokens,
+      allocated,
       actual: { total: actualTokens },
       truncatedSections,
       droppedSections,
       tokenEstimationMethod,
-      warnings: buildWarnings(
+      warnings: buildBudgetWarnings(
         actualTokens,
         targetTokens,
         hardLimitTokens,
@@ -287,128 +291,6 @@ export function createRpContextAssemblerV1Executor(services?: RpAssemblerService
       outputs: { assembledContext, budgetReport, promptDocument },
     };
   };
-}
-
-function estimateTokens(text: string, charsPerToken: number): number {
-  return Math.ceil(text.length / charsPerToken);
-}
-
-interface BudgetResult {
-  finalSections: Record<string, string>;
-  truncatedSections: string[];
-  droppedSections: string[];
-}
-
-/**
- * Enforce budget by truncating or dropping sections based on priority.
- * User input is NEVER dropped.
- */
-function enforceBudget(
-  sections: Record<string, string>,
-  sectionTokens: Record<string, number>,
-  targetTokens: number,
-  hardLimitTokens: number,
-  charsPerToken: number,
-): BudgetResult {
-  const totalTokens = Object.values(sectionTokens).reduce((a, b) => a + b, 0);
-
-  // If within target, no truncation needed
-  if (totalTokens <= targetTokens) {
-    return {
-      finalSections: { ...sections },
-      truncatedSections: [],
-      droppedSections: [],
-    };
-  }
-
-  // Need to reduce - sort sections by priority (ascending = lowest priority first)
-  const sectionEntries = Object.entries(sections).map(([key, content]) => ({
-    key,
-    content,
-    tokens: sectionTokens[key],
-    priority: SECTION_PRIORITY[key] ?? 0,
-  }));
-
-  // Sort by priority ascending (lowest priority first for truncation)
-  sectionEntries.sort((a, b) => a.priority - b.priority);
-
-  const finalSections: Record<string, string> = { ...sections };
-  const truncatedSections: string[] = [];
-  const droppedSections: string[] = [];
-  let currentTokens = totalTokens;
-
-  for (const entry of sectionEntries) {
-    if (currentTokens <= targetTokens) break;
-
-    // Never drop user input
-    if (entry.key === "userInputSection") continue;
-
-    const excess = currentTokens - targetTokens;
-    const entryTokens = entry.tokens ?? 0;
-
-    if (entryTokens <= excess && entry.priority < 99) {
-      // Drop entire section if it's small enough and not critical
-      finalSections[entry.key] = "";
-      droppedSections.push(entry.key);
-      currentTokens -= entryTokens;
-    } else if (entryTokens > 0) {
-      // Truncate section to fit
-      const targetChars = Math.max(0, (entryTokens - excess) * charsPerToken);
-      if (targetChars < entry.content.length) {
-        finalSections[entry.key] = entry.content.slice(0, targetChars) + "... [truncated]";
-        truncatedSections.push(entry.key);
-        currentTokens = estimateTokens(Object.values(finalSections).join(""), charsPerToken);
-      }
-    }
-  }
-
-  // Final check: if still over hard limit, aggressively truncate lowest priority
-  const finalTotal = estimateTokens(Object.values(finalSections).join(""), charsPerToken);
-
-  if (finalTotal > hardLimitTokens) {
-    // Force truncate from lowest priority sections
-    for (const entry of sectionEntries) {
-      if (entry.key === "userInputSection") continue;
-      const sectionContent = finalSections[entry.key] ?? "";
-      if (sectionContent.length > 0) {
-        const maxChars = Math.floor(hardLimitTokens * charsPerToken * 0.3); // Give 30% to each non-critical
-        if (sectionContent.length > maxChars) {
-          finalSections[entry.key] = sectionContent.slice(0, maxChars) + "... [hard truncated]";
-          if (!truncatedSections.includes(entry.key)) {
-            truncatedSections.push(entry.key);
-          }
-        }
-      }
-    }
-  }
-
-  return { finalSections, truncatedSections, droppedSections };
-}
-
-function buildWarnings(
-  actualTokens: number,
-  targetTokens: number,
-  hardLimitTokens: number,
-  truncatedSections: string[],
-  droppedSections: string[],
-): string[] {
-  const warnings: string[] = [];
-
-  if (actualTokens > hardLimitTokens) {
-    warnings.push(`Context exceeds hard limit: ${actualTokens} > ${hardLimitTokens} tokens`);
-  } else if (actualTokens > targetTokens) {
-    warnings.push(`Context exceeds target budget: ${actualTokens} > ${targetTokens} tokens`);
-  }
-
-  if (truncatedSections.length > 0) {
-    warnings.push(`Truncated sections: ${truncatedSections.join(", ")}`);
-  }
-
-  if (droppedSections.length > 0) {
-    warnings.push(`Dropped sections: ${droppedSections.join(", ")}`);
-  }
-
-  return warnings;
 }
 
 function buildSystemPrompt(): string {

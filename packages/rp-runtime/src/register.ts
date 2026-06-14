@@ -9,6 +9,8 @@ import {
   createRpInputParserV1Executor,
   rpContextAssemblerV1Definition,
   createRpContextAssemblerV1Executor,
+  rpContextAssemblerV2Definition,
+  createRpContextAssemblerV2Executor,
   rpWriterV1Definition,
   createRpWriterV1Executor,
   rpTimelineQueryV1Definition,
@@ -71,6 +73,7 @@ export function registerRpRuntime(services: RpRuntimeServices): RpRuntimeRegistr
     rpTimelineQueryV1: rpTimelineQueryV1Definition,
     rpLoreRetrieverV1: rpLoreRetrieverV1Definition,
     rpContextAssemblerV1: rpContextAssemblerV1Definition,
+    rpContextAssemblerV2: rpContextAssemblerV2Definition,
     rpWriterV1: rpWriterV1Definition,
     rpChapterSummaryV1: rpChapterSummaryV1Definition,
     rpTrackerUpdateV1: rpTrackerUpdateV1Definition,
@@ -97,6 +100,7 @@ export function registerRpRuntime(services: RpRuntimeServices): RpRuntimeRegistr
     rpContextAssemblerV1: createRpContextAssemblerV1Executor({
       config: services.assemblerConfig,
     }),
+    rpContextAssemblerV2: createRpContextAssemblerV2Executor(),
     rpWriterV1: createRpWriterV1Executor({
       llmAdapter: services.llmAdapter,
       config: services.writerConfig,

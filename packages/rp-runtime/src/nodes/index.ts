@@ -8,6 +8,12 @@ export {
 } from "./rpContextAssemblerV1.js";
 export type { RpAssemblerConfig, RpAssemblerServices } from "./rpContextAssemblerV1.js";
 
+export {
+  rpContextAssemblerV2Definition,
+  createRpContextAssemblerV2Executor,
+} from "./rpContextAssemblerV2.js";
+export type { RpAssemblerV2Config, RpAssemblerV2Services } from "./rpContextAssemblerV2.js";
+
 export { rpWriterV1Definition, createRpWriterV1Executor } from "./rpWriterV1.js";
 export type { RpLlmAdapter, RpWriterServices, RpWriterConfig } from "./rpWriterV1.js";
 
