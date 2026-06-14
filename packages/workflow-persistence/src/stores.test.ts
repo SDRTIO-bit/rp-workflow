@@ -285,7 +285,7 @@ describe("runWorkflowWithCheckpoint and resumeWorkflow", () => {
     const checkpoint = {
       runId: "run-resume-1",
       workflowId: workflow.id,
-      workflowHash: hash,
+      workflowHash: _hash,
       completedNodeIds: ["step1"],
       nodeOutputs: { step1: { result: "a" } },
     };
