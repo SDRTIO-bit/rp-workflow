@@ -59,8 +59,10 @@ const serializeSearchResults = (
     .join("\n");
 
 export type WorkflowRunnerContext = {
-  apiKey: string;
-  model: string;
+  apiKey?: string;
+  model?: string;
+  llmRouter?: import("@awp/agent-runtime").LlmRouter;
+  defaultModelConfig?: import("@awp/agent-runtime").NodeModelConfig;
   memoryFile: string;
   worldbookFile: string;
   plugins: NodePlugin[];
@@ -74,11 +76,19 @@ export const createExecutors = async (
   context: WorkflowRunnerContext,
   onToken?: (event: { nodeId: string; token: string }) => void,
 ): Promise<Record<string, NodeExecutor>> => {
-  if (!context.apiKey) {
-    throw new Error("缺少环境变量 DEEPSEEK_API_KEY。");
+  // Use LlmRouter if available, fallback to direct DeepSeek adapter for backward compat
+  let adapter: ReturnType<typeof createDeepSeekAdapter>;
+  let defaultModel: string;
+  if (context.llmRouter) {
+    const resolved = context.llmRouter.resolveConfig(context.defaultModelConfig, undefined);
+    adapter = context.llmRouter.adapter(resolved.providerId);
+    defaultModel = resolved.model;
+  } else if (context.apiKey) {
+    adapter = createDeepSeekAdapter({ apiKey: context.apiKey });
+    defaultModel = context.model ?? "deepseek-v4-flash";
+  } else {
+    throw new Error("No LLM provider configured. Set OPENCODE_API_KEY or DEEPSEEK_API_KEY.");
   }
-
-  const adapter = createDeepSeekAdapter({ apiKey: context.apiKey });
   const memories = await readEntries(context.memoryFile);
   const worldbookEntries = await readEntries(context.worldbookFile);
   const relevantMemories = rankMemories(extractQuery(workflow), memories, 4);
@@ -94,9 +104,9 @@ export const createExecutors = async (
     serializeEntries: (entries) =>
       serializeSearchResults(entries as Parameters<typeof serializeSearchResults>[0]),
     executeAgent: async ({ nodeId, config, inputs }) => {
-      const selectedModel = String(config.model ?? context.model).startsWith("mock-")
+      const selectedModel = String(config.model ?? defaultModel).startsWith("mock-")
         ? String(config.model)
-        : String(config.model ?? context.model);
+        : String(config.model ?? defaultModel);
       const result = await executeAgentNode(
         {
           nodeId,
@@ -202,7 +212,7 @@ export const createExecutors = async (
         {
           nodeId: node.id,
           config: {
-            model: context.model,
+            model: defaultModel,
             systemPrompt: [
               "你是 RP 角色扮演对话导演。",
               "必须根据 character、scene、player、memory 输入生成沉浸式中文 RP 回复。",
@@ -262,9 +272,9 @@ export const createExecutors = async (
         {
           nodeId: node.id,
           config: {
-            model: String(node.config.model ?? context.model).startsWith("mock-")
-              ? String(node.config.model ?? context.model)
-              : String(node.config.model ?? context.model),
+            model: String(node.config.model ?? defaultModel).startsWith("mock-")
+              ? String(node.config.model ?? defaultModel)
+              : String(node.config.model ?? defaultModel),
             systemPrompt: String(node.config.systemPrompt ?? ""),
             skills: Array.isArray(node.config.skills) ? node.config.skills.map(String) : [],
             plugins: Array.isArray(node.config.plugins) ? node.config.plugins.map(String) : [],

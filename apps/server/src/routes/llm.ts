@@ -1,9 +1,9 @@
 import { Hono } from "hono";
-import { createDeepSeekAdapter } from "@awp/agent-runtime";
+import type { LlmRouter, NodeModelConfig } from "@awp/agent-runtime";
 
 export type LlmConfig = {
-  apiKey: string | undefined;
-  model: string;
+  llmRouter: LlmRouter;
+  defaultModelConfig?: NodeModelConfig;
 };
 
 export const createLlmRoutes = (getConfig: () => LlmConfig) => {
@@ -11,43 +11,43 @@ export const createLlmRoutes = (getConfig: () => LlmConfig) => {
 
   app.get("/api/llm/status", async (c) => {
     const config = getConfig();
-    return c.json({
-      configured: Boolean(config.apiKey),
-      model: config.model,
-    });
+    try {
+      const resolved = config.llmRouter.resolveConfig(config.defaultModelConfig, undefined);
+      return c.json({
+        configured: true,
+        providerId: resolved.providerId,
+        model: resolved.model,
+      });
+    } catch {
+      return c.json({ configured: false, error: "No provider configured" });
+    }
   });
 
   app.post("/api/llm/chat", async (c) => {
     const config = getConfig();
-    if (!config.apiKey) {
-      return c.json({ error: "DEEPSEEK_API_KEY 未配置" }, 400);
-    }
-
     const body = await c.req.json();
-    const { messages, model } = body;
+    const { messages, model, providerId } = body;
 
     if (!Array.isArray(messages)) {
       return c.json({ error: "messages 必须是数组" }, 400);
     }
 
-    const adapter = createDeepSeekAdapter({ apiKey: config.apiKey });
-    const selectedModel = model ?? config.model;
-
     try {
-      // 将消息数组转换为单个prompt
+      const resolved = config.llmRouter.resolveConfig(
+        { model, provider: providerId },
+        config.defaultModelConfig,
+      );
       const prompt = messages
         .map((msg: { role: string; content: string }) => `${msg.role}: ${msg.content}`)
         .join("\n");
 
-      const result = await adapter.complete({
-        model: selectedModel,
-        prompt,
-      });
+      const result = await config.llmRouter.complete(resolved, prompt);
 
       return c.json({
         text: result.text,
         metadata: {
-          model: selectedModel,
+          providerId: resolved.providerId,
+          model: resolved.model,
           tokenUsage: result.tokenUsage,
         },
       });

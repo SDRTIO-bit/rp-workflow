@@ -2,6 +2,22 @@
 import { Hono } from "hono";
 import { createWorkflowRoutes } from "../routes/workflow.js";
 import type { WorkflowRuntime } from "../routes/workflow.js";
+import { ProviderRegistry, LlmRouter } from "@awp/agent-runtime";
+
+function createMockRouter(): LlmRouter {
+  const registry = new ProviderRegistry("mock");
+  registry.register({
+    providerId: "mock",
+    apiKey: "",
+    baseUrl: "",
+    defaultModel: "mock-model",
+    createAdapter: () => ({
+      provider: "mock",
+      complete: async () => ({ text: "mock", tokenUsage: { input: 0, output: 0 } }),
+    }),
+  });
+  return new LlmRouter(registry);
+}
 
 function createTestApp(runtime: WorkflowRuntime) {
   const app = new Hono();
@@ -13,8 +29,7 @@ function createTestApp(runtime: WorkflowRuntime) {
 }
 
 const baseRuntime: WorkflowRuntime = {
-  apiKey: "",
-  model: "deepseek-v4-flash",
+  llmRouter: createMockRouter(),
   memoryFile: "/tmp/mem.json",
   worldbookFile: "/tmp/wb.json",
   plugins: [],

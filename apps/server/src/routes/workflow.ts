@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { validateWorkflow, type NodeCatalog, type WorkflowRunContext } from "@awp/workflow-core";
+import type { LlmRouter, NodeModelConfig } from "@awp/agent-runtime";
 import {
   createExecutors,
   runWorkflowStreaming,
@@ -9,8 +10,8 @@ import type { NodePlugin, SkillItem } from "../services/pluginLoader.js";
 import type { RpRuntimeRegistration } from "@awp/rp-runtime";
 
 export type WorkflowRuntime = {
-  apiKey: string;
-  model: string;
+  llmRouter: LlmRouter;
+  defaultModelConfig?: NodeModelConfig;
   memoryFile: string;
   worldbookFile: string;
   plugins: NodePlugin[];
@@ -39,8 +40,8 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
     const body = await c.req.json();
     const runtime = getRuntime();
     const context: WorkflowRunnerContext = {
-      apiKey: runtime.apiKey,
-      model: runtime.model,
+      llmRouter: runtime.llmRouter,
+      defaultModelConfig: runtime.defaultModelConfig,
       memoryFile: runtime.memoryFile,
       worldbookFile: runtime.worldbookFile,
       plugins: runtime.plugins,
@@ -65,8 +66,8 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
     const body = await c.req.json();
     const runtime = getRuntime();
     const context: WorkflowRunnerContext = {
-      apiKey: runtime.apiKey,
-      model: runtime.model,
+      llmRouter: runtime.llmRouter,
+      defaultModelConfig: runtime.defaultModelConfig,
       memoryFile: runtime.memoryFile,
       worldbookFile: runtime.worldbookFile,
       plugins: runtime.plugins,

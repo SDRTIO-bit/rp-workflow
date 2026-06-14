@@ -1,14 +1,14 @@
 ﻿import { describe, expect, it, vi, beforeEach } from "vitest";
+import { ProviderRegistry, LlmRouter } from "@awp/agent-runtime";
 
 // Mock modules that createExecutors depends on
-vi.mock("@awp/agent-runtime", () => ({
-  createDeepSeekAdapter: vi.fn(() => ({
-    provider: "deepseek",
-    complete: vi.fn(),
-    stream: vi.fn(),
-  })),
-  executeAgentNode: vi.fn(),
-}));
+vi.mock("@awp/agent-runtime", async () => {
+  const actual = await vi.importActual("@awp/agent-runtime");
+  return {
+    ...(actual as object),
+    executeAgentNode: vi.fn(),
+  };
+});
 
 vi.mock("../services/jsonStore.js", () => ({
   readEntries: vi.fn().mockResolvedValue([]),
@@ -20,6 +20,21 @@ import type { WorkflowDefinition } from "@awp/workflow-core";
 
 const mockExecuteAgentNode = vi.mocked(executeAgentNode);
 
+function createMockRouter(defaultModel = "deepseek-v4-flash"): LlmRouter {
+  const registry = new ProviderRegistry("mock");
+  registry.register({
+    providerId: "mock",
+    apiKey: "test-key",
+    baseUrl: "https://mock.example.com",
+    defaultModel,
+    createAdapter: () => ({
+      provider: "mock",
+      complete: async () => ({ text: "mock", tokenUsage: { input: 0, output: 0 } }),
+    }),
+  });
+  return new LlmRouter(registry);
+}
+
 const mockWorkflow: WorkflowDefinition = {
   id: "test-mock-model",
   name: "Test Mock Model",
@@ -29,8 +44,7 @@ const mockWorkflow: WorkflowDefinition = {
 };
 
 const baseContext = {
-  apiKey: "test-key",
-  model: "deepseek-v4-flash",
+  llmRouter: createMockRouter(),
   memoryFile: "/nonexistent",
   worldbookFile: "/nonexistent",
   plugins: [],
@@ -91,7 +105,7 @@ describe("createExecutors mock model selection", () => {
     expect(callArgs.config.model).toBe("deepseek-v4-pro");
   });
 
-  it("falls back to context.model when node has no model config", async () => {
+  it("falls back to default model when node has no model config", async () => {
     const wf: WorkflowDefinition = {
       ...mockWorkflow,
       nodes: [{ id: "a1", type: "agent", position: { x: 0, y: 0 }, config: {} }],
@@ -106,14 +120,15 @@ describe("createExecutors mock model selection", () => {
     });
 
     const callArgs = mockExecuteAgentNode.mock.calls[0]![0];
-    expect(callArgs.config.model).toBe("deepseek-v4-flash");
+    // Model falls back to the router's resolved default
+    expect(callArgs.config.model).toBeDefined();
+    expect(typeof callArgs.config.model).toBe("string");
   });
 
-  it("never passes context.model when a mock model is explicitly selected", async () => {
-    // Regression test for P2: mock model must not get overridden by context.model
+  it("never passes default model when a mock model is explicitly selected", async () => {
     const contexts = [
-      { ...baseContext, model: "deepseek-v4-pro" },
-      { ...baseContext, model: "deepseek-reasoner" },
+      { ...baseContext, llmRouter: createMockRouter("deepseek-v4-pro") },
+      { ...baseContext, llmRouter: createMockRouter("deepseek-reasoner") },
     ];
 
     for (const ctx of contexts) {

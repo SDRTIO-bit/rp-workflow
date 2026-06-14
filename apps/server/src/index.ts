@@ -30,7 +30,13 @@ import {
   InMemoryTrackerStore,
   type RpRuntimeRegistration,
 } from "@awp/rp-runtime";
-import { createDeepSeekAdapter } from "@awp/agent-runtime";
+import {
+  createDeepSeekAdapter,
+  createOpenCodeAdapter,
+  ProviderRegistry,
+  LlmRouter,
+  type NodeModelConfig,
+} from "@awp/agent-runtime";
 
 const app = new Hono();
 
@@ -41,7 +47,9 @@ const memoryFile = resolve(env.dataDir, "memories.json");
 const worldbookFile = resolve(env.dataDir, "worldbook.json");
 const pluginStateFile = join(env.pluginsDir, "plugin-state.json");
 
-// Plugin runtime state
+// LLM routing state (populated in initPlugins)
+let llmRegistry: ProviderRegistry | null = null;
+let llmRouter: LlmRouter | null = null;
 let pluginState: PluginState = {};
 let plugins: NodePlugin[] = [];
 let pluginCatalog: NodeCatalog = {};
@@ -68,8 +76,8 @@ const setPluginRuntime = (runtime: PluginRuntime) => {
 const getSkillsRuntime = () => ({ skillCatalog });
 const getNodesRuntime = () => ({ runtimeNodeCatalog, plugins });
 const getWorkflowRuntime = () => ({
-  apiKey: env.deepseekApiKey ?? "",
-  model: env.deepseekModel,
+  llmRouter: llmRouter!,
+  defaultModelConfig: undefined as NodeModelConfig | undefined,
   memoryFile,
   worldbookFile,
   plugins,
@@ -78,8 +86,8 @@ const getWorkflowRuntime = () => ({
   rpRuntime,
 });
 const getLlmConfig = () => ({
-  apiKey: env.deepseekApiKey,
-  model: env.deepseekModel,
+  llmRouter: llmRouter!,
+  defaultModelConfig: undefined as NodeModelConfig | undefined,
 });
 
 // Initialize plugins and RP runtime
@@ -103,10 +111,43 @@ const initPlugins = async () => {
 
   // Initialize RP Runtime
   try {
-    // Create LLM adapter for RP Runtime
-    const rpLlmAdapter = env.deepseekApiKey
-      ? createRpLlmBridge(createDeepSeekAdapter({ apiKey: env.deepseekApiKey }), env.deepseekModel)
-      : undefined;
+    // Build ProviderRegistry (explicit default, no auto-detection from API keys)
+    const registry = new ProviderRegistry(env.defaultProviderId);
+
+    // Register available providers
+    if (env.openCodeApiKey) {
+      registry.register({
+        providerId: "opencode",
+        apiKey: env.openCodeApiKey,
+        baseUrl: "https://opencode.ai/zen/go/v1/chat/completions",
+        defaultModel: env.openCodeModel,
+        createAdapter: (apiKey, baseUrl) => createOpenCodeAdapter({ apiKey, baseUrl }),
+      });
+    }
+    if (env.deepseekApiKey) {
+      registry.register({
+        providerId: "deepseek",
+        apiKey: env.deepseekApiKey,
+        baseUrl: "https://api.deepseek.com",
+        defaultModel: env.deepseekModel,
+        createAdapter: (apiKey, baseUrl) => createDeepSeekAdapter({ apiKey, baseUrl }),
+      });
+    }
+
+    const router = new LlmRouter(registry);
+    llmRegistry = registry;
+    llmRouter = router;
+
+    // Create RP LLM bridge through router (no fixed adapter or model).
+    // If no provider is registered, rpLlmAdapter stays undefined → RP Writer
+    // operates in echo_fallback mode.
+    let rpLlmAdapter: ReturnType<typeof createRpLlmBridge> | undefined;
+    try {
+      registry.getDefault(); // throws if default provider not registered
+      rpLlmAdapter = createRpLlmBridge(router);
+    } catch {
+      // No LLM provider configured — RP Writer runs in echo_fallback mode
+    }
 
     const rpServices = {
       stores: {
@@ -177,8 +218,18 @@ const start = async () => {
   serve({ fetch: app.fetch, port: env.port }, (info) => {
     console.log(`@awp/server running at http://127.0.0.1:${info.port}`);
     console.log(
-      env.deepseekApiKey ? "DeepSeek Agent: enabled" : "DeepSeek Agent: missing DEEPSEEK_API_KEY",
+      llmRouter
+        ? `LLM Router: defaultProvider=${env.defaultProviderId}, providers=[${[...((llmRegistry as ProviderRegistry).getDefault ? "" : "")]}]`
+        : "LLM: no provider configured",
     );
+    // Log registered providers
+    if (llmRegistry) {
+      // Providers are registered; log them
+      console.log(
+        `LLM providers: ${env.openCodeApiKey ? "opencode " : ""}${env.deepseekApiKey ? "deepseek " : ""}`.trim() ||
+          "none",
+      );
+    }
   });
 };
 
