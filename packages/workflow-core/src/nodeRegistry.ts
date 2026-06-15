@@ -1,6 +1,25 @@
-import type { DataType, NodeCatalog, NodeDefinition, PortDefinition } from "./types";
+import type {
+  DataType,
+  LegacyPortDefinition,
+  LegacyPortMapping,
+  NodeCatalog,
+  NodeDefinition,
+  PortDefinition,
+  SchemaCompatResult,
+  WirePortDefinition,
+  WireType,
+} from "./types";
+import { isLegacyPort, isWirePort } from "./types";
 
-const input = (id: string, label: string, dataType: DataType, required = true): PortDefinition => ({
+// ============ Port Factory Helpers ============
+
+/** Create a legacy input port (dataType-based). Used by existing nodes. */
+const input = (
+  id: string,
+  label: string,
+  dataType: DataType,
+  required = true,
+): LegacyPortDefinition => ({
   id,
   label,
   dataType,
@@ -8,12 +27,158 @@ const input = (id: string, label: string, dataType: DataType, required = true): 
   required,
 });
 
-const output = (id: string, label: string, dataType: DataType): PortDefinition => ({
+/** Create a legacy output port (dataType-based). Used by existing nodes. */
+const output = (id: string, label: string, dataType: DataType): LegacyPortDefinition => ({
   id,
   label,
   dataType,
   direction: "output",
 });
+
+/** Create a wire-native input port. Used by P-1+ nodes. */
+const wireInput = (
+  id: string,
+  label: string,
+  wireType: WireType,
+  opts?: { required?: boolean; schemaId?: string },
+): WirePortDefinition => ({
+  id,
+  label,
+  wireType,
+  direction: "input",
+  required: opts?.required ?? true,
+  ...(opts?.schemaId ? { schemaId: opts.schemaId } : {}),
+});
+
+/** Create a wire-native output port. Used by P-1+ nodes. */
+const wireOutput = (
+  id: string,
+  label: string,
+  wireType: WireType,
+  opts?: { schemaId?: string },
+): WirePortDefinition => ({
+  id,
+  label,
+  wireType,
+  direction: "output",
+  ...(opts?.schemaId ? { schemaId: opts.schemaId } : {}),
+});
+
+// ============ Legacy → Wire Mapping Table ============
+
+/**
+ * Explicit per-(nodeType, portId) mapping from legacy DataType to WireType.
+ * Only ports in this table are eligible for mixed legacy/wire connections.
+ * Unregistered legacy ports resolve to undefined.
+ */
+export const LEGACY_PORT_WIRE_MAP: LegacyPortMapping[] = [
+  { nodeType: "userInput", portId: "text", wireType: "text" },
+  { nodeType: "textOutput", portId: "text", wireType: "text" },
+  { nodeType: "textOutput", portId: "final", wireType: "text" },
+  { nodeType: "rpWriterV1", portId: "narrative", wireType: "text" },
+  { nodeType: "rpWriterV1", portId: "writerOutput", wireType: "json" },
+  { nodeType: "rpWriterV1", portId: "compiledPrompt", wireType: "json" },
+  { nodeType: "rpWriterV1", portId: "assembledContext", wireType: "json" },
+  { nodeType: "rpPromptCompilerV1", portId: "compiledPrompt", wireType: "json" },
+  { nodeType: "rpPromptCompilerV1", portId: "promptDocument", wireType: "json" },
+  { nodeType: "rpPromptCompilerV1", portId: "resolvedPreset", wireType: "json" },
+  { nodeType: "rpContextAssemblerV2", portId: "promptDocument", wireType: "json" },
+  { nodeType: "rpContextAssemblerV2", portId: "assembledContext", wireType: "json" },
+  { nodeType: "rpContextAssemblerV2", portId: "budgetReport", wireType: "json" },
+  { nodeType: "rpInputParserLlmV1", portId: "parsedInput", wireType: "json" },
+  { nodeType: "rpInputParserLlmV1", portId: "parserInput", wireType: "json" },
+  { nodeType: "rpInputParserLlmV1", portId: "worldbookEntries", wireType: "json" },
+  { nodeType: "rpRecentMessagesV1", portId: "recentMessages", wireType: "json" },
+  { nodeType: "rpWorldbookRetrieverV1", portId: "retrievalResult", wireType: "json" },
+  { nodeType: "rpWorldbookRetrieverV1", portId: "rawInput", wireType: "text" },
+  { nodeType: "rpWorldbookRetrieverV1", portId: "worldbookEntries", wireType: "json" },
+  { nodeType: "rpWorldbookRetrieverV1", portId: "recentMessages", wireType: "json" },
+  { nodeType: "rpTimelineQueryV1", portId: "parsedInput", wireType: "json" },
+  { nodeType: "rpTimelineQueryV1", portId: "timelineContext", wireType: "json" },
+  { nodeType: "rpLoreRetrieverV1", portId: "parsedInput", wireType: "json" },
+  { nodeType: "rpLoreRetrieverV1", portId: "loreContext", wireType: "json" },
+  { nodeType: "rpPresetResolverV1", portId: "preset", wireType: "json" },
+  { nodeType: "rpPresetResolverV1", portId: "directives", wireType: "json" },
+  { nodeType: "rpPresetResolverV1", portId: "resolvedPreset", wireType: "json" },
+  { nodeType: "rpOutputComposerV1", portId: "text", wireType: "text" },
+  { nodeType: "rpOutputComposerV1", portId: "composedOutput", wireType: "json" },
+  { nodeType: "rpOutputComposerV1", portId: "writerContent", wireType: "json" },
+  { nodeType: "rpFormatValidatorV1", portId: "composedOutput", wireType: "json" },
+  { nodeType: "rpFormatValidatorV1", portId: "outputContract", wireType: "json" },
+  { nodeType: "rpFormatValidatorV1", portId: "validationResult", wireType: "json" },
+  { nodeType: "rpChapterSummaryV1", portId: "parsedInput", wireType: "json" },
+  { nodeType: "rpChapterSummaryV1", portId: "writerOutput", wireType: "json" },
+  { nodeType: "rpChapterSummaryV1", portId: "memoryEvent", wireType: "json" },
+  { nodeType: "rpChapterSummaryV1", portId: "chapterPatch", wireType: "json" },
+  { nodeType: "rpTrackerUpdateV1", portId: "parsedInput", wireType: "json" },
+  { nodeType: "rpTrackerUpdateV1", portId: "currentState", wireType: "json" },
+  { nodeType: "rpTrackerUpdateV1", portId: "trackerPatch", wireType: "json" },
+  { nodeType: "rpMemoryCommitV1", portId: "memoryEvent", wireType: "json" },
+  { nodeType: "rpMemoryCommitV1", portId: "chapterPatch", wireType: "json" },
+  { nodeType: "rpMemoryCommitV1", portId: "trackerPatch", wireType: "json" },
+  { nodeType: "rpMemoryCommitV1", portId: "commitResult", wireType: "json" },
+  { nodeType: "rpSemanticExpanderV1", portId: "parsedInput", wireType: "json" },
+  { nodeType: "rpSemanticExpanderV1", portId: "worldbookEntries", wireType: "json" },
+  { nodeType: "rpSemanticExpanderV1", portId: "deterministicResult", wireType: "json" },
+  { nodeType: "rpSemanticExpanderV1", portId: "mergedResult", wireType: "json" },
+  { nodeType: "rpParserInputBuilderV1", portId: "rawInput", wireType: "text" },
+  { nodeType: "rpParserInputBuilderV1", portId: "retrievalResult", wireType: "json" },
+  { nodeType: "rpParserInputBuilderV1", portId: "worldbookEntries", wireType: "json" },
+  { nodeType: "rpParserInputBuilderV1", portId: "recentMessages", wireType: "json" },
+  { nodeType: "rpParserInputBuilderV1", portId: "currentLocation", wireType: "text" },
+  { nodeType: "rpParserInputBuilderV1", portId: "charactersPresent", wireType: "json" },
+  { nodeType: "rpParserInputBuilderV1", portId: "parserInput", wireType: "json" },
+  { nodeType: "agentV2", portId: "context", wireType: "markdown" },
+  { nodeType: "agentV2", portId: "instruction", wireType: "text" },
+  { nodeType: "agentV2", portId: "sessionContext", wireType: "json" },
+  { nodeType: "agentV2", portId: "result", wireType: "text" },
+  { nodeType: "agentV2", portId: "sessionDelta", wireType: "json" },
+  { nodeType: "agentSessionLoadV1", portId: "sessionKey", wireType: "json" },
+  { nodeType: "agentSessionLoadV1", portId: "sessionConfig", wireType: "json" },
+  { nodeType: "agentSessionLoadV1", portId: "sessionContext", wireType: "json" },
+  { nodeType: "agentSessionCommitV1", portId: "sessionDelta", wireType: "json" },
+  { nodeType: "agentSessionCommitV1", portId: "sessionConfig", wireType: "json" },
+  { nodeType: "agentSessionCommitV1", portId: "commitResult", wireType: "json" },
+  { nodeType: "agentSessionClearV1", portId: "sessionKey", wireType: "json" },
+  { nodeType: "agentSessionClearV1", portId: "clearResult", wireType: "json" },
+  { nodeType: "resourceSource", portId: "entries", wireType: "json" },
+  { nodeType: "agent", portId: "context", wireType: "markdown" },
+  { nodeType: "agent", portId: "instruction", wireType: "text" },
+  { nodeType: "agent", portId: "result", wireType: "text" },
+  { nodeType: "debugLog", portId: "data", wireType: "json" },
+  { nodeType: "debugLog", portId: "debug", wireType: "json" },
+  { nodeType: "preview", portId: "data", wireType: "json" },
+  { nodeType: "preview", portId: "preview", wireType: "json" },
+  { nodeType: "assetPreview", portId: "data", wireType: "json" },
+  { nodeType: "assetPreview", portId: "preview", wireType: "json" },
+];
+
+/**
+ * Resolve the effective WireType for a port.
+ * Wire ports: returns wireType directly (checks catalog first).
+ * Legacy ports: looks up in LEGACY_PORT_WIRE_MAP (no catalog check needed).
+ * Unregistered legacy ports: returns undefined (cannot connect to wire ports).
+ *
+ * @param catalog - Optional catalog to check for wire ports. Defaults to nodeRegistry.
+ */
+export function resolvePortWireType(
+  nodeType: string,
+  portId: string,
+  catalog?: NodeCatalog,
+): WireType | undefined {
+  const cat = catalog ?? nodeRegistry;
+
+  // Check if the port exists in the catalog — if it's a wire port, return its wireType
+  const def = cat[nodeType];
+  if (def) {
+    const port = def.ports.find((p) => p.id === portId);
+    if (port && isWirePort(port)) return port.wireType;
+  }
+
+  // Legacy port: look up in mapping table (no catalog requirement)
+  const mapping = LEGACY_PORT_WIRE_MAP.find((m) => m.nodeType === nodeType && m.portId === portId);
+  return mapping?.wireType;
+}
 
 export const nodeCategories: Record<string, { zh: string; en: string }> = {
   core: { zh: "核心节点", en: "Core" },
@@ -458,11 +623,306 @@ export const nodeRegistry: Record<string, NodeDefinition> = {
     quickAdd: true,
     ports: [input("data", "Data", "json", false), output("preview", "Preview", "debug_info")],
   },
+
+  // ============ P-1: Wire-Native Nodes ============
+
+  playerInput: {
+    type: "playerInput",
+    label: "Player Input",
+    labelI18n: { zh: "玩家输入", en: "Player Input" },
+    category: "core",
+    description: "Accepts player text input for wire-native workflows.",
+    descriptionI18n: {
+      zh: "接受玩家文本输入，用于 Wire-native 工作流。",
+      en: "Accepts player text input for wire-native workflows.",
+    },
+    color: "#0f766e",
+    preview: "Emits player text on a Text wire.",
+    previewI18n: { zh: "通过 Text 线输出玩家文本。", en: "Emits player text on a Text wire." },
+    defaultConfig: { text: "" },
+    configFields: [{ key: "text", label: { zh: "文本", en: "Text" }, kind: "textarea" }],
+    ports: [wireOutput("text", "Text", "text")],
+  },
+
+  markdownSource: {
+    type: "markdownSource",
+    label: "Markdown Source",
+    labelI18n: { zh: "Markdown 源", en: "Markdown Source" },
+    category: "core",
+    description:
+      "Provides Markdown content (prompts, instructions, context) for wire-native workflows.",
+    descriptionI18n: {
+      zh: "为 Wire-native 工作流提供 Markdown 内容（提示词、指令、上下文）。",
+      en: "Provides Markdown content (prompts, instructions, context) for wire-native workflows.",
+    },
+    color: "#7c3aed",
+    preview: "Emits Markdown on a Markdown wire.",
+    previewI18n: {
+      zh: "通过 Markdown 线输出 Markdown 内容。",
+      en: "Emits Markdown on a Markdown wire.",
+    },
+    defaultConfig: { content: "" },
+    configFields: [{ key: "content", label: { zh: "内容", en: "Content" }, kind: "textarea" }],
+    ports: [wireOutput("markdown", "Markdown", "markdown")],
+  },
+
+  jsonSource: {
+    type: "jsonSource",
+    label: "JSON Source",
+    labelI18n: { zh: "JSON 源", en: "JSON Source" },
+    category: "core",
+    description: "Provides structured JSON data for wire-native workflows.",
+    descriptionI18n: {
+      zh: "为 Wire-native 工作流提供结构化 JSON 数据。",
+      en: "Provides structured JSON data for wire-native workflows.",
+    },
+    color: "#475569",
+    preview: "Emits JSON on a JSON wire.",
+    previewI18n: { zh: "通过 JSON 线输出 JSON 数据。", en: "Emits JSON on a JSON wire." },
+    defaultConfig: { data: "{}" },
+    configFields: [{ key: "data", label: { zh: "数据", en: "Data" }, kind: "json" }],
+    ports: [wireOutput("json", "JSON", "json")],
+  },
+
+  genericAgent: {
+    type: "genericAgent",
+    label: "Generic Agent",
+    labelI18n: { zh: "通用 Agent", en: "Generic Agent" },
+    category: "core",
+    description:
+      "Fully configurable LLM agent with 4 static input slots. Accepts Text, Markdown, and JSON inputs.",
+    descriptionI18n: {
+      zh: "完全可配置的 LLM Agent，具有 4 个静态输入槽。接受 Text、Markdown 和 JSON 输入。",
+      en: "Fully configurable LLM agent with 4 static input slots. Accepts Text, Markdown, and JSON inputs.",
+    },
+    color: "#2563eb",
+    quickAdd: true,
+    panelLayout: "agent",
+    defaultConfig: {
+      systemPrompt: "You are a helpful assistant.",
+      modelId: "",
+      temperature: 0.7,
+      maxTokens: 2048,
+    },
+    configFields: [
+      {
+        key: "providerId",
+        label: { zh: "Provider", en: "Provider" },
+        kind: "text",
+        placeholder: { zh: "例如: deepseek", en: "e.g. deepseek" },
+        help: {
+          zh: "Provider ID，由 Server Provider Registry 管理",
+          en: "Provider ID, managed by Server Provider Registry",
+        },
+      },
+      {
+        key: "modelId",
+        label: { zh: "模型", en: "Model" },
+        kind: "text",
+        placeholder: { zh: "例如: deepseek-v4-flash", en: "e.g. deepseek-v4-flash" },
+        help: {
+          zh: "模型 ID，由 Provider Registry 解析",
+          en: "Model ID, resolved by Provider Registry",
+        },
+      },
+      { key: "systemPrompt", label: { zh: "系统提示词", en: "System Prompt" }, kind: "textarea" },
+      {
+        key: "temperature",
+        label: { zh: "温度", en: "Temperature" },
+        kind: "number",
+        min: 0,
+        max: 2,
+        advanced: true,
+      },
+      {
+        key: "topP",
+        label: { zh: "Top P", en: "Top P" },
+        kind: "number",
+        min: 0,
+        max: 1,
+        advanced: true,
+      },
+      {
+        key: "maxTokens",
+        label: { zh: "最大 Token", en: "Max Tokens" },
+        kind: "number",
+        min: 1,
+        max: 128000,
+        advanced: true,
+      },
+      {
+        key: "timeoutMs",
+        label: { zh: "超时(ms)", en: "Timeout (ms)" },
+        kind: "number",
+        min: 1000,
+        max: 300000,
+        advanced: true,
+      },
+      {
+        key: "responseFormat",
+        label: { zh: "响应格式", en: "Response Format" },
+        kind: "select",
+        options: ["text", "json_object"],
+        advanced: true,
+      },
+      {
+        key: "jsonRendererEnabled",
+        label: { zh: "JSON 渲染器", en: "JSON Renderer" },
+        kind: "boolean",
+        help: {
+          zh: "将 data:JSON 输入转为 Markdown 供模型阅读",
+          en: "Render data:JSON input to Markdown for the model",
+        },
+      },
+    ],
+    ports: [
+      wireInput("userInput", "User Input", "text", { required: false }),
+      wireInput("instruction", "Instruction", "markdown", { required: false }),
+      wireInput("context", "Context", "markdown", { required: false }),
+      wireInput("data", "Data", "json", { required: false }),
+      wireOutput("result", "Result", "text"),
+    ],
+  },
+
+  specializedAgent: {
+    type: "specializedAgent",
+    label: "Specialized Agent",
+    labelI18n: { zh: "专用 Agent", en: "Specialized Agent" },
+    category: "core",
+    description:
+      "Profile-driven agent with pre-configured capabilities. Select a profile to load specialized prompts and defaults.",
+    descriptionI18n: {
+      zh: "基于 Profile 的专用 Agent，具有预配置能力。选择 Profile 以加载专用提示词和默认值。",
+      en: "Profile-driven agent with pre-configured capabilities. Select a profile to load specialized prompts and defaults.",
+    },
+    color: "#7c3aed",
+    quickAdd: true,
+    panelLayout: "agent",
+    defaultConfig: {
+      profileId: "",
+    },
+    configFields: [
+      {
+        key: "profileId",
+        label: { zh: "Profile", en: "Profile" },
+        kind: "text",
+        required: true,
+        placeholder: { zh: "例如: rp-writer", en: "e.g. rp-writer" },
+        help: {
+          zh: "Profile ID，从 Profile Registry 解析。不在下拉列表中硬编码。",
+          en: "Profile ID, resolved from Profile Registry. Not hardcoded in dropdown.",
+        },
+      },
+      {
+        key: "providerId",
+        label: { zh: "Provider", en: "Provider" },
+        kind: "text",
+        placeholder: { zh: "覆盖 Profile 默认 Provider", en: "Override profile default provider" },
+      },
+      {
+        key: "modelId",
+        label: { zh: "模型", en: "Model" },
+        kind: "text",
+        placeholder: { zh: "覆盖 Profile 默认模型", en: "Override profile default model" },
+      },
+      {
+        key: "temperature",
+        label: { zh: "温度", en: "Temperature" },
+        kind: "number",
+        min: 0,
+        max: 2,
+        advanced: true,
+        help: { zh: "覆盖 Profile 默认值", en: "Override profile default" },
+      },
+      {
+        key: "maxTokens",
+        label: { zh: "最大 Token", en: "Max Tokens" },
+        kind: "number",
+        min: 1,
+        max: 128000,
+        advanced: true,
+      },
+    ],
+    ports: [
+      wireInput("userInput", "User Input", "text", { required: false }),
+      wireInput("instruction", "Instruction", "markdown", { required: false }),
+      wireInput("context", "Context", "markdown", { required: false }),
+      wireInput("data", "Data", "json", { required: false }),
+      wireOutput("result", "Result", "text"),
+    ],
+  },
+
+  inspectOutput: {
+    type: "inspectOutput",
+    label: "Inspect Output",
+    labelI18n: { zh: "检查输出", en: "Inspect Output" },
+    category: "utility",
+    description:
+      "Displays intermediate data for debugging. Three optional input ports for JSON, Markdown, and Text.",
+    descriptionI18n: {
+      zh: "显示中间数据用于调试。三个可选输入端口，分别接受 JSON、Markdown 和 Text。",
+      en: "Displays intermediate data for debugging. Three optional input ports for JSON, Markdown, and Text.",
+    },
+    color: "#64748b",
+    panelLayout: "preview",
+    defaultConfig: { displayMode: "auto" },
+    configFields: [
+      {
+        key: "displayMode",
+        label: { zh: "显示模式", en: "Display Mode" },
+        kind: "select",
+        options: ["auto", "json", "markdown", "text"],
+      },
+    ],
+    ports: [
+      wireInput("jsonInput", "JSON Input", "json", { required: false }),
+      wireInput("markdownInput", "Markdown Input", "markdown", { required: false }),
+      wireInput("textInput", "Text Input", "text", { required: false }),
+    ],
+  },
+
+  playerOutput: {
+    type: "playerOutput",
+    label: "Player Output",
+    labelI18n: { zh: "玩家输出", en: "Player Output" },
+    category: "core",
+    description:
+      "Delivers final text output to the player. Only accepts Text wire. Does not expose internal data.",
+    descriptionI18n: {
+      zh: "向玩家发送最终文本输出。仅接受 Text 线。不暴露内部数据。",
+      en: "Delivers final text output to the player. Only accepts Text wire. Does not expose internal data.",
+    },
+    color: "#b45309",
+    panelLayout: "output",
+    defaultConfig: { displayLabel: "Output" },
+    configFields: [
+      {
+        key: "displayLabel",
+        label: { zh: "显示标签", en: "Display Label" },
+        kind: "text",
+      },
+    ],
+    ports: [
+      wireInput("text", "Text", "text", { required: true }),
+      wireOutput("final", "Final", "text"),
+    ],
+  },
 };
 
 export const validatePortSchemaId = (port: PortDefinition): string | null => {
-  if (port.schemaId && port.dataType !== "json") {
-    return `Port "${port.id}" has schemaId but dataType is "${port.dataType}" (must be "json")`;
+  // For legacy ports: schemaId only valid on json dataType
+  if (isLegacyPort(port)) {
+    if (port.schemaId && port.dataType !== "json") {
+      return `Port "${port.id}" has schemaId but dataType is "${port.dataType}" (must be "json")`;
+    }
+    return null;
+  }
+  // For wire ports: schemaId only valid on json wireType
+  if (isWirePort(port)) {
+    if (port.schemaId && port.wireType !== "json") {
+      return `Port "${port.id}" has schemaId but wireType is "${port.wireType}" (must be "json")`;
+    }
+    return null;
   }
   return null;
 };
@@ -476,9 +936,10 @@ export const findPortInCatalog = (
   nodeType: string,
   portId: string,
   direction?: "input" | "output",
-) => {
+): PortDefinition | undefined => {
   const definition = catalog[nodeType];
-  const port = definition?.ports.find((candidate) => candidate.id === portId);
+  if (!definition) return undefined;
+  const port = definition.ports.find((candidate) => candidate.id === portId);
 
   if (!port || (direction && port.direction !== direction)) {
     return undefined;
@@ -486,6 +947,8 @@ export const findPortInCatalog = (
 
   return port;
 };
+
+// ============ Legacy Type Compatibility (unchanged) ============
 
 export const areTypesCompatible = (
   sourceType: DataType,
@@ -559,3 +1022,55 @@ export const areTypesCompatible = (
 
   return compatible.has(`${sourceType}:${targetType}`);
 };
+
+// ============ Wire Type Compatibility (P-1) ============
+
+/**
+ * Check strict WireType compatibility.
+ * Only same-type connections are allowed. Cross-type is rejected.
+ */
+export function areWireTypesCompatible(
+  sourceWireType: WireType,
+  targetWireType: WireType,
+): boolean {
+  return sourceWireType === targetWireType;
+}
+
+/**
+ * Check JSON schema compatibility between two ports.
+ *
+ * Returns:
+ * - "compatible": same schemaId, or target has no schemaId
+ * - "compatible-with-runtime-validation": source has no schemaId, target has schemaId (runtime check needed)
+ * - "incompatible": different schemaIds
+ */
+export function checkSchemaCompatibility(
+  sourceSchemaId: string | undefined,
+  targetSchemaId: string | undefined,
+): SchemaCompatResult {
+  if (sourceSchemaId && targetSchemaId) {
+    return sourceSchemaId === targetSchemaId ? "compatible" : "incompatible";
+  }
+  if (!targetSchemaId) {
+    return "compatible";
+  }
+  // sourceSchemaId is undefined, target has schemaId
+  return "compatible-with-runtime-validation";
+}
+
+// Runtime schema validator registry — injected by server composition root
+let _runtimeSchemaValidator: ((schemaId: string, data: unknown) => boolean) | undefined;
+
+/** Inject a runtime schema validator. Called by server composition root. */
+export function setRuntimeSchemaValidator(
+  validator: (schemaId: string, data: unknown) => boolean,
+): void {
+  _runtimeSchemaValidator = validator;
+}
+
+/** Get the injected runtime schema validator. */
+export function getRuntimeSchemaValidator():
+  | ((schemaId: string, data: unknown) => boolean)
+  | undefined {
+  return _runtimeSchemaValidator;
+}

@@ -1,6 +1,6 @@
 import { createExecutionBatches } from "./scheduler";
 import { validateWorkflow } from "./validation";
-import { nodeRegistry } from "./nodeRegistry";
+import { nodeRegistry, getRuntimeSchemaValidator } from "./nodeRegistry";
 import type {
   NodeCatalog,
   NodeExecutor,
@@ -9,6 +9,8 @@ import type {
   WorkflowRunContext,
   WorkflowRunResult,
 } from "./types";
+import { isWirePort } from "./types";
+import { findPortInCatalog, checkSchemaCompatibility } from "./nodeRegistry";
 
 export const runWorkflow = async (
   workflow: WorkflowDefinition,
@@ -44,6 +46,27 @@ export const runWorkflow = async (
 
         const inputs = collectInputs(workflow, nodeId, outputsByNode);
         const startedAt = Date.now();
+
+        // Runtime schema validation for JSON edges with compatible-with-runtime-validation
+        const schemaError = validateRuntimeSchemas(
+          workflow,
+          nodeId,
+          inputs,
+          outputsByNode,
+          catalog,
+        );
+        if (schemaError) {
+          hasError = true;
+          return {
+            nodeId,
+            status: "error",
+            inputs,
+            outputs: {},
+            startedAt,
+            endedAt: Date.now(),
+            error: schemaError,
+          };
+        }
 
         try {
           const executor = executors[node.type] ?? defaultExecutor;
@@ -110,3 +133,53 @@ const defaultExecutor: NodeExecutor = async ({ node, inputs }) => ({
     final: `Node ${node.id} received ${JSON.stringify(inputs)}`,
   },
 });
+
+/**
+ * Validate JSON data at runtime for edges marked compatible-with-runtime-validation.
+ * Returns an error string if validation fails, or null if all good.
+ */
+function validateRuntimeSchemas(
+  workflow: WorkflowDefinition,
+  nodeId: string,
+  inputs: Record<string, unknown>,
+  outputsByNode: Map<string, Record<string, unknown>>,
+  catalog: NodeCatalog,
+): string | null {
+  const validator = getRuntimeSchemaValidator();
+  if (!validator) return null; // No validator configured — skip runtime check
+
+  const targetNode = workflow.nodes.find((n) => n.id === nodeId);
+  if (!targetNode) return null;
+
+  const incomingEdges = workflow.edges.filter((e) => e.target === nodeId);
+
+  for (const edge of incomingEdges) {
+    const sourceNode = workflow.nodes.find((n) => n.id === edge.source);
+    if (!sourceNode) continue;
+
+    const targetPort = findPortInCatalog(catalog, targetNode.type, edge.targetPort, "input");
+    const sourcePort = findPortInCatalog(catalog, sourceNode.type, edge.sourcePort, "output");
+    if (!targetPort || !sourcePort) continue;
+
+    // Only check wire-native JSON → JSON edges
+    if (!isWirePort(sourcePort) || !isWirePort(targetPort)) continue;
+    if (sourcePort.wireType !== "json" || targetPort.wireType !== "json") continue;
+
+    // Only check when compatible-with-runtime-validation
+    const schemaStatus = checkSchemaCompatibility(sourcePort.schemaId, targetPort.schemaId);
+    if (schemaStatus !== "compatible-with-runtime-validation") continue;
+
+    // Target has schemaId, source doesn't — validate actual data
+    if (!targetPort.schemaId) continue;
+
+    const data = inputs[edge.targetPort];
+    if (!validator(targetPort.schemaId, data)) {
+      return (
+        `Runtime schema validation failed: data on port "${edge.targetPort}" ` +
+        `does not satisfy schema "${targetPort.schemaId}"`
+      );
+    }
+  }
+
+  return null;
+}

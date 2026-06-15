@@ -19,14 +19,76 @@ export type DataType =
 
 export type PortDirection = "input" | "output";
 
-export type PortDefinition = {
+// ============ Wire Types (P-1: Three-Wire Model) ============
+
+/** Three-wire types for the platform. */
+export type WireType = "json" | "markdown" | "text";
+
+// ============ Port Definition — Discriminated Union ============
+
+/** Legacy port: uses DataType (17 values). Preserved for backward compatibility. */
+export type LegacyPortDefinition = {
   id: string;
   label: string;
   direction: PortDirection;
   dataType: DataType;
-  required?: boolean;
   schemaId?: string;
+  required?: boolean;
 };
+
+/** Wire-native port: uses WireType (3 values). Added in P-1. */
+export type WirePortDefinition = {
+  id: string;
+  label: string;
+  direction: PortDirection;
+  wireType: WireType;
+  schemaId?: string;
+  required?: boolean;
+};
+
+/** Port definition — discriminated union of legacy and wire-native ports. */
+export type PortDefinition = LegacyPortDefinition | WirePortDefinition;
+
+// ============ Type Guards ============
+
+/** Check if a port is a legacy (DataType-based) port. */
+export const isLegacyPort = (port: PortDefinition): port is LegacyPortDefinition =>
+  "dataType" in port;
+
+/** Check if a port is a wire-native (WireType-based) port. */
+export const isWirePort = (port: PortDefinition): port is WirePortDefinition => "wireType" in port;
+
+// ============ Wire Type Compatibility ============
+
+/** Result of JSON schema compatibility check. */
+export type SchemaCompatResult =
+  | "compatible"
+  | "compatible-with-runtime-validation"
+  | "incompatible";
+
+/** Resolve a port to its effective WireType.
+ *  Wire ports return their wireType directly.
+ *  Legacy ports are looked up in the mapping table.
+ *  Unregistered legacy ports return undefined.
+ */
+export type PortWireTypeResolver = (nodeType: string, portId: string) => WireType | undefined;
+
+/** Schema validator callback for runtime validation.
+ *  Called when a JSON connection has schemaId mismatch that requires runtime checking.
+ *  Returns true if the actual data satisfies the target schema at runtime.
+ */
+export type RuntimeSchemaValidator = (targetSchemaId: string, data: unknown) => boolean;
+
+// ============ Legacy → Wire Mapping Table ============
+
+/** Individual legacy port mapping entry. */
+export type LegacyPortMapping = {
+  nodeType: string;
+  portId: string;
+  wireType: WireType;
+};
+
+// ============ Localization ============
 
 export type LocalizedText = {
   zh: string;

@@ -1,9 +1,13 @@
 import {
   areTypesCompatible,
+  areWireTypesCompatible,
+  checkSchemaCompatibility,
   findPortInCatalog,
   nodeRegistry,
+  resolvePortWireType,
   validatePortSchemaId,
 } from "./nodeRegistry";
+import { isLegacyPort, isWirePort } from "./types";
 import type { NodeCatalog, WorkflowDefinition, WorkflowValidationIssue } from "./types";
 
 export const validateWorkflow = (
@@ -92,23 +96,77 @@ export const validateWorkflow = (
       });
     }
 
-    if (
-      !areTypesCompatible(
-        sourcePort.dataType,
-        targetPort.dataType,
-        sourcePort.schemaId,
-        targetPort.schemaId,
-      )
-    ) {
-      const schemaInfo =
-        sourcePort.schemaId || targetPort.schemaId
-          ? ` [source schemaId: ${sourcePort.schemaId ?? "none"}, target schemaId: ${targetPort.schemaId ?? "none"}]`
-          : "";
-      issues.push({
-        level: "error",
-        message: `Incompatible edge types: ${sourcePort.dataType} -> ${targetPort.dataType}${schemaInfo}`,
-        edgeId: edge.id,
-      });
+    // Determine compatibility path based on port types
+    const sourceIsWire = isWirePort(sourcePort);
+    const targetIsWire = isWirePort(targetPort);
+    const sourceIsLegacy = isLegacyPort(sourcePort);
+    const targetIsLegacy = isLegacyPort(targetPort);
+
+    if (sourceIsLegacy && targetIsLegacy) {
+      // Legacy → Legacy: use old areTypesCompatible
+      if (
+        !areTypesCompatible(
+          sourcePort.dataType,
+          targetPort.dataType,
+          sourcePort.schemaId,
+          targetPort.schemaId,
+        )
+      ) {
+        const schemaInfo =
+          sourcePort.schemaId || targetPort.schemaId
+            ? ` [source schemaId: ${sourcePort.schemaId ?? "none"}, target schemaId: ${targetPort.schemaId ?? "none"}]`
+            : "";
+        issues.push({
+          level: "error",
+          message: `Incompatible edge types: ${sourcePort.dataType} -> ${targetPort.dataType}${schemaInfo}`,
+          edgeId: edge.id,
+        });
+      }
+    } else if (sourceIsWire && targetIsWire) {
+      // Wire → Wire: use strict areWireTypesCompatible + schema check
+      if (!areWireTypesCompatible(sourcePort.wireType, targetPort.wireType)) {
+        issues.push({
+          level: "error",
+          message: `Incompatible wire types: ${sourcePort.wireType} -> ${targetPort.wireType}`,
+          edgeId: edge.id,
+        });
+      } else if (sourcePort.wireType === "json" && targetPort.wireType === "json") {
+        // Same wire type JSON → check schema compatibility
+        const schemaResult = checkSchemaCompatibility(sourcePort.schemaId, targetPort.schemaId);
+        if (schemaResult === "incompatible") {
+          issues.push({
+            level: "error",
+            message: `Incompatible JSON schemas: source=${sourcePort.schemaId ?? "none"}, target=${targetPort.schemaId ?? "none"}`,
+            edgeId: edge.id,
+          });
+        }
+        // "compatible-with-runtime-validation" is not a validation error — it's a runtime concern
+      }
+    } else {
+      // Mixed: try to resolve legacy port to wire type
+      const sourceWireType = sourceIsWire
+        ? sourcePort.wireType
+        : resolvePortWireType(source.type, sourcePort.id);
+      const targetWireType = targetIsWire
+        ? targetPort.wireType
+        : resolvePortWireType(target.type, targetPort.id);
+
+      if (!sourceWireType || !targetWireType) {
+        const unresolvable = !sourceWireType
+          ? `${source.type}.${sourcePort.id}`
+          : `${target.type}.${targetPort.id}`;
+        issues.push({
+          level: "error",
+          message: `Cannot connect legacy port to wire-native port: ${unresolvable} has no wire type mapping`,
+          edgeId: edge.id,
+        });
+      } else if (!areWireTypesCompatible(sourceWireType, targetWireType)) {
+        issues.push({
+          level: "error",
+          message: `Incompatible resolved wire types: ${source.type}.${sourcePort.id} (${sourceWireType}) -> ${target.type}.${targetPort.id} (${targetWireType})`,
+          edgeId: edge.id,
+        });
+      }
     }
   }
 
