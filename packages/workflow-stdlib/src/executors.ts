@@ -183,15 +183,43 @@ export const finalDraftSelectorExecutor: NodeExecutor = async ({ inputs }) => {
   // Select the non-empty draft. Revise draft takes priority if both present
   // (in practice only one will be non-empty due to branch skipping).
   const finalDraft = reviseDraft || acceptDraft || "";
+  const source = reviseDraft ? ("attempt-2" as const) : ("attempt-1" as const);
+
+  // Build the loop result from gate results
+  const firstGateResult = inputs.firstGateResult as Record<string, unknown> | undefined;
+  const secondGateResult = inputs.secondGateResult as Record<string, unknown> | undefined;
+  const acceptRouting = inputs.acceptRouting as Record<string, unknown> | undefined;
+  const accepted = acceptRouting?.accepted === true;
+
+  const hasRevision = secondGateResult && Object.keys(secondGateResult).length > 0;
+  const effectiveGateResult = hasRevision && secondGateResult ? secondGateResult : firstGateResult;
+
+  // Determine exhausted state
+  const exhausted = !accepted && hasRevision;
+
+  const loopResult = {
+    finalDraft,
+    accepted,
+    exhausted,
+    writerAttempts: hasRevision ? (2 as const) : (1 as const),
+    criticAttempts: hasRevision ? (2 as const) : (1 as const),
+    finalDraftSource: source,
+    gateResult: effectiveGateResult,
+    firstGateResult: firstGateResult ?? {},
+    revisionApplied: hasRevision,
+  };
 
   return {
     outputs: {
       finalDraft,
+      loopResult,
     },
     metadata: {
-      source: reviseDraft ? "attempt-2" : "attempt-1",
+      source,
       acceptDraftPresent: acceptDraft !== undefined && acceptDraft.length > 0,
       reviseDraftPresent: reviseDraft !== undefined && reviseDraft.length > 0,
+      accepted,
+      exhausted,
     },
   };
 };

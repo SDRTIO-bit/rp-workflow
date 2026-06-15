@@ -17,5 +17,6 @@ export * from "./renderer";
 export * from "./rpCriticGate";
 export * from "./rpMemoryCommitPolicy";
 export * from "./rpRevisionLoop";
+export * from "./rpSideEffectDecision";
 export * from "./sessionMarkdown";
 export * from "./types";

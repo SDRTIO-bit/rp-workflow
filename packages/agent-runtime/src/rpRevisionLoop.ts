@@ -274,3 +274,89 @@ export function validateLoopResult(result: RpRevisionLoopResultV1): string | nul
 
   return null;
 }
+
+// ============ P-11.1: Side-Effect Decision ============
+
+/**
+ * Deterministic side-effect decision derived from a revision loop result.
+ * Does NOT call LLM, access Store, or modify the loop result.
+ *
+ * Schema ID: awp.rp-side-effect-decision.v1
+ */
+export type RpSideEffectDecisionV1 = {
+  allowPlayerOutput: boolean;
+  allowSessionCommit: boolean;
+  allowMemoryCommit: boolean;
+
+  accepted: boolean;
+  exhausted: boolean;
+
+  reason: "accepted" | "exhausted-return-latest" | "exhausted-fail";
+};
+
+/**
+ * Compute the side-effect decision from a loop result and finalize config.
+ *
+ * Rules:
+ * - accepted=true → all allowed, reason=accepted
+ * - accepted=false + exhausted=true + onExhausted=return-latest →
+ *   player/session allowed, memory denied, reason=exhausted-return-latest
+ * - accepted=false + exhausted=true + onExhausted=fail →
+ *   all denied, reason=exhausted-fail
+ *
+ * Throws for illegal state combinations.
+ */
+export function computeSideEffectDecision(
+  loopResult: RpRevisionLoopResultV1,
+  config: RpRevisionFinalizeConfig = DEFAULT_FINALIZE_CONFIG,
+): RpSideEffectDecisionV1 {
+  const validationError = validateLoopResult(loopResult);
+  if (validationError) {
+    throw new Error(`rpSideEffectDecision: invalid loop result: ${validationError}`);
+  }
+
+  if (loopResult.accepted) {
+    return {
+      allowPlayerOutput: true,
+      allowSessionCommit: true,
+      allowMemoryCommit: true,
+      accepted: true,
+      exhausted: false,
+      reason: "accepted",
+    };
+  }
+
+  // Not accepted → must be exhausted (validated above)
+  if (!loopResult.exhausted) {
+    throw new Error(
+      "rpSideEffectDecision: loop result is neither accepted nor exhausted — illegal state",
+    );
+  }
+
+  if (config.onExhausted === "return-latest") {
+    return {
+      allowPlayerOutput: true,
+      allowSessionCommit: true,
+      allowMemoryCommit: false,
+      accepted: false,
+      exhausted: true,
+      reason: "exhausted-return-latest",
+    };
+  }
+
+  // Must be fail
+  if (config.onExhausted === "fail") {
+    return {
+      allowPlayerOutput: false,
+      allowSessionCommit: false,
+      allowMemoryCommit: false,
+      accepted: false,
+      exhausted: true,
+      reason: "exhausted-fail",
+    };
+  }
+
+  throw new Error(
+    `rpSideEffectDecision: unknown onExhausted value "${String(config.onExhausted)}"`,
+  );
+}

@@ -89,7 +89,7 @@ export async function runWorkflowWithCheckpoint(
   const outputsByNode = new Map<string, Record<string, unknown>>();
   const nodeRuns: NodeRunResult[] = [];
   let hasError = false;
-  let inactiveBranchNodes = new Set<string>();
+  const inactiveBranchNodes = new Set<string>();
 
   for (const batch of batches) {
     const batchRuns = await Promise.all(
@@ -125,18 +125,21 @@ export async function runWorkflowWithCheckpoint(
           const result = await executor({ node, inputs, context });
           outputsByNode.set(nodeId, result.outputs);
 
-          // After executing a conditionalRoute, compute inactive branch
+          // After executing a conditionalRoute, compute inactive branch and ACCUMULATE
           if (node.type === "conditionalRoute") {
             const outs = result.outputs as Record<string, unknown>;
             const activeBranch =
               (outs.activeBranch as string) ?? (outs.decision as string) ?? "accept";
             const inactivePort = activeBranch === "accept" ? "reviseBranch" : "acceptBranch";
-            inactiveBranchNodes = computeInactiveBranchNodes(
+            const newInactive = computeInactiveBranchNodes(
               workflow,
               nodeId,
               inactivePort,
               activeBranch === "accept" ? "acceptBranch" : "reviseBranch",
             );
+            for (const nid of newInactive) {
+              inactiveBranchNodes.add(nid);
+            }
           }
 
           // Fire checkpoint hook
@@ -239,8 +242,8 @@ export async function resumeWorkflow(
     ...(checkpoint.skippedNodeIds ?? []),
   ]);
 
-  // Recompute inactive branch nodes from saved conditionalRoute outputs
-  let inactiveBranchNodes = new Set<string>();
+  // Recompute inactive branch nodes from saved conditionalRoute outputs — ACCUMULATE
+  const inactiveBranchNodes = new Set<string>();
   for (const nodeId of checkpoint.completedNodeIds) {
     const node = workflow.nodes.find((n) => n.id === nodeId);
     if (node?.type === "conditionalRoute") {
@@ -249,12 +252,15 @@ export async function resumeWorkflow(
         const activeBranch =
           (outputs.activeBranch as string) ?? (outputs.decision as string) ?? "accept";
         const inactivePort = activeBranch === "accept" ? "reviseBranch" : "acceptBranch";
-        inactiveBranchNodes = computeInactiveBranchNodes(
+        const newInactive = computeInactiveBranchNodes(
           workflow,
           nodeId,
           inactivePort,
           activeBranch === "accept" ? "acceptBranch" : "reviseBranch",
         );
+        for (const nid of newInactive) {
+          inactiveBranchNodes.add(nid);
+        }
       }
     }
   }
@@ -323,18 +329,21 @@ export async function resumeWorkflow(
           const result = await executor({ node, inputs, context });
           outputsByNode.set(nodeId, result.outputs);
 
-          // After executing a conditionalRoute, compute inactive branch
+          // After executing a conditionalRoute, compute inactive branch and ACCUMULATE
           if (node.type === "conditionalRoute") {
             const outs = result.outputs as Record<string, unknown>;
             const activeBranch =
               (outs.activeBranch as string) ?? (outs.decision as string) ?? "accept";
             const inactivePort = activeBranch === "accept" ? "reviseBranch" : "acceptBranch";
-            inactiveBranchNodes = computeInactiveBranchNodes(
+            const newInactive = computeInactiveBranchNodes(
               workflow,
               nodeId,
               inactivePort,
               activeBranch === "accept" ? "acceptBranch" : "reviseBranch",
             );
+            for (const nid of newInactive) {
+              inactiveBranchNodes.add(nid);
+            }
           }
 
           await callbacks?.onNodeCompleted?.(checkpoint.runId, nodeId, result.outputs);

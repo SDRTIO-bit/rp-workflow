@@ -232,7 +232,7 @@ export async function runWorkflowWithBranches(
   const outputsByNode = new Map<string, Record<string, unknown>>();
   const nodeRuns: NodeRunResult[] = [];
   let hasError = false;
-  let inactiveBranchNodes = new Set<string>();
+  const inactiveBranchNodes = new Set<string>();
 
   for (const batch of batches) {
     const batchRuns = await Promise.all(
@@ -286,19 +286,23 @@ export async function runWorkflowWithBranches(
           const result = await executor({ node, inputs, context });
           outputsByNode.set(nodeId, result.outputs);
 
-          // After executing a conditionalRoute, compute inactive branch
+          // After executing a conditionalRoute, compute inactive branch and ACCUMULATE
           if (node.type === "conditionalRoute") {
             const activeBranch =
               (result.outputs.activeBranch as string) ??
               (result.outputs.decision as string) ??
               "accept";
             const inactivePort = activeBranch === "accept" ? "reviseBranch" : "acceptBranch";
-            inactiveBranchNodes = computeInactiveBranchNodes(
+            const newInactive = computeInactiveBranchNodes(
               workflow,
               nodeId,
               inactivePort,
               activeBranch === "accept" ? "acceptBranch" : "reviseBranch",
             );
+            // Accumulate: later conditionalRoutes add to the set without clearing prior inactives
+            for (const nid of newInactive) {
+              inactiveBranchNodes.add(nid);
+            }
           }
 
           return {

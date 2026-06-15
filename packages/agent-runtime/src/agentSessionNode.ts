@@ -6,6 +6,8 @@
  *
  * Stateless mode: load returns empty context, commit is no-op.
  * Stateful mode: load returns session history, commit saves new turns.
+ *
+ * P-11.1: Commit now uses idempotent session commit with turnId + contentHash dedup.
  */
 
 import type { NodeDefinition, NodeExecutor } from "@awp/workflow-core";
@@ -17,7 +19,21 @@ import type {
   AgentTurnV1,
 } from "./agentSession.js";
 import { DEFAULT_SESSION_CONFIG } from "./agentSession.js";
-import type { AgentSessionStore } from "./agentSessionStore.js";
+import type {
+  AgentSessionStore,
+  AgentSessionCommitDedupKeyV1,
+  AgentSessionCommitResultV1,
+} from "./agentSessionStore.js";
+
+// ============ Content Hash (djb2, deterministic, no crypto) ============
+
+function computeContentHash(content: string): string {
+  let hash = 5381;
+  for (let i = 0; i < content.length; i++) {
+    hash = ((hash << 5) + hash + content.charCodeAt(i)) & 0xffffffff;
+  }
+  return `sha_${(hash >>> 0).toString(36)}`;
+}
 
 // ============ Node Definitions ============
 
@@ -77,6 +93,13 @@ export const agentSessionCommitV1Definition: NodeDefinition = {
       direction: "input",
       required: false,
       schemaId: "agent.session-config.v1",
+    },
+    {
+      id: "turnId",
+      label: "Turn ID",
+      wireType: "json",
+      direction: "input",
+      required: false,
     },
     {
       id: "commitResult",
@@ -252,6 +275,66 @@ export function createAgentSessionCommitV1Executor(services: AgentSessionService
       };
     }
 
+    // P-11.1: Idempotent commit when turnId is provided
+    const turnId =
+      typeof input.inputs.turnId === "string" && input.inputs.turnId
+        ? input.inputs.turnId
+        : undefined;
+
+    if (turnId) {
+      const dedupKey: AgentSessionCommitDedupKeyV1 = {
+        sessionId: sessionDelta.sessionKey.conversationId,
+        agentNodeId: sessionDelta.sessionKey.agentNodeId,
+        turnId,
+      };
+      const draftText = String(sessionDelta.newTurn.assistantOutput ?? "");
+      const contentHash = computeContentHash(draftText);
+
+      try {
+        const result: AgentSessionCommitResultV1 = await services.store.commitIdempotent(
+          sessionDelta.sessionKey,
+          sessionDelta,
+          dedupKey,
+          contentHash,
+        );
+
+        if (result.committed) {
+          return {
+            outputs: {
+              commitResult: { committed: true, turnIndex: sessionDelta.newTurn.turnIndex, turnId },
+              metadata: { mode: "stateful", storeSuccess: true, dedupKey },
+            },
+          };
+        }
+
+        if (result.deduplicated) {
+          return {
+            outputs: {
+              commitResult: { committed: false, deduplicated: true, turnId },
+              metadata: { mode: "stateful", deduplicated: true, turnId },
+            },
+          };
+        }
+
+        // Must be conflict
+        return {
+          outputs: {
+            commitResult: { committed: false, conflict: true, error: result.error, turnId },
+            metadata: { mode: "stateful", conflict: true, error: result.error, turnId },
+          },
+        };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return {
+          outputs: {
+            commitResult: { committed: false, error: message, turnId },
+            metadata: { mode: "stateful", storeSuccess: false, error: message },
+          },
+        };
+      }
+    }
+
+    // Legacy path: no turnId → fall back to plain append
     try {
       await services.store.append(sessionDelta.sessionKey, sessionDelta);
       return {

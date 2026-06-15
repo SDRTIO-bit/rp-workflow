@@ -202,6 +202,7 @@ export const stdlibNodes: NodeCatalog = {
     ],
     ports: [
       wIn("condition", "Condition", "json", true),
+      wIn("routing", "Routing", "json", false),
       wOut("activeBranch", "Active Branch", "text"),
       wOut("acceptBranch", "Accept Branch", "json"),
       wOut("reviseBranch", "Revise Branch", "json"),
@@ -214,10 +215,10 @@ export const stdlibNodes: NodeCatalog = {
     labelI18n: { zh: "终稿选择器", en: "Final Draft Selector" },
     category: "core",
     description:
-      "Merges two branches by selecting the active branch's output. Accepts drafts from both accept and revise branches.",
+      "Merges two branches by selecting the active branch's output. Outputs both final draft text and the full RpRevisionLoopResultV1 for downstream decision nodes.",
     descriptionI18n: {
-      zh: "通过选择活动分支的输出来合并两个分支。接收来自 accept 和 revise 两个分支的草稿。",
-      en: "Merges two branches by selecting the active branch's output. Accepts drafts from both accept and revise branches.",
+      zh: "通过选择活动分支的输出来合并两个分支。同时输出最终草稿文本和完整的 RpRevisionLoopResultV1。",
+      en: "Merges two branches by selecting the active branch's output. Outputs both final draft text and the full RpRevisionLoopResultV1.",
     },
     color: "#0ea5e9",
     panelLayout: "generic",
@@ -227,7 +228,10 @@ export const stdlibNodes: NodeCatalog = {
       wIn("acceptDraft", "Accept Draft", "text", false),
       wIn("reviseDraft", "Revise Draft", "text", false),
       wIn("acceptRouting", "Accept Routing", "json", false),
+      wIn("firstGateResult", "First Gate Result", "json", false),
+      wIn("secondGateResult", "Second Gate Result", "json", false),
       wOut("finalDraft", "Final Draft", "text"),
+      wOut("loopResult", "Loop Result", "json"),
     ],
   },
 
@@ -275,6 +279,7 @@ export const stdlibNodes: NodeCatalog = {
       wIn("sessionKey", "Session Key", "json", true),
       wIn("playerInput", "Player Input", "text", false),
       wIn("finalDraft", "Final Draft", "text", false),
+      wIn("routing", "Routing", "json", false),
       wOut("sessionDelta", "Session Delta", "json"),
     ],
   },
@@ -296,6 +301,73 @@ export const stdlibNodes: NodeCatalog = {
     defaultConfig: {},
     configFields: [],
     ports: [wIn("text", "Text", "text", true), wOut("json", "JSON", "json")],
+  },
+
+  // ============ P-11.1: Player Output (formalized) ============
+
+  playerOutput: {
+    type: "playerOutput",
+    label: "Player Output",
+    labelI18n: { zh: "玩家输出", en: "Player Output" },
+    category: "core",
+    description:
+      "Outputs the final draft text to the player. Accepts optional routing for branch gating.",
+    descriptionI18n: {
+      zh: "将最终草稿文本输出给玩家。接受可选路由信号用于分支门控。",
+      en: "Outputs the final draft text to the player. Accepts optional routing for branch gating.",
+    },
+    color: "#10b981",
+    panelLayout: "generic",
+    defaultConfig: {},
+    configFields: [],
+    ports: [
+      wIn("text", "Text", "text", true),
+      wIn("routing", "Routing", "json", false),
+      wOut("final", "Final", "text"),
+    ],
+  },
+
+  // ============ P-11.1: Player Input (formalized) ============
+
+  playerInput: {
+    type: "playerInput",
+    label: "Player Input",
+    labelI18n: { zh: "玩家输入", en: "Player Input" },
+    category: "core",
+    description: "Source node providing the player's input text.",
+    descriptionI18n: {
+      zh: "提供玩家输入文本的源节点。",
+      en: "Source node providing the player's input text.",
+    },
+    color: "#0ea5e9",
+    panelLayout: "generic",
+    defaultConfig: { text: "" },
+    configFields: [{ key: "text", label: { zh: "文本", en: "Text" }, kind: "text" }],
+    ports: [wOut("text", "Text", "text")],
+  },
+
+  // ============ P-11.1: Inspect Output (formalized) ============
+
+  inspectOutput: {
+    type: "inspectOutput",
+    label: "Inspect Output",
+    labelI18n: { zh: "检查输出", en: "Inspect Output" },
+    category: "debug",
+    description: "Debug node that logs input values for inspection.",
+    descriptionI18n: {
+      zh: "调试节点，记录输入值以供检查。",
+      en: "Debug node that logs input values for inspection.",
+    },
+    color: "#f59e0b",
+    panelLayout: "generic",
+    defaultConfig: {},
+    configFields: [],
+    ports: [
+      wIn("jsonInput", "JSON Input", "json", false),
+      wIn("markdownInput", "Markdown Input", "markdown", false),
+      wIn("textInput", "Text Input", "text", false),
+      wOut("debug", "Debug", "text"),
+    ],
   },
 };
 

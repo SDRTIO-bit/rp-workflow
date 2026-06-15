@@ -394,6 +394,9 @@ describe("Agent Session: store error handling", () => {
         throw new Error("Store write failed");
       },
       clear: async () => {},
+      commitIdempotent: async () => {
+        throw new Error("Store write failed");
+      },
     };
     const services = { store: brokenStore };
     const commitExec = createAgentSessionCommitV1Executor(services);

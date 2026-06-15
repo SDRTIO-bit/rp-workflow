@@ -48,6 +48,10 @@ import {
   rpCriticQualityGateExecutor,
   rpMemoryCommitPolicyNode,
   rpMemoryCommitPolicyExecutor,
+  rpSideEffectDecisionNode,
+  rpSideEffectDecisionExecutor,
+  failWorkflowNode,
+  failWorkflowExecutor,
   InMemoryAgentSessionStore,
   sessionContextToMarkdown,
   agentSessionLoadV1Definition,
@@ -68,6 +72,8 @@ function cat() {
     memoryDelete: memoryDeleteNode,
     rpCriticQualityGate: rpCriticQualityGateNode,
     rpMemoryCommitPolicy: rpMemoryCommitPolicyNode,
+    rpSideEffectDecision: rpSideEffectDecisionNode,
+    failWorkflow: failWorkflowNode,
     agentSessionLoadV1: agentSessionLoadV1Definition,
     agentSessionCommitV1: agentSessionCommitV1Definition,
   };
@@ -103,6 +109,10 @@ function mk(
   const ms = o?.ms ?? new InMemoryWorkflowMemoryStore();
   const ws = o?.ws ?? new InMemoryDynamicWorldbookStore();
   const cx: WorkflowRunContext = { sessionId: "session-a" };
+  // P-11.1: Module-level counter shared across mk() calls for multi-turn test support
+  if (!(globalThis as any).__rpTurnIdCounter) {
+    (globalThis as any).__rpTurnIdCounter = 0;
+  }
   const e: Record<string, NodeExecutor> = {
     playerInput: async ({ node }) => ({
       outputs: { text: String((node.config as any).text ?? "") },
@@ -134,6 +144,8 @@ function mk(
     }),
     rpCriticQualityGate: rpCriticQualityGateExecutor,
     rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,
+    rpSideEffectDecision: rpSideEffectDecisionExecutor,
+    failWorkflow: failWorkflowExecutor,
     agentSessionLoadV1: createAgentSessionLoadV1Executor({ store: ss }),
     agentSessionCommitV1: createAgentSessionCommitV1Executor({ store: ss }),
     sessionToMarkdown: async ({ inputs }) => {
@@ -150,6 +162,17 @@ function mk(
     memoryDelete: createMemoryDeleteExecutor(ms),
   };
   Object.assign(e, createStdlibExecutors());
+  // P-11.1: Override jsonSource to auto-increment turnId for idempotent commit in multi-turn tests
+  const baseJsonSource = e.jsonSource!;
+  e.jsonSource = async (ctx) => {
+    const result = await baseJsonSource(ctx);
+    if (ctx.node.id === "turnId") {
+      (globalThis as any).__rpTurnIdCounter++;
+      const turnId = `turn-${String((globalThis as any).__rpTurnIdCounter).padStart(3, "0")}`;
+      result.outputs.json = turnId;
+    }
+    return result;
+  };
   return { e, cx, ss, ms, ws };
 }
 const W1 = "[yin ling looked at the key]";
@@ -381,7 +404,9 @@ describe("P-11: File Persistence", () => {
   afterEach(() => {
     try {
       unlinkSync(join(td, "mem.json"));
-    } catch { /* cleanup */ }
+    } catch {
+      /* cleanup */
+    }
   });
   it("17. file store cross-instance", async () => {
     const fp = join(td, "mem.json");

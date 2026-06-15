@@ -20,6 +20,8 @@ import {
   createAgentSessionCommitV1Executor,
   rpMemoryCommitPolicyExecutor,
   rpCriticQualityGateExecutor,
+  rpSideEffectDecisionExecutor,
+  failWorkflowExecutor,
   sessionContextToMarkdown,
   type SpecializedAgentProfileRegistry,
   type AgentSessionStore,
@@ -462,6 +464,10 @@ export const createExecutors = async (
     // ============ P-8: RP Memory Commit Policy ============
     rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,
     rpCriticQualityGate: rpCriticQualityGateExecutor,
+
+    // ============ P-11.1: RP Side Effect Decision & Fail ============
+    rpSideEffectDecision: rpSideEffectDecisionExecutor,
+    failWorkflow: failWorkflowExecutor,
   };
 };
 
