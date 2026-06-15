@@ -2722,6 +2722,7 @@ interface LightCheckpoint {
   workflowId: string;
   workflowHash: string;
   completedNodeIds: string[];
+  skippedNodeIds: string[];
   nodeOutputs: Record<string, Record<string, unknown>>;
 }
 
@@ -2794,6 +2795,7 @@ function v1ToLightCheckpoint(v1: WorkflowCheckpointV1): LightCheckpoint {
     workflowId: v1.workflowId,
     workflowHash: v1.workflowHash,
     completedNodeIds: [...v1.completedNodeIds],
+    skippedNodeIds: [],
     nodeOutputs,
   };
 }
@@ -2877,6 +2879,7 @@ describe("RP Real Vertical Slice V1 — Checkpoint Conversion (Mock)", () => {
       workflowId: wf.id,
       workflowHash: computeWorkflowHash(wf),
       completedNodeIds: ["input", "recentMessages", "llmParser", "promptCompiler"],
+      skippedNodeIds: [],
       nodeOutputs: {
         input: { text: "hello" },
         recentMessages: { recentMessages: [] },
@@ -2943,6 +2946,7 @@ describe("RP Real Vertical Slice V1 — Checkpoint Conversion (Mock)", () => {
       workflowId: wf.id,
       workflowHash: computeWorkflowHash(wf),
       completedNodeIds: ["input", "recentMessages", "llmParser", "promptCompiler"],
+      skippedNodeIds: [],
       nodeOutputs: {
         input: { text: "A" },
         recentMessages: { recentMessages: [] },
@@ -2962,6 +2966,7 @@ describe("RP Real Vertical Slice V1 — Checkpoint Conversion (Mock)", () => {
       workflowId: wf.id,
       workflowHash: computeWorkflowHash(wf),
       completedNodeIds: ["input", "llmParser"],
+      skippedNodeIds: [],
       nodeOutputs: {
         input: { text: "no secrets" },
         llmParser: { parsedInput: { mentions: [] } },
@@ -3101,6 +3106,7 @@ describeRealLLM("RP Real Vertical Slice V1 — Checkpoint Real Interrupt+Resume"
           workflowId: workflow.id,
           workflowHash,
           completedNodeIds: [...completedIds],
+          skippedNodeIds: [],
           nodeOutputs: { ...completedOutputs },
         };
         const v1 = lightCheckpointToV1(light, workflow, runStartedAt);

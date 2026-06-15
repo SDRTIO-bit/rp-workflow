@@ -287,6 +287,7 @@ describe("runWorkflowWithCheckpoint and resumeWorkflow", () => {
       workflowId: workflow.id,
       workflowHash: _hash,
       completedNodeIds: ["step1"],
+      skippedNodeIds: [],
       nodeOutputs: { step1: { result: "a" } },
     };
 
@@ -315,6 +316,7 @@ describe("runWorkflowWithCheckpoint and resumeWorkflow", () => {
       workflowId: workflow.id,
       workflowHash: "wf_different_hash",
       completedNodeIds: [],
+      skippedNodeIds: [],
       nodeOutputs: {},
     };
 

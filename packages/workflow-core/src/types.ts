@@ -210,7 +210,7 @@ export type NodeExecutor = (input: NodeExecutionInput) => Promise<NodeExecutionO
 
 export type NodeRunResult = {
   nodeId: string;
-  status: "success" | "error" | "blocked";
+  status: "success" | "error" | "blocked" | "skipped";
   inputs: Record<string, unknown>;
   outputs: Record<string, unknown>;
   startedAt: number;

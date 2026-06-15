@@ -153,6 +153,49 @@ export function createMarkdownSourceExecutor(resolver?: ResourceResolver): NodeE
   };
 }
 
+// ============ P-10: Conditional Routing Executors ============
+
+export const conditionalRouteExecutor: NodeExecutor = async ({ node, inputs }) => {
+  const conditionField = String(node.config.conditionField ?? "accepted");
+  const condition = inputs.condition as Record<string, unknown> | undefined;
+
+  if (!condition || typeof condition !== "object") {
+    throw new Error(`conditionalRoute at "${node.id}": condition input must be a JSON object`);
+  }
+
+  const value = condition[conditionField];
+  const activeBranch = value === true || value === "accept" ? "accept" : "revise";
+
+  return {
+    outputs: {
+      activeBranch,
+      acceptBranch: condition,
+      reviseBranch: condition,
+    },
+    metadata: { activeBranch, conditionField },
+  };
+};
+
+export const finalDraftSelectorExecutor: NodeExecutor = async ({ inputs }) => {
+  const acceptDraft = typeof inputs.acceptDraft === "string" ? inputs.acceptDraft : undefined;
+  const reviseDraft = typeof inputs.reviseDraft === "string" ? inputs.reviseDraft : undefined;
+
+  // Select the non-empty draft. Revise draft takes priority if both present
+  // (in practice only one will be non-empty due to branch skipping).
+  const finalDraft = reviseDraft || acceptDraft || "";
+
+  return {
+    outputs: {
+      finalDraft,
+    },
+    metadata: {
+      source: reviseDraft ? "attempt-2" : "attempt-1",
+      acceptDraftPresent: acceptDraft !== undefined && acceptDraft.length > 0,
+      reviseDraftPresent: reviseDraft !== undefined && reviseDraft.length > 0,
+    },
+  };
+};
+
 // ============ Executor Registry ============
 
 /**
@@ -167,5 +210,7 @@ export function createStdlibExecutors(resolver?: ResourceResolver): Record<strin
     markdownToText: markdownToTextExecutor,
     jsonSource: createJsonSourceExecutor(resolver),
     markdownSource: createMarkdownSourceExecutor(resolver),
+    conditionalRoute: conditionalRouteExecutor,
+    finalDraftSelector: finalDraftSelectorExecutor,
   };
 }

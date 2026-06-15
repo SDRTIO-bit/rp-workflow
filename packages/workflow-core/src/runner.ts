@@ -134,6 +134,212 @@ const defaultExecutor: NodeExecutor = async ({ node, inputs }) => ({
   },
 });
 
+// ============ Branch-Aware Execution (P-10) ============
+
+/**
+ * Compute the set of node IDs reachable from a given source through a specific port.
+ * Follows edges from source:sourcePort to downstream targets, transitively.
+ */
+function reachableFromPort(
+  workflow: WorkflowDefinition,
+  sourceNodeId: string,
+  sourcePortId: string,
+): Set<string> {
+  const reachable = new Set<string>();
+  const queue: string[] = [];
+
+  // Find initial targets
+  for (const edge of workflow.edges) {
+    if (edge.source === sourceNodeId && edge.sourcePort === sourcePortId) {
+      if (!reachable.has(edge.target)) {
+        reachable.add(edge.target);
+        queue.push(edge.target);
+      }
+    }
+  }
+
+  // BFS
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    for (const edge of workflow.edges) {
+      if (edge.source === current && !reachable.has(edge.target)) {
+        reachable.add(edge.target);
+        queue.push(edge.target);
+      }
+    }
+  }
+
+  return reachable;
+}
+
+/**
+ * Determine which nodes are in the inactive branch after a conditionalRoute decision.
+ * Returns the set of node IDs that should be skipped.
+ *
+ * A node is skipped if it is reachable from the inactive port
+ * AND NOT reachable from the active port (exclusive reachability).
+ */
+export function computeInactiveBranchNodes(
+  workflow: WorkflowDefinition,
+  conditionalRouteNodeId: string,
+  inactivePort: string,
+  activePort: string,
+): Set<string> {
+  const inactiveReachable = reachableFromPort(workflow, conditionalRouteNodeId, inactivePort);
+  const activeReachable = reachableFromPort(workflow, conditionalRouteNodeId, activePort);
+
+  // Nodes exclusively in inactive branch (not also reachable from active branch)
+  const exclusive = new Set<string>();
+  for (const nodeId of inactiveReachable) {
+    if (!activeReachable.has(nodeId)) {
+      exclusive.add(nodeId);
+    }
+  }
+
+  return exclusive;
+}
+
+/**
+ * Run a workflow with conditional branch support.
+ *
+ * When a node of type "conditionalRoute" is encountered, its output
+ * (on the "activeBranch" port) determines which downstream branch is active.
+ * Nodes exclusively in the inactive branch are marked as "skipped".
+ *
+ * The "finalDraftSelector" node receives from both branches and selects
+ * the active branch's output — it is NEVER skipped.
+ */
+export async function runWorkflowWithBranches(
+  workflow: WorkflowDefinition,
+  executors: Record<string, NodeExecutor>,
+  catalog: NodeCatalog = nodeRegistry,
+  context?: WorkflowRunContext,
+): Promise<WorkflowRunResult> {
+  const validationIssues = validateWorkflow(workflow, catalog);
+  const errorIssues = validationIssues.filter((issue) => issue.level === "error");
+
+  if (errorIssues.length > 0) {
+    return {
+      workflowId: workflow.id,
+      status: "error",
+      batches: [],
+      nodeRuns: [],
+      validationIssues,
+    };
+  }
+
+  const batches = createExecutionBatches(workflow);
+  const outputsByNode = new Map<string, Record<string, unknown>>();
+  const nodeRuns: NodeRunResult[] = [];
+  let hasError = false;
+  let inactiveBranchNodes = new Set<string>();
+
+  for (const batch of batches) {
+    const batchRuns = await Promise.all(
+      batch.map(async (nodeId): Promise<NodeRunResult> => {
+        const node = workflow.nodes.find((candidate) => candidate.id === nodeId);
+        if (!node) {
+          throw new Error(`Missing scheduled node ${nodeId}`);
+        }
+
+        // Skip nodes in inactive branch
+        if (inactiveBranchNodes.has(nodeId)) {
+          const inputs = collectInputs(workflow, nodeId, outputsByNode);
+          const startedAt = Date.now();
+          return {
+            nodeId,
+            status: "skipped",
+            inputs,
+            outputs: {},
+            startedAt,
+            endedAt: Date.now(),
+            metadata: { skippedReason: "inactive-branch" },
+          };
+        }
+
+        const inputs = collectInputs(workflow, nodeId, outputsByNode);
+        const startedAt = Date.now();
+
+        // Runtime schema validation
+        const schemaError = validateRuntimeSchemas(
+          workflow,
+          nodeId,
+          inputs,
+          outputsByNode,
+          catalog,
+        );
+        if (schemaError) {
+          hasError = true;
+          return {
+            nodeId,
+            status: "error",
+            inputs,
+            outputs: {},
+            startedAt,
+            endedAt: Date.now(),
+            error: schemaError,
+          };
+        }
+
+        try {
+          const executor = executors[node.type] ?? defaultExecutor;
+          const result = await executor({ node, inputs, context });
+          outputsByNode.set(nodeId, result.outputs);
+
+          // After executing a conditionalRoute, compute inactive branch
+          if (node.type === "conditionalRoute") {
+            const activeBranch =
+              (result.outputs.activeBranch as string) ??
+              (result.outputs.decision as string) ??
+              "accept";
+            const inactivePort = activeBranch === "accept" ? "reviseBranch" : "acceptBranch";
+            inactiveBranchNodes = computeInactiveBranchNodes(
+              workflow,
+              nodeId,
+              inactivePort,
+              activeBranch === "accept" ? "acceptBranch" : "reviseBranch",
+            );
+          }
+
+          return {
+            nodeId,
+            status: "success" as const,
+            inputs,
+            outputs: result.outputs,
+            metadata: result.metadata,
+            startedAt,
+            endedAt: Date.now(),
+          };
+        } catch (error) {
+          hasError = true;
+          return {
+            nodeId,
+            status: "error" as const,
+            inputs,
+            outputs: {},
+            startedAt,
+            endedAt: Date.now(),
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      }),
+    );
+
+    nodeRuns.push(...batchRuns);
+    if (hasError) {
+      break;
+    }
+  }
+
+  return {
+    workflowId: workflow.id,
+    status: hasError ? "error" : "success",
+    batches,
+    nodeRuns,
+    validationIssues,
+  };
+}
+
 /**
  * Validate JSON data at runtime for edges marked compatible-with-runtime-validation.
  * Returns an error string if validation fails, or null if all good.

@@ -1,0 +1,296 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "rp-writer-critic-bounded-revision-v1",
+    "name": "RP Writer Critic Bounded Revision V1",
+    "version": 1,
+    "description": "P-10: bounded writer-critic revision loop. Writer 1 → Critic 1 → Gate 1 → conditional route. Accept branch: draft1 → output. Revise branch: Writer 2 (revision) → Critic 2 → Gate 2 → output. Max 2 attempts, 1 revision.",
+    "nodes": [
+      {
+        "id": "input",
+        "type": "playerInput",
+        "position": { "x": 100, "y": 50 },
+        "config": {
+          "text": "我把钥匙放到吧台上，看着银铃"
+        }
+      },
+      {
+        "id": "preset",
+        "type": "markdownSource",
+        "position": { "x": 100, "y": 180 },
+        "config": {
+          "content": "## Style\n- 中文文学叙事\n- 第三人称\n- 不超过300字"
+        }
+      },
+      {
+        "id": "criticRubric",
+        "type": "markdownSource",
+        "position": { "x": 100, "y": 310 },
+        "config": {
+          "content": "## Review Rubric\n\n- Draft must not control the player character\n- Draft must not reveal information the POV character cannot know\n- Draft must follow the preset style"
+        }
+      },
+      {
+        "id": "writer1",
+        "type": "specializedAgent",
+        "position": { "x": 400, "y": 80 },
+        "config": {
+          "profileId": "rp-writer",
+          "modelId": "mock-model",
+          "temperature": 0.8
+        }
+      },
+      {
+        "id": "critic1",
+        "type": "specializedAgent",
+        "position": { "x": 700, "y": 80 },
+        "config": {
+          "profileId": "rp-critic",
+          "modelId": "mock-model"
+        }
+      },
+      {
+        "id": "gate1",
+        "type": "rpCriticQualityGate",
+        "position": { "x": 1000, "y": 80 },
+        "config": {
+          "minContinuity": 0.7,
+          "minPlayerAgency": 0.8,
+          "rejectOnErrorIssue": true
+        }
+      },
+      {
+        "id": "route",
+        "type": "conditionalRoute",
+        "position": { "x": 1300, "y": 80 },
+        "config": {
+          "conditionField": "accepted"
+        }
+      },
+      {
+        "id": "selector",
+        "type": "finalDraftSelector",
+        "position": { "x": 2200, "y": 200 },
+        "config": {}
+      },
+      {
+        "id": "writer2",
+        "type": "specializedAgent",
+        "position": { "x": 1600, "y": 280 },
+        "config": {
+          "profileId": "rp-writer",
+          "modelId": "mock-model",
+          "temperature": 0.8
+        }
+      },
+      {
+        "id": "critic2",
+        "type": "specializedAgent",
+        "position": { "x": 1900, "y": 280 },
+        "config": {
+          "profileId": "rp-critic",
+          "modelId": "mock-model"
+        }
+      },
+      {
+        "id": "gate2",
+        "type": "rpCriticQualityGate",
+        "position": { "x": 2200, "y": 280 },
+        "config": {
+          "minContinuity": 0.7,
+          "minPlayerAgency": 0.8,
+          "rejectOnErrorIssue": true
+        }
+      },
+      {
+        "id": "output",
+        "type": "playerOutput",
+        "position": { "x": 2500, "y": 200 },
+        "config": {
+          "displayLabel": "Final Draft"
+        }
+      },
+      {
+        "id": "inspDraft1",
+        "type": "inspectOutput",
+        "position": { "x": 700, "y": 200 },
+        "config": { "displayMode": "text" }
+      },
+      {
+        "id": "inspGate1",
+        "type": "inspectOutput",
+        "position": { "x": 1300, "y": 200 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspDraft2",
+        "type": "inspectOutput",
+        "position": { "x": 1900, "y": 400 },
+        "config": { "displayMode": "text" }
+      },
+      {
+        "id": "inspGate2",
+        "type": "inspectOutput",
+        "position": { "x": 2200, "y": 400 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspLoop",
+        "type": "inspectOutput",
+        "position": { "x": 2500, "y": 320 },
+        "config": { "displayMode": "json" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_input_w1",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "writer1",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_preset_w1",
+        "source": "preset",
+        "sourcePort": "markdown",
+        "target": "writer1",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_w1_c1",
+        "source": "writer1",
+        "sourcePort": "result",
+        "target": "critic1",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_rubric_c1",
+        "source": "criticRubric",
+        "sourcePort": "markdown",
+        "target": "critic1",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_c1_g1",
+        "source": "critic1",
+        "sourcePort": "result",
+        "target": "gate1",
+        "targetPort": "review"
+      },
+      {
+        "id": "e_w1_selector",
+        "source": "writer1",
+        "sourcePort": "result",
+        "target": "selector",
+        "targetPort": "acceptDraft"
+      },
+      {
+        "id": "e_g1_route",
+        "source": "gate1",
+        "sourcePort": "result",
+        "target": "route",
+        "targetPort": "condition"
+      },
+      {
+        "id": "e_route_accept",
+        "source": "route",
+        "sourcePort": "acceptBranch",
+        "target": "selector",
+        "targetPort": "acceptRouting"
+      },
+      {
+        "id": "e_route_revise",
+        "source": "route",
+        "sourcePort": "reviseBranch",
+        "target": "writer2",
+        "targetPort": "data"
+      },
+      {
+        "id": "e_input_w2",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "writer2",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_preset_w2",
+        "source": "preset",
+        "sourcePort": "markdown",
+        "target": "writer2",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_w2_c2",
+        "source": "writer2",
+        "sourcePort": "result",
+        "target": "critic2",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_rubric_c2",
+        "source": "criticRubric",
+        "sourcePort": "markdown",
+        "target": "critic2",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_c2_g2",
+        "source": "critic2",
+        "sourcePort": "result",
+        "target": "gate2",
+        "targetPort": "review"
+      },
+      {
+        "id": "e_w2_selector",
+        "source": "writer2",
+        "sourcePort": "result",
+        "target": "selector",
+        "targetPort": "reviseDraft"
+      },
+      {
+        "id": "e_selector_output",
+        "source": "selector",
+        "sourcePort": "finalDraft",
+        "target": "output",
+        "targetPort": "text"
+      },
+      {
+        "id": "e_insp_d1",
+        "source": "writer1",
+        "sourcePort": "result",
+        "target": "inspDraft1",
+        "targetPort": "textInput"
+      },
+      {
+        "id": "e_insp_g1",
+        "source": "gate1",
+        "sourcePort": "result",
+        "target": "inspGate1",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_d2",
+        "source": "writer2",
+        "sourcePort": "result",
+        "target": "inspDraft2",
+        "targetPort": "textInput"
+      },
+      {
+        "id": "e_insp_g2",
+        "source": "gate2",
+        "sourcePort": "result",
+        "target": "inspGate2",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_loop",
+        "source": "selector",
+        "sourcePort": "finalDraft",
+        "target": "inspLoop",
+        "targetPort": "textInput"
+      }
+    ]
+  }
+}

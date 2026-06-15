@@ -169,6 +169,67 @@ export const stdlibNodes: NodeCatalog = {
     configFields: [],
     ports: [wIn("input", "Input", "markdown", true), wOut("output", "Output", "text")],
   },
+
+  // ============ P-10: Conditional Routing Nodes ============
+
+  conditionalRoute: {
+    type: "conditionalRoute",
+    label: "Conditional Route",
+    labelI18n: { zh: "条件路由", en: "Conditional Route" },
+    category: "core",
+    description:
+      "Evaluates a condition and activates one of two output branches. The inactive branch nodes are skipped by the runner.",
+    descriptionI18n: {
+      zh: "评估条件并激活两个输出分支之一。非活动分支的节点由运行器跳过。",
+      en: "Evaluates a condition and activates one of two output branches. The inactive branch nodes are skipped by the runner.",
+    },
+    color: "#f59e0b",
+    panelLayout: "generic",
+    defaultConfig: {
+      conditionField: "accepted",
+    },
+    configFields: [
+      {
+        key: "conditionField",
+        label: { zh: "条件字段", en: "Condition Field" },
+        kind: "text",
+        placeholder: { zh: "例如: accepted", en: "e.g. accepted" },
+        help: {
+          zh: "从 condition 输入中读取的布尔字段名",
+          en: "Boolean field name to read from condition input",
+        },
+      },
+    ],
+    ports: [
+      wIn("condition", "Condition", "json", true),
+      wOut("activeBranch", "Active Branch", "text"),
+      wOut("acceptBranch", "Accept Branch", "json"),
+      wOut("reviseBranch", "Revise Branch", "json"),
+    ],
+  },
+
+  finalDraftSelector: {
+    type: "finalDraftSelector",
+    label: "Final Draft Selector",
+    labelI18n: { zh: "终稿选择器", en: "Final Draft Selector" },
+    category: "core",
+    description:
+      "Merges two branches by selecting the active branch's output. Accepts drafts from both accept and revise branches.",
+    descriptionI18n: {
+      zh: "通过选择活动分支的输出来合并两个分支。接收来自 accept 和 revise 两个分支的草稿。",
+      en: "Merges two branches by selecting the active branch's output. Accepts drafts from both accept and revise branches.",
+    },
+    color: "#0ea5e9",
+    panelLayout: "generic",
+    defaultConfig: {},
+    configFields: [],
+    ports: [
+      wIn("acceptDraft", "Accept Draft", "text", false),
+      wIn("reviseDraft", "Revise Draft", "text", false),
+      wIn("acceptRouting", "Accept Routing", "json", false),
+      wOut("finalDraft", "Final Draft", "text"),
+    ],
+  },
 };
 
 /** Merge stdlib nodes into a target catalog. */
