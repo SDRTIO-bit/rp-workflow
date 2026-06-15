@@ -99,6 +99,7 @@ export function resolveModelConfig(
     providerId,
     model,
     temperature: nodeConfig?.temperature ?? workflowDefaults?.temperature,
+    topP: nodeConfig?.topP ?? workflowDefaults?.topP,
     maxTokens: nodeConfig?.maxTokens ?? workflowDefaults?.maxTokens,
     timeoutMs: nodeConfig?.timeoutMs ?? workflowDefaults?.timeoutMs,
     responseFormat: nodeConfig?.responseFormat ?? workflowDefaults?.responseFormat,

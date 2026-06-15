@@ -16,6 +16,11 @@ export class LlmRouter {
 
   constructor(private registry: ProviderRegistry) {}
 
+  /** Expose the provider registry for external use (e.g., agent kernel model config resolution). */
+  get providerRegistry(): ProviderRegistry {
+    return this.registry;
+  }
+
   /**
    * Get or create an adapter for a provider.
    * For use by legacy agent executors that need a direct LlmAdapter.

@@ -1,4 +1,5 @@
 export * from "./agentExecutor";
+export * from "./agentKernel";
 export * from "./agentSession";
 export * from "./agentSessionNode";
 export * from "./agentSessionStore";
@@ -8,6 +9,8 @@ export * from "./llmRouter";
 export * from "./modelConfig";
 export * from "./mockLlm";
 export * from "./openCodeAdapter";
+export * from "./profileRegistry";
 export * from "./promptBuilder";
 export * from "./providerRegistry";
+export * from "./renderer";
 export * from "./types";

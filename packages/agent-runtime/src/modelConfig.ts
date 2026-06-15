@@ -11,6 +11,7 @@ export interface ResolvedModelRequest {
   providerId: string;
   model: string;
   temperature?: number;
+  topP?: number;
   maxTokens?: number;
   timeoutMs?: number;
   responseFormat?: "text" | "json_object";
@@ -21,6 +22,7 @@ export interface NodeModelConfig {
   provider?: string;
   model?: string;
   temperature?: number;
+  topP?: number;
   maxTokens?: number;
   timeoutMs?: number;
   responseFormat?: "text" | "json_object";

@@ -64,6 +64,8 @@ export type LlmCompletionInput = {
   model: string;
   prompt: string;
   temperature?: number;
+  topP?: number;
+  maxTokens?: number;
 };
 
 export type LlmCompletionResult = {
