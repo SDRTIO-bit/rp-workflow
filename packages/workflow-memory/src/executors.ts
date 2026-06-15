@@ -26,11 +26,40 @@ export function createMemoryWriteExecutor(store: WorkflowMemoryStore): NodeExecu
       throw new Error("memoryWrite: namespace is required in node config or input");
     }
 
+    // operationId dedup
+    if (writeInput.operationId) {
+      const requestHash = JSON.stringify(writeInput.records);
+      const existing = await store.getDedupRecord(namespace, writeInput.operationId);
+      if (existing) {
+        if (existing.requestHash !== requestHash) {
+          throw new Error(
+            `memoryWrite: operationId "${writeInput.operationId}" was previously executed with different records`,
+          );
+        }
+        // Return deduplicated result
+        return {
+          outputs: { output: { written: [], count: 0, deduplicated: true } },
+          metadata: {
+            namespace,
+            count: 0,
+            deduplicated: true,
+            operationId: writeInput.operationId,
+          },
+        };
+      }
+    }
+
     const result = await store.upsert(namespace, writeInput.records);
+
+    // Save dedup record after successful commit
+    if (writeInput.operationId) {
+      const requestHash = JSON.stringify(writeInput.records);
+      await store.saveDedupRecord(namespace, writeInput.operationId, requestHash);
+    }
 
     return {
       outputs: { output: result },
-      metadata: { namespace, count: result.count },
+      metadata: { namespace, count: result.count, operationId: writeInput.operationId },
     };
   };
 }

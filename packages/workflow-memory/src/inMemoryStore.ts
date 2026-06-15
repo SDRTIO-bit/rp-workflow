@@ -11,6 +11,10 @@ import type {
 
 export class InMemoryWorkflowMemoryStore implements WorkflowMemoryStore {
   private records = new Map<string, Map<string, MemoryRecordV1>>();
+  private dedupRecords = new Map<
+    string,
+    Map<string, { operationId: string; requestHash: string }>
+  >();
 
   private ns(namespace: string): Map<string, MemoryRecordV1> {
     let m = this.records.get(namespace);
@@ -80,7 +84,28 @@ export class InMemoryWorkflowMemoryStore implements WorkflowMemoryStore {
     return { deleted, ids };
   }
 
+  async getDedupRecord(
+    namespace: string,
+    operationId: string,
+  ): Promise<{ operationId: string; requestHash: string } | undefined> {
+    return this.dedupRecords.get(namespace)?.get(operationId);
+  }
+
+  async saveDedupRecord(
+    namespace: string,
+    operationId: string,
+    requestHash: string,
+  ): Promise<void> {
+    let ns = this.dedupRecords.get(namespace);
+    if (!ns) {
+      ns = new Map();
+      this.dedupRecords.set(namespace, ns);
+    }
+    ns.set(operationId, { operationId, requestHash });
+  }
+
   clear(): void {
     this.records.clear();
+    this.dedupRecords.clear();
   }
 }

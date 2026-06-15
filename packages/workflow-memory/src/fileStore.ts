@@ -17,10 +17,11 @@ import type {
 interface FileData {
   version: 1;
   records: Record<string, Record<string, MemoryRecordV1>>;
+  dedup: Record<string, Record<string, { operationId: string; requestHash: string }>>;
 }
 
 function emptyData(): FileData {
-  return { version: 1, records: {} };
+  return { version: 1, records: {}, dedup: {} };
 }
 
 export class FileWorkflowMemoryStore implements WorkflowMemoryStore {
@@ -145,5 +146,28 @@ export class FileWorkflowMemoryStore implements WorkflowMemoryStore {
   reload(): void {
     this.loaded = false;
     this.data = emptyData();
+  }
+
+  async getDedupRecord(
+    namespace: string,
+    operationId: string,
+  ): Promise<{ operationId: string; requestHash: string } | undefined> {
+    this.ensureLoaded();
+    return this.data.dedup[namespace]?.[operationId];
+  }
+
+  async saveDedupRecord(
+    namespace: string,
+    operationId: string,
+    requestHash: string,
+  ): Promise<void> {
+    this.ensureLoaded();
+    let ns = this.data.dedup[namespace];
+    if (!ns) {
+      ns = {};
+      this.data.dedup[namespace] = ns;
+    }
+    ns[operationId] = { operationId, requestHash };
+    await this.save();
   }
 }

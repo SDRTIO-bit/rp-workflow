@@ -29,6 +29,7 @@ export interface MemoryRecordV1 {
 export interface MemoryWriteInputV1 {
   records: MemoryRecordV1[];
   namespace: string;
+  operationId?: string;
 }
 
 // ============ Write Output ============
@@ -89,6 +90,15 @@ export interface WorkflowMemoryStore {
 
   /** Delete records by namespace + ids. Returns count actually deleted. */
   delete(namespace: string, ids: string[]): Promise<MemoryDeleteOutputV1>;
+
+  /** Check if an operationId has been committed. Returns hash if already executed. */
+  getDedupRecord(
+    namespace: string,
+    operationId: string,
+  ): Promise<{ operationId: string; requestHash: string } | undefined>;
+
+  /** Save a dedup record after successful commit. */
+  saveDedupRecord(namespace: string, operationId: string, requestHash: string): Promise<void>;
 }
 
 // ============ Schema IDs ============
