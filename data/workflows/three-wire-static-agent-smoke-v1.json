@@ -1,0 +1,116 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "three-wire-static-agent-smoke-v1",
+    "name": "Three-Wire Static Agent Smoke Test",
+    "version": 1,
+    "description": "P-1 smoke test: playerInput(text) + markdownSource + jsonSource → genericAgent → playerOutput, with inspectOutput branches for all three wire types.",
+    "nodes": [
+      {
+        "id": "input",
+        "type": "playerInput",
+        "position": { "x": 100, "y": 300 },
+        "config": {
+          "text": "Tell me a short story about a dragon."
+        }
+      },
+      {
+        "id": "instr",
+        "type": "markdownSource",
+        "position": { "x": 100, "y": 150 },
+        "config": {
+          "content": "Write in a whimsical, fairy-tale style."
+        }
+      },
+      {
+        "id": "jsonSrc",
+        "type": "jsonSource",
+        "position": { "x": 100, "y": 450 },
+        "config": {
+          "data": "{\"genre\": \"fantasy\", \"mood\": \"lighthearted\", \"dragonName\": \"Ember\", \"maxLength\": \"short\"}"
+        }
+      },
+      {
+        "id": "agent",
+        "type": "genericAgent",
+        "position": { "x": 500, "y": 300 },
+        "config": {
+          "providerId": "",
+          "modelId": "mock-model",
+          "systemPrompt": "You are a creative storyteller. Respond with Text output only.",
+          "temperature": 0.7,
+          "maxTokens": 512
+        }
+      },
+      {
+        "id": "output",
+        "type": "playerOutput",
+        "position": { "x": 900, "y": 300 },
+        "config": {
+          "displayLabel": "Story"
+        }
+      },
+      {
+        "id": "inspector",
+        "type": "inspectOutput",
+        "position": { "x": 900, "y": 500 },
+        "config": {
+          "displayMode": "auto"
+        }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_input",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "agent",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_instr",
+        "source": "instr",
+        "sourcePort": "markdown",
+        "target": "agent",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_json",
+        "source": "jsonSrc",
+        "sourcePort": "json",
+        "target": "agent",
+        "targetPort": "data"
+      },
+      {
+        "id": "e_result",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "output",
+        "targetPort": "text"
+      },
+      {
+        "id": "e_inspect_json",
+        "source": "jsonSrc",
+        "sourcePort": "json",
+        "target": "inspector",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_inspect_md",
+        "source": "instr",
+        "sourcePort": "markdown",
+        "target": "inspector",
+        "targetPort": "markdownInput"
+      },
+      {
+        "id": "e_inspect_text",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "inspector",
+        "targetPort": "textInput"
+      }
+    ]
+  }
+}

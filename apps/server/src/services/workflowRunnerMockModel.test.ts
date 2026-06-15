@@ -3,10 +3,18 @@ import { ProviderRegistry, LlmRouter } from "@awp/agent-runtime";
 
 // Mock modules that createExecutors depends on
 vi.mock("@awp/agent-runtime", async () => {
-  const actual = await vi.importActual("@awp/agent-runtime");
+  const actual = await vi.importActual<typeof import("@awp/agent-runtime")>("@awp/agent-runtime");
   return {
-    ...(actual as object),
+    ...actual,
     executeAgentNode: vi.fn(),
+    // Provide stub implementations for P-1 agent executors (not used by these tests)
+    createGenericAgentExecutor: vi
+      .fn()
+      .mockReturnValue(async () => ({ outputs: { result: "[mock generic agent]" }, metadata: {} })),
+    createSpecializedAgentExecutor: vi.fn().mockReturnValue(async () => ({
+      outputs: { result: "[mock specialized agent]" },
+      metadata: {},
+    })),
   };
 });
 

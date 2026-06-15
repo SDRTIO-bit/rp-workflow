@@ -35,7 +35,9 @@ import {
   createOpenCodeAdapter,
   ProviderRegistry,
   LlmRouter,
+  createP1ProfileRegistry,
   type NodeModelConfig,
+  type SpecializedAgentProfileRegistry,
 } from "@awp/agent-runtime";
 
 const app = new Hono();
@@ -56,6 +58,7 @@ let pluginCatalog: NodeCatalog = {};
 let rpRuntime: RpRuntimeRegistration | null = null;
 let runtimeNodeCatalog: NodeCatalog = { ...nodeRegistry };
 let skillCatalog: SkillItem[] = [];
+let profileRegistry: SpecializedAgentProfileRegistry | undefined;
 
 const getPluginRuntime = (): PluginRuntime => ({
   pluginState,
@@ -84,6 +87,7 @@ const getWorkflowRuntime = () => ({
   skillCatalog,
   runtimeNodeCatalog,
   rpRuntime,
+  profileRegistry,
 });
 const getLlmConfig = () => ({
   llmRouter: llmRouter!,
@@ -113,6 +117,10 @@ const initPlugins = async () => {
   try {
     // Build ProviderRegistry (explicit default, no auto-detection from API keys)
     const registry = new ProviderRegistry(env.defaultProviderId);
+
+    // Initialize P-1 Profile Registry (built-in mock profiles)
+    profileRegistry = createP1ProfileRegistry();
+    console.log(`Profile Registry: ${profileRegistry.list().length} profiles registered`);
 
     // Register available providers
     if (env.openCodeApiKey) {

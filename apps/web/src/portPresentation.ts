@@ -1,15 +1,23 @@
 import {
   nodeRegistry,
+  isWirePort,
   type DataType,
   type NodeCatalog,
   type PortDefinition,
   type PortDirection,
+  type WireType,
 } from "@awp/workflow-core";
 
 export type DataTypePresentation = {
   labelZh: string;
   labelEn: string;
   color: string;
+};
+
+const wireTypePresentation: Record<WireType, DataTypePresentation> = {
+  text: { labelZh: "文本 (Wire)", labelEn: "Text (Wire)", color: "#2563eb" },
+  markdown: { labelZh: "Markdown (Wire)", labelEn: "Markdown (Wire)", color: "#7c3aed" },
+  json: { labelZh: "JSON (Wire)", labelEn: "JSON (Wire)", color: "#475569" },
 };
 
 export const dataTypePresentation: Record<DataType, DataTypePresentation> = {
@@ -38,6 +46,26 @@ export const getDataTypePresentation = (dataType: DataType) =>
     labelEn: String(dataType),
     color: "#64748b",
   };
+
+/** Get a displayable presentation for any PortDefinition (legacy or wire-native). */
+export const getPortPresentation = (port: PortDefinition): DataTypePresentation => {
+  if (isWirePort(port)) {
+    return (
+      wireTypePresentation[port.wireType] ?? {
+        labelZh: `Wire: ${port.wireType}`,
+        labelEn: `Wire: ${port.wireType}`,
+        color: "#64748b",
+      }
+    );
+  }
+  return getDataTypePresentation(port.dataType);
+};
+
+/** Get a displayable type string (e.g. "text", "json", "markdown") from any port. */
+export const getPortDisplayType = (port: PortDefinition): string => {
+  if (isWirePort(port)) return port.wireType;
+  return port.dataType;
+};
 
 export const getNodePorts = (
   nodeType: string,

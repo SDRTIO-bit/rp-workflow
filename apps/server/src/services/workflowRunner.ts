@@ -6,8 +6,18 @@ import {
   type NodeExecutor,
   type NodeCatalog,
   type WorkflowRunContext,
+  getRuntimeSchemaValidator,
+  checkSchemaCompatibility,
+  findPortInCatalog,
 } from "@awp/workflow-core";
-import { createDeepSeekAdapter, executeAgentNode } from "@awp/agent-runtime";
+import { isWirePort } from "@awp/workflow-core";
+import {
+  createDeepSeekAdapter,
+  executeAgentNode,
+  createGenericAgentExecutor,
+  createSpecializedAgentExecutor,
+  type SpecializedAgentProfileRegistry,
+} from "@awp/agent-runtime";
 import { rankMemories } from "@awp/memory-core";
 import type { RpRuntimeRegistration } from "@awp/rp-runtime";
 import { readEntries } from "./jsonStore.js";
@@ -69,6 +79,7 @@ export type WorkflowRunnerContext = {
   skillCatalog: SkillItem[];
   pluginCatalog: NodeCatalog;
   rpRuntime: RpRuntimeRegistration | null;
+  profileRegistry?: SpecializedAgentProfileRegistry;
 };
 
 export const createExecutors = async (
@@ -304,6 +315,71 @@ export const createExecutors = async (
     },
     textOutput: async ({ inputs }) => ({ outputs: { final: inputs.text ?? "" } }),
     debugLog: async ({ inputs }) => ({ outputs: { debug: JSON.stringify(inputs, null, 2) } }),
+
+    // ============ P-1: Wire-Native Node Executors ============
+
+    playerInput: async ({ node }) => ({
+      outputs: { text: String(node.config.text ?? "") },
+    }),
+
+    markdownSource: async ({ node }) => ({
+      outputs: { markdown: String(node.config.content ?? "") },
+    }),
+
+    jsonSource: async ({ node }) => {
+      const raw = String(node.config.data ?? "{}");
+      let data: unknown;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = raw;
+      }
+      return { outputs: { json: data } };
+    },
+
+    playerOutput: async ({ inputs }) => ({
+      outputs: { final: inputs.text ?? "" },
+    }),
+
+    inspectOutput: async ({ inputs }) => {
+      const parts: string[] = [];
+      if (inputs.jsonInput !== undefined && inputs.jsonInput !== null) {
+        parts.push(`[JSON]\n${JSON.stringify(inputs.jsonInput, null, 2)}`);
+      }
+      if (inputs.markdownInput !== undefined && inputs.markdownInput !== null) {
+        parts.push(`[Markdown]\n${String(inputs.markdownInput)}`);
+      }
+      if (inputs.textInput !== undefined && inputs.textInput !== null) {
+        parts.push(`[Text]\n${String(inputs.textInput)}`);
+      }
+      return { outputs: { debug: parts.join("\n\n") || "(no inputs connected)" } };
+    },
+
+    // Agent executors (P-1) — use LlmRouter or fallback adapter
+    genericAgent: context.llmRouter
+      ? createGenericAgentExecutor({
+          registry: context.llmRouter.providerRegistry,
+          profileRegistry: context.profileRegistry,
+          createAdapter: (providerId) => context.llmRouter!.adapter(providerId),
+          workflowModelConfig: context.defaultModelConfig,
+        })
+      : ((async () => {
+          throw new Error("genericAgent: LlmRouter not configured. Set up LLM providers first.");
+        }) as unknown as NodeExecutor),
+
+    specializedAgent: context.llmRouter
+      ? createSpecializedAgentExecutor({
+          registry: context.llmRouter.providerRegistry,
+          profileRegistry: context.profileRegistry,
+          createAdapter: (providerId) => context.llmRouter!.adapter(providerId),
+          workflowModelConfig: context.defaultModelConfig,
+        })
+      : ((async () => {
+          throw new Error(
+            "specializedAgent: LlmRouter not configured. Set up LLM providers first.",
+          );
+        }) as unknown as NodeExecutor),
+
     ...pluginExecutors,
     // Merge RP Runtime executors
     ...(context.rpRuntime?.executors ?? {}),
@@ -361,6 +437,42 @@ export const runWorkflowStreaming = async (
 
         const inputs = collectInputs(workflow, nodeId, outputsByNode);
         const startedAt = Date.now();
+
+        // Runtime schema validation for JSON edges with compatible-with-runtime-validation
+        const runtimeValidator = getRuntimeSchemaValidator();
+        if (runtimeValidator) {
+          for (const edge of workflow.edges.filter((e) => e.target === nodeId)) {
+            const sourceNode = workflow.nodes.find((n) => n.id === edge.source);
+            if (!sourceNode) continue;
+            const tPort = findPortInCatalog(runtimeNodeCatalog, nodeId, edge.targetPort, "input");
+            const sPort = findPortInCatalog(
+              runtimeNodeCatalog,
+              sourceNode.type,
+              edge.sourcePort,
+              "output",
+            );
+            if (!tPort || !sPort) continue;
+            if (!isWirePort(sPort) || !isWirePort(tPort)) continue;
+            if (sPort.wireType !== "json" || tPort.wireType !== "json") continue;
+            const status = checkSchemaCompatibility(sPort.schemaId, tPort.schemaId);
+            if (status !== "compatible-with-runtime-validation") continue;
+            if (!tPort.schemaId) continue;
+            if (!runtimeValidator(tPort.schemaId, inputs[edge.targetPort])) {
+              hasError = true;
+              const errorMsg = `Runtime schema validation failed: port "${edge.targetPort}" does not satisfy schema "${tPort.schemaId}"`;
+              const errorRun = {
+                nodeId,
+                status: "error" as const,
+                inputs,
+                outputs: {},
+                startedAt,
+                endedAt: Date.now(),
+                error: errorMsg,
+              };
+              return errorRun;
+            }
+          }
+        }
 
         try {
           const executor = executors[node.type] ?? (async () => ({ outputs: {}, metadata: {} }));

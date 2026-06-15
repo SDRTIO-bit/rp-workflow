@@ -1,12 +1,15 @@
 import {
   areTypesCompatible,
+  areWireTypesCompatible,
   findPortInCatalog,
+  isLegacyPort,
+  isWirePort,
   nodeRegistry,
   type NodeCatalog,
   type WorkflowDefinition,
   type WorkflowEdge,
 } from "@awp/workflow-core";
-import { getDataTypePresentation } from "./portPresentation";
+import { getPortPresentation } from "./portPresentation";
 
 export type ConnectionCandidate = Omit<WorkflowEdge, "id">;
 export type ConnectionEvaluation = { ok: true } | { ok: false; reason: string };
@@ -40,9 +43,20 @@ export const evaluateConnection = (
     return { ok: false, reason: "目标输入端口已经被占用。" };
   }
 
-  if (!areTypesCompatible(sourcePort.dataType, targetPort.dataType)) {
-    const sourceType = getDataTypePresentation(sourcePort.dataType).labelZh;
-    const targetType = getDataTypePresentation(targetPort.dataType).labelZh;
+  // Determine compatibility based on port types
+  let compatible: boolean;
+  if (isLegacyPort(sourcePort) && isLegacyPort(targetPort)) {
+    compatible = areTypesCompatible(sourcePort.dataType, targetPort.dataType);
+  } else if (isWirePort(sourcePort) && isWirePort(targetPort)) {
+    compatible = areWireTypesCompatible(sourcePort.wireType, targetPort.wireType);
+  } else {
+    // Mixed legacy/wire — cannot connect directly in the UI
+    compatible = false;
+  }
+
+  if (!compatible) {
+    const sourceType = getPortPresentation(sourcePort).labelZh;
+    const targetType = getPortPresentation(targetPort).labelZh;
     return { ok: false, reason: `端口类型不兼容：${sourceType} 不能连接到 ${targetType}。` };
   }
 

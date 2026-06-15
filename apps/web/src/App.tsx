@@ -40,7 +40,7 @@ import {
   updateMemoryViaServer,
 } from "./memoryClient";
 import { edgeDelayMs, motionStyle, nodeDelayMs } from "./motion";
-import { getDataTypePresentation, getNodePorts } from "./portPresentation";
+import { getNodePorts, getPortPresentation } from "./portPresentation";
 import {
   disablePluginViaServer,
   enablePluginViaServer,
@@ -1437,7 +1437,7 @@ export function App() {
             className="edge-path"
             d={edgePath(start, end)}
             fill="none"
-            stroke={getDataTypePresentation(sourcePort.dataType).color}
+            stroke={getPortPresentation(sourcePort).color}
             strokeWidth="2.5"
             pathLength={1}
             style={motionStyle("--edge-delay", edgeDelayMs(edgeIndex))}
@@ -1481,7 +1481,7 @@ export function App() {
         className="connection-preview"
         d={edgePath(start, connectionDraft.pointer)}
         fill="none"
-        stroke={getDataTypePresentation(sourcePort.dataType).color}
+        stroke={getPortPresentation(sourcePort).color}
         strokeWidth="3"
       />
     );
@@ -2325,7 +2325,7 @@ function PortList({
   onHover: (node: WorkflowNode, port: PortDefinition, enabled: boolean) => void;
 }) {
   return ports.map((port, index) => {
-    const presentation = getDataTypePresentation(port.dataType);
+    const presentation = getPortPresentation(port);
     const typeLabel = language === "zh" ? presentation.labelZh : presentation.labelEn;
     const label = port.label;
     const isInput = direction === "input";
