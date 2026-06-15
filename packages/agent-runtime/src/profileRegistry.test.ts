@@ -93,8 +93,8 @@ describe("createP1ProfileRegistry", () => {
   it("rp-writer has correct input ordering", () => {
     const registry = createP1ProfileRegistry();
     const profile = registry.get("rp-writer")!;
-    expect(profile.inputOrder.userInput).toBe(1);
-    expect(profile.inputOrder.context).toBe(2);
+    expect(profile.inputOrder.instruction).toBe(1);
+    expect(profile.inputOrder.context).toBe(4);
   });
 
   it("profile summaries contain localized labels", () => {

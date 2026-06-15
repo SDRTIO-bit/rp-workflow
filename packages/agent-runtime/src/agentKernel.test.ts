@@ -248,10 +248,10 @@ describe("createSpecializedAgentExecutor", () => {
     );
 
     const prompt = completeSpy.mock.calls[0]?.[0]?.prompt ?? "";
-    // userInput (order 1) should appear before context (order 2)
+    // context (order 4) should appear before userInput (order 5) in rp-writer profile
     const userInputPos = prompt.indexOf("AAA");
     const contextPos = prompt.indexOf("CCC");
-    expect(userInputPos).toBeLessThan(contextPos);
+    expect(contextPos).toBeLessThan(userInputPos);
   });
 });
 
