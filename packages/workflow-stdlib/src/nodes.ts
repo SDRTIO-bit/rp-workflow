@@ -230,6 +230,54 @@ export const stdlibNodes: NodeCatalog = {
       wOut("finalDraft", "Final Draft", "text"),
     ],
   },
+
+  // ============ P-11: Session Conversion Node ============
+
+  sessionToMarkdown: {
+    type: "sessionToMarkdown",
+    label: "Session → Markdown",
+    labelI18n: { zh: "会话 → Markdown", en: "Session → Markdown" },
+    category: "core",
+    description:
+      "Converts AgentSessionContextV1 JSON into readable markdown for LLM context injection. Deterministic, no LLM.",
+    descriptionI18n: {
+      zh: "将 AgentSessionContextV1 JSON 转换为可读的 Markdown，供 LLM 上下文注入。确定性转换，不调用 LLM。",
+      en: "Converts AgentSessionContextV1 JSON into readable markdown for LLM context injection. Deterministic, no LLM.",
+    },
+    color: "#0ea5e9",
+    panelLayout: "generic",
+    defaultConfig: {},
+    configFields: [],
+    ports: [
+      wIn("sessionContext", "Session Context", "json", true),
+      wOut("markdown", "Markdown", "markdown"),
+    ],
+  },
+
+  // ============ P-11: Session Delta Builder ============
+
+  buildSessionDelta: {
+    type: "buildSessionDelta",
+    label: "Build Session Delta",
+    labelI18n: { zh: "构建会话增量", en: "Build Session Delta" },
+    category: "core",
+    description:
+      "Builds an AgentSessionDeltaV1 from session key, player input, final draft, and turn info. Deterministic, no LLM.",
+    descriptionI18n: {
+      zh: "从会话密钥、玩家输入、最终草稿和回合信息构建 AgentSessionDeltaV1。确定性，不调用 LLM。",
+      en: "Builds an AgentSessionDeltaV1 from session key, player input, final draft, and turn info. Deterministic, no LLM.",
+    },
+    color: "#10b981",
+    panelLayout: "generic",
+    defaultConfig: {},
+    configFields: [],
+    ports: [
+      wIn("sessionKey", "Session Key", "json", true),
+      wIn("playerInput", "Player Input", "text", false),
+      wIn("finalDraft", "Final Draft", "text", false),
+      wOut("sessionDelta", "Session Delta", "json"),
+    ],
+  },
 };
 
 /** Merge stdlib nodes into a target catalog. */

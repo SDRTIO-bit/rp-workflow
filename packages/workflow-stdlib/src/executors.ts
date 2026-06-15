@@ -196,6 +196,35 @@ export const finalDraftSelectorExecutor: NodeExecutor = async ({ inputs }) => {
   };
 };
 
+// ============ P-11: Session Delta Builder ============
+
+export const buildSessionDeltaExecutor: NodeExecutor = async ({ inputs }) => {
+  const sessionKey = inputs.sessionKey as Record<string, unknown> | undefined;
+  const playerInput = typeof inputs.playerInput === "string" ? inputs.playerInput : "";
+  const finalDraft = typeof inputs.finalDraft === "string" ? inputs.finalDraft : "";
+  const agentNodeId = (sessionKey?.agentNodeId as string) ?? "writer-main";
+  const turnIndex = (sessionKey?.turnIndex as number) ?? 1;
+
+  const sessionDelta = {
+    sessionKey: {
+      tenantId: (sessionKey?.tenantId as string) ?? "default",
+      workflowInstanceId: (sessionKey?.workflowInstanceId as string) ?? "default",
+      conversationId: (sessionKey?.conversationId as string) ?? "default",
+      agentNodeId,
+    },
+    newTurn: {
+      turnIndex,
+      input: { text: playerInput },
+      assistantOutput: finalDraft,
+      modelConfig: { model: "workflow" },
+      tokenUsage: { input: Math.ceil((playerInput.length + finalDraft.length) / 4), output: Math.ceil(finalDraft.length / 4) },
+      createdAt: new Date().toISOString(),
+    },
+  };
+
+  return { outputs: { sessionDelta } };
+};
+
 // ============ Executor Registry ============
 
 /**
@@ -212,5 +241,6 @@ export function createStdlibExecutors(resolver?: ResourceResolver): Record<strin
     markdownSource: createMarkdownSourceExecutor(resolver),
     conditionalRoute: conditionalRouteExecutor,
     finalDraftSelector: finalDraftSelectorExecutor,
+    buildSessionDelta: buildSessionDeltaExecutor,
   };
 }

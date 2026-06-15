@@ -20,6 +20,7 @@ import {
   createAgentSessionCommitV1Executor,
   rpMemoryCommitPolicyExecutor,
   rpCriticQualityGateExecutor,
+  sessionContextToMarkdown,
   type SpecializedAgentProfileRegistry,
   type AgentSessionStore,
 } from "@awp/agent-runtime";
@@ -445,6 +446,16 @@ export const createExecutors = async (
       : ((async () => {
           throw new Error("agentSessionCommitV1: SessionStore not configured.");
         }) as unknown as NodeExecutor),
+
+    // ============ P-11: Session to Markdown ============
+    sessionToMarkdown: async ({ inputs }) => {
+      const ctx = inputs.sessionContext as Record<string, unknown> | undefined;
+      if (!ctx || typeof ctx !== "object") {
+        return { outputs: { markdown: "(No session history.)" } };
+      }
+      const markdown = sessionContextToMarkdown(ctx as unknown as Parameters<typeof sessionContextToMarkdown>[0]);
+      return { outputs: { markdown } };
+    },
 
     // ============ P-8: RP Memory Commit Policy ============
     rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,

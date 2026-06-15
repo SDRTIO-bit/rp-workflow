@@ -38,6 +38,7 @@ import {
   memoryCorpusNode,
   memoryDeleteNode,
   InMemoryWorkflowMemoryStore,
+  FileWorkflowMemoryStore,
   createMemorySchemaValidators,
   type WorkflowMemoryStore,
 } from "@awp/workflow-memory";
@@ -59,6 +60,8 @@ import {
   rpMemoryCommitPolicyNode,
   rpCriticQualityGateNode,
   InMemoryAgentSessionStore,
+  agentSessionLoadV1Definition,
+  agentSessionCommitV1Definition,
   type NodeModelConfig,
   type SpecializedAgentProfileRegistry,
   type AgentSessionStore,
@@ -168,9 +171,23 @@ const initPlugins = async () => {
     );
     console.log(`Memory validators: ${Object.keys(memoryValidators).length} schemas registered`);
 
-    // P-5 Memory Store
-    memoryStore = new InMemoryWorkflowMemoryStore();
-    console.log("Memory Store: in-memory store initialized");
+    // P-5 Memory Store — configurable backend (in-memory or file)
+    if (env.workflowMemoryStore === "file") {
+      if (!env.workflowMemoryDir) {
+        throw new Error(
+          "WORKFLOW_MEMORY_STORE=file requires WORKFLOW_MEMORY_DIR to be set to a non-empty directory path.",
+        );
+      }
+      const memoryDir = resolve(env.workflowMemoryDir);
+      const memoryFilePath = join(memoryDir, "workflow-memories.json");
+      memoryStore = new FileWorkflowMemoryStore(memoryFilePath);
+      console.log(`Memory Store: file store initialized at ${memoryFilePath}`);
+    } else if (env.workflowMemoryStore === "in-memory") {
+      memoryStore = new InMemoryWorkflowMemoryStore();
+      console.log("Memory Store: in-memory store initialized");
+    } else {
+      throw new Error(`Unknown WORKFLOW_MEMORY_STORE: "${env.workflowMemoryStore}". Supported: in-memory, file`);
+    }
 
     // P-7 Agent Session Store
     sessionStore = new InMemoryAgentSessionStore();
@@ -241,7 +258,7 @@ const initPlugins = async () => {
       );
     }
 
-    // Merge catalogs: nodeRegistry + stdlibNodes + dynamicWorldbook + retrieval + rpCatalog + pluginCatalog
+    // Merge catalogs: nodeRegistry + stdlibNodes + dynamicWorldbook + retrieval + rpCatalog + session nodes + pluginCatalog
     runtimeNodeCatalog = {
       ...nodeRegistry,
       ...stdlibNodes,
@@ -253,6 +270,8 @@ const initPlugins = async () => {
       memoryDelete: memoryDeleteNode,
       rpMemoryCommitPolicy: rpMemoryCommitPolicyNode,
       rpCriticQualityGate: rpCriticQualityGateNode,
+      agentSessionLoadV1: agentSessionLoadV1Definition,
+      agentSessionCommitV1: agentSessionCommitV1Definition,
       ...rpRuntime.catalog,
       ...pluginCatalog,
     };

@@ -14,6 +14,10 @@ export type Env = {
   /** Explicit default provider. Does NOT auto-detect from available API keys. */
   defaultProviderId: string;
   nodeEnv: string;
+  /** Workflow memory store backend: "in-memory" (default) or "file". */
+  workflowMemoryStore: "in-memory" | "file";
+  /** Directory for file-based memory store. Required when workflowMemoryStore is "file". */
+  workflowMemoryDir: string;
 };
 
 export const resolveEnv = (): Env => ({
@@ -26,4 +30,6 @@ export const resolveEnv = (): Env => ({
   openCodeModel: process.env.OPENCODE_MODEL ?? "deepseek-v4-flash",
   defaultProviderId: process.env.LLM_DEFAULT_PROVIDER ?? "deepseek",
   nodeEnv: process.env.NODE_ENV ?? "development",
+  workflowMemoryStore: (process.env.WORKFLOW_MEMORY_STORE as "in-memory" | "file") ?? "in-memory",
+  workflowMemoryDir: process.env.WORKFLOW_MEMORY_DIR ?? "",
 });
