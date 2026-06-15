@@ -18,6 +18,8 @@ export type Env = {
   workflowMemoryStore: "in-memory" | "file";
   /** Directory for file-based memory store. Required when workflowMemoryStore is "file". */
   workflowMemoryDir: string;
+  /** Official RP workflow version: "unified-v1" (default) or "legacy". */
+  rpWorkflowVersion: "unified-v1" | "legacy";
 };
 
 export const resolveEnv = (): Env => ({
@@ -32,4 +34,6 @@ export const resolveEnv = (): Env => ({
   nodeEnv: process.env.NODE_ENV ?? "development",
   workflowMemoryStore: (process.env.WORKFLOW_MEMORY_STORE as "in-memory" | "file") ?? "in-memory",
   workflowMemoryDir: process.env.WORKFLOW_MEMORY_DIR ?? "",
+  rpWorkflowVersion:
+    (process.env.RP_WORKFLOW_VERSION as "unified-v1" | "legacy" | undefined) ?? "unified-v1",
 });

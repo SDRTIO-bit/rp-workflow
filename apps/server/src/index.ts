@@ -10,6 +10,7 @@ import { createSkillsRoutes } from "./routes/skills.js";
 import { createNodesRoutes } from "./routes/nodes.js";
 import { createTemplatesRoutes } from "./routes/templates.js";
 import { createWorkflowRoutes } from "./routes/workflow.js";
+import { createRpRoutes } from "./routes/rp.js";
 import { createLlmRoutes } from "./routes/llm.js";
 import {
   loadNodePlugins,
@@ -68,6 +69,7 @@ import {
   type SpecializedAgentProfileRegistry,
   type AgentSessionStore,
 } from "@awp/agent-runtime";
+import type { OfficialRpServiceContext } from "./rp/officialRpTypes.js";
 
 const app = new Hono();
 
@@ -127,6 +129,17 @@ const getWorkflowRuntime = () => ({
 const getLlmConfig = () => ({
   llmRouter: llmRouter!,
   defaultModelConfig: undefined as NodeModelConfig | undefined,
+});
+
+const getRpServiceContext = (): OfficialRpServiceContext => ({
+  serverWorkflowVersion: env.rpWorkflowVersion,
+  llmRouter: llmRouter!,
+  profileRegistry: profileRegistry!,
+  sessionStore: sessionStore!,
+  memoryStore: memoryStore!,
+  worldbookStore: worldbookStore!,
+  runtimeNodeCatalog,
+  dataDir: env.dataDir,
 });
 
 // Initialize plugins and RP runtime
@@ -300,6 +313,7 @@ app.route("/", createSkillsRoutes(getSkillsRuntime));
 app.route("/", createNodesRoutes(getNodesRuntime));
 app.route("/", createTemplatesRoutes());
 app.route("/", createWorkflowRoutes(getWorkflowRuntime));
+app.route("/", createRpRoutes(getRpServiceContext));
 app.route("/", createLlmRoutes(getLlmConfig));
 
 // Production static serving
