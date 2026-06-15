@@ -6,6 +6,7 @@
     { "path": "./packages/workflow-core" },
     { "path": "./packages/workflow-stdlib" },
     { "path": "./packages/workflow-worldbook" },
+    { "path": "./packages/workflow-retrieval" },
     { "path": "./packages/agent-runtime" },
     { "path": "./packages/workflow-persistence" },
     { "path": "./packages/db" },
