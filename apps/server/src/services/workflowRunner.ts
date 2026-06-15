@@ -23,6 +23,10 @@ import {
   createDynamicWorldbookExecutor,
   type DynamicWorldbookStore,
 } from "@awp/workflow-worldbook";
+import {
+  genericRetrieverExecutor,
+  retrievalResultToMarkdownExecutor,
+} from "@awp/workflow-retrieval";
 import { rankMemories } from "@awp/memory-core";
 import type { RpRuntimeRegistration } from "@awp/rp-runtime";
 import { readEntries } from "./jsonStore.js";
@@ -395,6 +399,10 @@ export const createExecutors = async (
       : ((async () => {
           throw new Error("dynamicWorldbook: WorldbookStore not configured.");
         }) as unknown as NodeExecutor),
+
+    // ============ P-4: Retrieval Layer Executors ============
+    genericRetriever: genericRetrieverExecutor,
+    retrievalResultToMarkdown: retrievalResultToMarkdownExecutor,
   };
 };
 

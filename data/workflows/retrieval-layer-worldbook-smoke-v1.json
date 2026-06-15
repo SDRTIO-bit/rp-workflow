@@ -1,0 +1,194 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "retrieval-layer-worldbook-smoke-v1",
+    "name": "Retrieval Layer Worldbook Smoke Test",
+    "version": 1,
+    "description": "P-4 retrieval smoke: filter worldbook -> genericRetriever -> retrievalResultToMarkdown -> specializedAgent -> playerOutput, with inspect branches",
+    "nodes": [
+      {
+        "id": "filterCmd",
+        "type": "jsonSource",
+        "position": { "x": 100, "y": 100 },
+        "config": {
+          "data": "{\"operation\": \"filter\", \"selector\": {}}"
+        }
+      },
+      {
+        "id": "wb",
+        "type": "dynamicWorldbook",
+        "position": { "x": 350, "y": 100 },
+        "config": {
+          "resourceRef": "worldbook:smoke-test",
+          "lifecycle": "session",
+          "allowedOperations": ["query", "filter"],
+          "allowDelete": false
+        }
+      },
+      {
+        "id": "query",
+        "type": "playerInput",
+        "position": { "x": 100, "y": 300 },
+        "config": {
+          "text": "白塔教会和北境守护"
+        }
+      },
+      {
+        "id": "retriever",
+        "type": "genericRetriever",
+        "position": { "x": 600, "y": 200 },
+        "config": {
+          "strategy": "keyword",
+          "limit": 5
+        }
+      },
+      {
+        "id": "toMd",
+        "type": "retrievalResultToMarkdown",
+        "position": { "x": 600, "y": 400 },
+        "config": {
+          "heading": "# Retrieved Context",
+          "includeScores": false,
+          "maxCharsPerEntry": 2000
+        }
+      },
+      {
+        "id": "instruction",
+        "type": "markdownSource",
+        "position": { "x": 100, "y": 500 },
+        "config": {
+          "content": "Using the retrieved context above, answer the player's question concisely."
+        }
+      },
+      {
+        "id": "agent",
+        "type": "specializedAgent",
+        "position": { "x": 900, "y": 400 },
+        "config": {
+          "profileId": "rp-writer",
+          "modelId": "mock-model"
+        }
+      },
+      {
+        "id": "output",
+        "type": "playerOutput",
+        "position": { "x": 1200, "y": 400 },
+        "config": {
+          "displayLabel": "Answer"
+        }
+      },
+      {
+        "id": "inspWb",
+        "type": "inspectOutput",
+        "position": { "x": 900, "y": 100 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspResult",
+        "type": "inspectOutput",
+        "position": { "x": 1200, "y": 100 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspMd",
+        "type": "inspectOutput",
+        "position": { "x": 1200, "y": 300 },
+        "config": { "displayMode": "markdown" }
+      },
+      {
+        "id": "inspText",
+        "type": "inspectOutput",
+        "position": { "x": 1200, "y": 500 },
+        "config": { "displayMode": "text" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_filter",
+        "source": "filterCmd",
+        "sourcePort": "json",
+        "target": "wb",
+        "targetPort": "command"
+      },
+      {
+        "id": "e_corpus",
+        "source": "wb",
+        "sourcePort": "result",
+        "target": "retriever",
+        "targetPort": "corpus"
+      },
+      {
+        "id": "e_query",
+        "source": "query",
+        "sourcePort": "text",
+        "target": "retriever",
+        "targetPort": "query"
+      },
+      {
+        "id": "e_ret_result",
+        "source": "retriever",
+        "sourcePort": "result",
+        "target": "toMd",
+        "targetPort": "result"
+      },
+      {
+        "id": "e_md_context",
+        "source": "toMd",
+        "sourcePort": "markdown",
+        "target": "agent",
+        "targetPort": "context"
+      },
+      {
+        "id": "e_user_input",
+        "source": "query",
+        "sourcePort": "text",
+        "target": "agent",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_instr",
+        "source": "instruction",
+        "sourcePort": "markdown",
+        "target": "agent",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_agent_out",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "output",
+        "targetPort": "text"
+      },
+      {
+        "id": "e_insp_wb",
+        "source": "wb",
+        "sourcePort": "result",
+        "target": "inspWb",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_result",
+        "source": "retriever",
+        "sourcePort": "result",
+        "target": "inspResult",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_md",
+        "source": "toMd",
+        "sourcePort": "markdown",
+        "target": "inspMd",
+        "targetPort": "markdownInput"
+      },
+      {
+        "id": "e_insp_text",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "inspText",
+        "targetPort": "textInput"
+      }
+    ]
+  }
+}

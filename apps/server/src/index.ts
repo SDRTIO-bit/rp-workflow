@@ -28,6 +28,11 @@ import {
   createWorldbookSchemaValidators,
   type DynamicWorldbookStore,
 } from "@awp/workflow-worldbook";
+import {
+  genericRetrieverNode,
+  retrievalResultToMarkdownNode,
+  createRetrievalSchemaValidators,
+} from "@awp/workflow-retrieval";
 import { createRpLlmBridge } from "./services/rpLlmBridge.js";
 import {
   registerRpRuntime,
@@ -134,11 +139,16 @@ const initPlugins = async () => {
     // Initialize P-3 Dynamic Worldbook Store & Schema Validators
     worldbookStore = new InMemoryDynamicWorldbookStore();
     const worldbookValidators = createWorldbookSchemaValidators();
+    const retrievalValidators = createRetrievalSchemaValidators();
+    const allValidators = { ...worldbookValidators, ...retrievalValidators };
     setRuntimeSchemaValidator((schemaId, data) => {
-      const validator = worldbookValidators[schemaId];
+      const validator = allValidators[schemaId];
       return validator ? validator(data) : true; // pass-through for unknown schemas
     });
     console.log("Worldbook Store: in-memory store initialized");
+    console.log(
+      `Retrieval validators: ${Object.keys(retrievalValidators).length} schemas registered`,
+    );
 
     // Register available providers
     if (env.openCodeApiKey) {
@@ -205,11 +215,13 @@ const initPlugins = async () => {
       );
     }
 
-    // Merge catalogs: nodeRegistry + stdlibNodes + dynamicWorldbook + rpCatalog + pluginCatalog
+    // Merge catalogs: nodeRegistry + stdlibNodes + dynamicWorldbook + retrieval + rpCatalog + pluginCatalog
     runtimeNodeCatalog = {
       ...nodeRegistry,
       ...stdlibNodes,
       dynamicWorldbook: dynamicWorldbookNode,
+      genericRetriever: genericRetrieverNode,
+      retrievalResultToMarkdown: retrievalResultToMarkdownNode,
       ...rpRuntime.catalog,
       ...pluginCatalog,
     };
