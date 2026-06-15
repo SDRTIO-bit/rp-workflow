@@ -1,0 +1,114 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "composable-context-smoke-v1",
+    "name": "Composable Context Smoke Test",
+    "version": 1,
+    "description": "P-2 smoke test: worldbook A + B → JSON Merge → JSON to Markdown → Agent.context; style + format → Markdown Merge → Agent.instruction; playerInput → Agent.userInput → playerOutput, with inspect branches.",
+    "nodes": [
+      {
+        "id": "wbA",
+        "type": "jsonSource",
+        "position": { "x": 50, "y": 50 },
+        "config": {
+          "sourceMode": "inline",
+          "data": "[{\"id\": \"a1\", \"title\": \"白塔教会\", \"content\": \"白塔教会是帝国的国教，崇拜七位主神。\"}, {\"id\": \"a2\", \"title\": \"圣银骑士团\", \"content\": \"圣银骑士团是教会的军事力量。\"}]"
+        }
+      },
+      {
+        "id": "wbB",
+        "type": "jsonSource",
+        "position": { "x": 50, "y": 200 },
+        "config": {
+          "sourceMode": "inline",
+          "data": "[{\"id\": \"b1\", \"title\": \"银铃\", \"content\": \"银铃是骑士团核心成员的信物，可感知附近的不死者。\"}, {\"id\": \"b2\", \"title\": \"黑潮\", \"content\": \"黑潮是一种腐蚀性魔法，来源不明。\"}]"
+        }
+      },
+      {
+        "id": "merge",
+        "type": "jsonMerge",
+        "position": { "x": 350, "y": 125 },
+        "config": { "mode": "array-concat" }
+      },
+      {
+        "id": "j2m",
+        "type": "jsonToMarkdown",
+        "position": { "x": 650, "y": 125 },
+        "config": {}
+      },
+      {
+        "id": "styleMd",
+        "type": "markdownSource",
+        "position": { "x": 50, "y": 400 },
+        "config": {
+          "sourceMode": "inline",
+          "content": "## 写作风格\n\n使用简洁有力的中文。避免过于华丽的修饰。以动作和对话推动叙事。"
+        }
+      },
+      {
+        "id": "formatMd",
+        "type": "markdownSource",
+        "position": { "x": 50, "y": 550 },
+        "config": {
+          "sourceMode": "inline",
+          "content": "## 输出格式\n\n以第三人称叙述。每段不超过 3 句。以有意义的选择点结束。"
+        }
+      },
+      {
+        "id": "mdMerge",
+        "type": "markdownMerge",
+        "position": { "x": 350, "y": 475 },
+        "config": {
+          "separator": "\n\n",
+          "skipEmpty": true
+        }
+      },
+      {
+        "id": "player",
+        "type": "playerInput",
+        "position": { "x": 50, "y": 700 },
+        "config": { "text": "阿绫握紧银铃，推开了地下神殿的大门。" }
+      },
+      {
+        "id": "agent",
+        "type": "genericAgent",
+        "position": { "x": 650, "y": 400 },
+        "config": {
+          "providerId": "",
+          "modelId": "mock-model",
+          "systemPrompt": "你是 RP 冒险故事的创作者。根据提供的世界书背景、写作风格和输出格式，续写场景。",
+          "temperature": 0.7,
+          "maxTokens": 512
+        }
+      },
+      {
+        "id": "output",
+        "type": "playerOutput",
+        "position": { "x": 950, "y": 400 },
+        "config": { "displayLabel": "Scene" }
+      },
+      {
+        "id": "inspector",
+        "type": "inspectOutput",
+        "position": { "x": 950, "y": 600 },
+        "config": { "displayMode": "auto" }
+      }
+    ],
+    "edges": [
+      { "id": "e_wbA", "source": "wbA", "sourcePort": "json", "target": "merge", "targetPort": "left" },
+      { "id": "e_wbB", "source": "wbB", "sourcePort": "json", "target": "merge", "targetPort": "right" },
+      { "id": "e_j2m", "source": "merge", "sourcePort": "result", "target": "j2m", "targetPort": "input" },
+      { "id": "e_ctx", "source": "j2m", "sourcePort": "output", "target": "agent", "targetPort": "context" },
+      { "id": "e_style", "source": "styleMd", "sourcePort": "markdown", "target": "mdMerge", "targetPort": "left" },
+      { "id": "e_format", "source": "formatMd", "sourcePort": "markdown", "target": "mdMerge", "targetPort": "right" },
+      { "id": "e_instr", "source": "mdMerge", "sourcePort": "result", "target": "agent", "targetPort": "instruction" },
+      { "id": "e_user", "source": "player", "sourcePort": "text", "target": "agent", "targetPort": "userInput" },
+      { "id": "e_result", "source": "agent", "sourcePort": "result", "target": "output", "targetPort": "text" },
+      { "id": "e_insp_json", "source": "merge", "sourcePort": "result", "target": "inspector", "targetPort": "jsonInput" },
+      { "id": "e_insp_md", "source": "j2m", "sourcePort": "output", "target": "inspector", "targetPort": "markdownInput" },
+      { "id": "e_insp_text", "source": "agent", "sourcePort": "result", "target": "inspector", "targetPort": "textInput" }
+    ]
+  }
+}

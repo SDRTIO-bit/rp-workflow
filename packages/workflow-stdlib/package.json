@@ -1,5 +1,5 @@
 {
-  "name": "@awp/agent-runtime",
+  "name": "@awp/workflow-stdlib",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",
@@ -9,9 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@awp/plugin-sdk": "*",
-    "@awp/workflow-core": "*",
-    "@awp/workflow-stdlib": "*"
+    "@awp/workflow-core": "*"
   },
   "devDependencies": {
     "vitest": "^3.2.2"
