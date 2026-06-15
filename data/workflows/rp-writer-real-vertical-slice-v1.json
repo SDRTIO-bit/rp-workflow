@@ -1,0 +1,239 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "rp-writer-real-vertical-slice-v1",
+    "name": "RP Writer Real Vertical Slice V1",
+    "version": 1,
+    "description": "P-5 vertical slice: playerInput -> worldbook filter -> genericRetriever -> retrievalResultToMarkdown -> markdownMerge(context) -> specializedAgent(rp-writer) -> playerOutput, with inspect branches",
+    "nodes": [
+      {
+        "id": "filterCmd",
+        "type": "jsonSource",
+        "position": { "x": 100, "y": 50 },
+        "config": {
+          "data": "{\"operation\": \"filter\", \"selector\": {}}"
+        }
+      },
+      {
+        "id": "wb",
+        "type": "dynamicWorldbook",
+        "position": { "x": 350, "y": 50 },
+        "config": {
+          "resourceRef": "worldbook:rp-tavern",
+          "lifecycle": "session",
+          "allowedOperations": ["query", "filter"],
+          "allowDelete": false
+        }
+      },
+      {
+        "id": "input",
+        "type": "playerInput",
+        "position": { "x": 100, "y": 200 },
+        "config": {
+          "text": "我把钥匙放到吧台上，看着银铃：\"这件事你打算怎么解释？\""
+        }
+      },
+      {
+        "id": "retriever",
+        "type": "genericRetriever",
+        "position": { "x": 600, "y": 150 },
+        "config": {
+          "strategy": "keyword",
+          "limit": 8
+        }
+      },
+      {
+        "id": "retToMd",
+        "type": "retrievalResultToMarkdown",
+        "position": { "x": 600, "y": 300 },
+        "config": {
+          "includeScores": false,
+          "maxCharsPerEntry": 2000
+        }
+      },
+      {
+        "id": "recentMsg",
+        "type": "markdownSource",
+        "position": { "x": 100, "y": 400 },
+        "config": {
+          "content": "## Recent Messages\n\n**银铃**: 林舟，仓库的钥匙你保管好。别让老板知道。\n**林舟**: 你就不怕我拿着钥匙跑了？\n**银铃**: 你跑不了。外面下着雨呢。\n**老板**: （从柜台后抬头）你们在聊什么？"
+        }
+      },
+      {
+        "id": "mergeCtx",
+        "type": "markdownMerge",
+        "position": { "x": 900, "y": 250 },
+        "config": {
+          "separator": "\n\n---\n\n",
+          "skipEmpty": true
+        }
+      },
+      {
+        "id": "preset",
+        "type": "markdownSource",
+        "position": { "x": 100, "y": 550 },
+        "config": {
+          "content": "## Style Preset\n\n- Narrative style: 中文文学叙事\n- Perspective: 第三人称有限视角（跟随林舟）\n- Tone: 紧张、悬疑\n- Length: 中等篇幅（200-400字）\n- Format: 纯正文，无章节标题"
+        }
+      },
+      {
+        "id": "agent",
+        "type": "specializedAgent",
+        "position": { "x": 1150, "y": 400 },
+        "config": {
+          "profileId": "rp-writer",
+          "modelId": "mock-model",
+          "temperature": 0.8,
+          "maxTokens": 2048
+        }
+      },
+      {
+        "id": "output",
+        "type": "playerOutput",
+        "position": { "x": 1400, "y": 400 },
+        "config": {
+          "displayLabel": "RP Narrative"
+        }
+      },
+      {
+        "id": "inspWbCorpus",
+        "type": "inspectOutput",
+        "position": { "x": 900, "y": 50 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspRetResult",
+        "type": "inspectOutput",
+        "position": { "x": 1150, "y": 50 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspRetMd",
+        "type": "inspectOutput",
+        "position": { "x": 1400, "y": 50 },
+        "config": { "displayMode": "markdown" }
+      },
+      {
+        "id": "inspContext",
+        "type": "inspectOutput",
+        "position": { "x": 1400, "y": 200 },
+        "config": { "displayMode": "markdown" }
+      },
+      {
+        "id": "inspAgent",
+        "type": "inspectOutput",
+        "position": { "x": 1400, "y": 550 },
+        "config": { "displayMode": "text" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_filter",
+        "source": "filterCmd",
+        "sourcePort": "json",
+        "target": "wb",
+        "targetPort": "command"
+      },
+      {
+        "id": "e_corpus",
+        "source": "wb",
+        "sourcePort": "result",
+        "target": "retriever",
+        "targetPort": "corpus"
+      },
+      {
+        "id": "e_query",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "retriever",
+        "targetPort": "query"
+      },
+      {
+        "id": "e_ret_to_md",
+        "source": "retriever",
+        "sourcePort": "result",
+        "target": "retToMd",
+        "targetPort": "result"
+      },
+      {
+        "id": "e_retmd_left",
+        "source": "retToMd",
+        "sourcePort": "markdown",
+        "target": "mergeCtx",
+        "targetPort": "left"
+      },
+      {
+        "id": "e_msg_right",
+        "source": "recentMsg",
+        "sourcePort": "markdown",
+        "target": "mergeCtx",
+        "targetPort": "right"
+      },
+      {
+        "id": "e_ctx_to_agent",
+        "source": "mergeCtx",
+        "sourcePort": "result",
+        "target": "agent",
+        "targetPort": "context"
+      },
+      {
+        "id": "e_user_input",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "agent",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_preset",
+        "source": "preset",
+        "sourcePort": "markdown",
+        "target": "agent",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_agent_out",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "output",
+        "targetPort": "text"
+      },
+      {
+        "id": "e_insp_wb_corpus",
+        "source": "wb",
+        "sourcePort": "result",
+        "target": "inspWbCorpus",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_ret",
+        "source": "retriever",
+        "sourcePort": "result",
+        "target": "inspRetResult",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_ret_md",
+        "source": "retToMd",
+        "sourcePort": "markdown",
+        "target": "inspRetMd",
+        "targetPort": "markdownInput"
+      },
+      {
+        "id": "e_insp_ctx",
+        "source": "mergeCtx",
+        "sourcePort": "result",
+        "target": "inspContext",
+        "targetPort": "markdownInput"
+      },
+      {
+        "id": "e_insp_agent",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "inspAgent",
+        "targetPort": "textInput"
+      }
+    ]
+  }
+}
