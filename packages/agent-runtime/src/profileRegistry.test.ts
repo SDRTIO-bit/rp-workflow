@@ -58,10 +58,10 @@ describe("InMemorySpecializedAgentProfileRegistry", () => {
 });
 
 describe("createP1ProfileRegistry", () => {
-  it("creates registry with 3 built-in profiles", () => {
+  it("creates registry with 4 built-in profiles", () => {
     const registry = createP1ProfileRegistry();
     const list = registry.list();
-    expect(list).toHaveLength(3);
+    expect(list).toHaveLength(4);
   });
 
   it("contains rp-writer profile", () => {

@@ -1,0 +1,151 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "rp-writer-critic-gate-v1",
+    "name": "RP Writer Critic Gate V1",
+    "version": 1,
+    "description": "P-9: writer -> critic -> quality gate. Writer draft goes to player output AND to critic instruction. Critic reviews but does not trigger auto-retry.",
+    "nodes": [
+      {
+        "id": "input",
+        "type": "playerInput",
+        "position": { "x": 100, "y": 50 },
+        "config": {
+          "text": "我把钥匙放到吧台上，看着银铃"
+        }
+      },
+      {
+        "id": "preset",
+        "type": "markdownSource",
+        "position": { "x": 100, "y": 200 },
+        "config": {
+          "content": "## Style\n- 中文文学叙事\n- 第三人称\n- 不超过300字"
+        }
+      },
+      {
+        "id": "writer",
+        "type": "specializedAgent",
+        "position": { "x": 400, "y": 100 },
+        "config": {
+          "profileId": "rp-writer",
+          "modelId": "mock-model",
+          "temperature": 0.8
+        }
+      },
+      {
+        "id": "criticRubric",
+        "type": "markdownSource",
+        "position": { "x": 100, "y": 350 },
+        "config": {
+          "content": "## Review Rubric\n\n- Draft must not control the player character\n- Draft must not reveal information the POV character cannot know\n- Draft must follow the preset style"
+        }
+      },
+      {
+        "id": "critic",
+        "type": "specializedAgent",
+        "position": { "x": 700, "y": 200 },
+        "config": {
+          "profileId": "rp-critic",
+          "modelId": "mock-model"
+        }
+      },
+      {
+        "id": "gate",
+        "type": "rpCriticQualityGate",
+        "position": { "x": 1000, "y": 200 },
+        "config": {
+          "minContinuity": 0.7,
+          "minPlayerAgency": 0.8,
+          "rejectOnErrorIssue": true
+        }
+      },
+      {
+        "id": "output",
+        "type": "playerOutput",
+        "position": { "x": 1000, "y": 400 },
+        "config": {
+          "displayLabel": "Writer Draft"
+        }
+      },
+      {
+        "id": "inspDraft",
+        "type": "inspectOutput",
+        "position": { "x": 700, "y": 400 },
+        "config": { "displayMode": "text" }
+      },
+      {
+        "id": "inspGate",
+        "type": "inspectOutput",
+        "position": { "x": 1300, "y": 200 },
+        "config": { "displayMode": "json" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_input",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "writer",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_preset",
+        "source": "preset",
+        "sourcePort": "markdown",
+        "target": "writer",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_writer_out",
+        "source": "writer",
+        "sourcePort": "result",
+        "target": "output",
+        "targetPort": "text"
+      },
+      {
+        "id": "e_critic_ui",
+        "source": "input",
+        "sourcePort": "text",
+        "target": "critic",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_rubric",
+        "source": "criticRubric",
+        "sourcePort": "markdown",
+        "target": "critic",
+        "targetPort": "instruction"
+      },
+      {
+        "id": "e_writer_draft",
+        "source": "writer",
+        "sourcePort": "result",
+        "target": "critic",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_critic_to_gate",
+        "source": "critic",
+        "sourcePort": "result",
+        "target": "gate",
+        "targetPort": "review"
+      },
+      {
+        "id": "e_insp_draft",
+        "source": "writer",
+        "sourcePort": "result",
+        "target": "inspDraft",
+        "targetPort": "textInput"
+      },
+      {
+        "id": "e_insp_gate",
+        "source": "gate",
+        "sourcePort": "result",
+        "target": "inspGate",
+        "targetPort": "jsonInput"
+      }
+    ]
+  }
+}

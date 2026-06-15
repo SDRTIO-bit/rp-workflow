@@ -13,7 +13,11 @@ import {
   type WorkflowDefinition,
 } from "@awp/workflow-core";
 import { stdlibNodes, createStdlibExecutors } from "@awp/workflow-stdlib";
-import { rpMemoryCommitPolicyExecutor, rpMemoryCommitPolicyNode } from "./index";
+import {
+  rpMemoryCommitPolicyExecutor,
+  rpMemoryCommitPolicyNode,
+  createP1ProfileRegistry,
+} from "./index";
 import {
   InMemoryWorkflowMemoryStore,
   memoryWriteNode,

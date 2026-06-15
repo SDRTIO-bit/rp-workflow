@@ -57,6 +57,7 @@ import {
   LlmRouter,
   createP1ProfileRegistry,
   rpMemoryCommitPolicyNode,
+  rpCriticQualityGateNode,
   InMemoryAgentSessionStore,
   type NodeModelConfig,
   type SpecializedAgentProfileRegistry,
@@ -251,6 +252,7 @@ const initPlugins = async () => {
       memoryCorpus: memoryCorpusNode,
       memoryDelete: memoryDeleteNode,
       rpMemoryCommitPolicy: rpMemoryCommitPolicyNode,
+      rpCriticQualityGate: rpCriticQualityGateNode,
       ...rpRuntime.catalog,
       ...pluginCatalog,
     };

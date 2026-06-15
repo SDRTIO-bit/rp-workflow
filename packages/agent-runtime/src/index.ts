@@ -14,6 +14,7 @@ export * from "./profileRegistry";
 export * from "./promptBuilder";
 export * from "./providerRegistry";
 export * from "./renderer";
+export * from "./rpCriticGate";
 export * from "./rpMemoryCommitPolicy";
 export * from "./sessionMarkdown";
 export * from "./types";

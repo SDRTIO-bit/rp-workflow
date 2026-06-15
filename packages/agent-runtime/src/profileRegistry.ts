@@ -263,6 +263,73 @@ const RP_MEMORY_CURATOR_PROFILE: SpecializedAgentProfile = {
   declaredToolPermissions: [],
 };
 
+const RP_CRITIC_PROFILE: SpecializedAgentProfile = {
+  profileId: "rp-critic",
+  label: { zh: "RP 审查人", en: "RP Critic" },
+  description: {
+    zh: "审查 RP Writer 生成的正文，检查世界一致性、角色一致性、玩家代理权和格式合规。",
+    en: "Reviews RP Writer output for world consistency, character consistency, player agency, and format compliance.",
+  },
+  foundationalSystemPrompt: [
+    "You are an RP quality critic. Review the writer's draft against the provided context.",
+    "",
+    "## Review Checklist",
+    "1. World consistency — does the draft contradict established world facts or retrieved worldbook?",
+    "2. Character consistency — do characters act, speak, and react according to their established traits and relationships?",
+    "3. Player agency — does the draft make key decisions for the player or control the player character?",
+    "4. Knowledge boundary — does the draft reveal information a character should not know?",
+    "5. Input completeness — does the draft address the player's current input?",
+    "6. Style & format — does the draft follow the preset's style, tense, and format?",
+    "7. Quality — is the draft repetitive, mechanical, or empty filler?",
+    "8. Purity — does the draft contain meta-analysis, explanations, or non-narrative content?",
+    "",
+    "## Output Format",
+    "Output ONLY a JSON object matching this schema:",
+    "{",
+    '  "decision": "accept" | "revise",',
+    '  "scores": {',
+    '    "continuity": 0.0-1.0,',
+    '    "characterConsistency": 0.0-1.0,',
+    '    "playerAgency": 0.0-1.0,',
+    '    "knowledgeBoundary": 0.0-1.0,',
+    '    "styleAndFormat": 0.0-1.0',
+    "  },",
+    '  "issues": [',
+    "    {",
+    '      "code": "continuity|character-inconsistency|player-agency|knowledge-leak|worldbook-conflict|format|style|repetition|other",',
+    '      "severity": "warning|error",',
+    '      "message": "concise description",',
+    '      "evidence": "short quote (optional)",',
+    '      "suggestion": "specific fix suggestion"',
+    "    }",
+    "  ],",
+    '  "revisionInstruction": "if decision is revise, provide specific guidance for the writer"',
+    "}",
+    "",
+    "If decision is accept, omit revisionInstruction.",
+    "Output ONLY the JSON. No markdown, no explanation.",
+  ].join("\n"),
+  requiredInputs: {
+    userInput: { required: false, order: 3 },
+    instruction: { required: false, order: 1 },
+    context: { required: true, order: 2 },
+    data: { required: false, order: 4, jsonRenderer: false },
+  },
+  inputOrder: {
+    instruction: 1,
+    context: 2,
+    userInput: 3,
+    data: 4,
+  },
+  defaultModelConfig: {
+    temperature: 0.2,
+    maxTokens: 1024,
+    responseFormat: "json_object",
+  },
+  lockedFields: ["responseFormat"],
+  declaredToolPermissions: [],
+};
+
 // ============ Factory ============
 
 /**
@@ -273,5 +340,6 @@ export function createP1ProfileRegistry(): InMemorySpecializedAgentProfileRegist
   registry.register(RP_WRITER_PROFILE);
   registry.register(STORY_WRITER_PROFILE);
   registry.register(RP_MEMORY_CURATOR_PROFILE);
+  registry.register(RP_CRITIC_PROFILE);
   return registry;
 }

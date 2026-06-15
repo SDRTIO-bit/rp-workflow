@@ -19,6 +19,7 @@ import {
   createAgentSessionLoadV1Executor,
   createAgentSessionCommitV1Executor,
   rpMemoryCommitPolicyExecutor,
+  rpCriticQualityGateExecutor,
   type SpecializedAgentProfileRegistry,
   type AgentSessionStore,
 } from "@awp/agent-runtime";
@@ -447,6 +448,7 @@ export const createExecutors = async (
 
     // ============ P-8: RP Memory Commit Policy ============
     rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,
+    rpCriticQualityGate: rpCriticQualityGateExecutor,
   };
 };
 
