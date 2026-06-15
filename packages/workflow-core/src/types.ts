@@ -191,6 +191,7 @@ export type WorkflowValidationIssue = {
 
 export type WorkflowRunContext = {
   runId?: string;
+  sessionId?: string;
   values?: Readonly<Record<string, unknown>>;
 };
 

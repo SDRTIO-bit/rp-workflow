@@ -1,0 +1,17 @@
+{
+  "name": "@awp/workflow-worldbook",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@awp/workflow-core": "*"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.2"
+  }
+}
