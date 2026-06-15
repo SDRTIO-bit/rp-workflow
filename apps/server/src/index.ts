@@ -33,6 +33,14 @@ import {
   retrievalResultToMarkdownNode,
   createRetrievalSchemaValidators,
 } from "@awp/workflow-retrieval";
+import {
+  memoryWriteNode,
+  memoryCorpusNode,
+  memoryDeleteNode,
+  InMemoryWorkflowMemoryStore,
+  createMemorySchemaValidators,
+  type WorkflowMemoryStore,
+} from "@awp/workflow-memory";
 import { createRpLlmBridge } from "./services/rpLlmBridge.js";
 import {
   registerRpRuntime,
@@ -72,6 +80,7 @@ let runtimeNodeCatalog: NodeCatalog = { ...nodeRegistry };
 let skillCatalog: SkillItem[] = [];
 let profileRegistry: SpecializedAgentProfileRegistry | undefined;
 let worldbookStore: DynamicWorldbookStore | undefined;
+let memoryStore: WorkflowMemoryStore | undefined;
 
 const getPluginRuntime = (): PluginRuntime => ({
   pluginState,
@@ -102,6 +111,7 @@ const getWorkflowRuntime = () => ({
   rpRuntime,
   profileRegistry,
   worldbookStore,
+  memoryStore,
 });
 const getLlmConfig = () => ({
   llmRouter: llmRouter!,
@@ -140,7 +150,8 @@ const initPlugins = async () => {
     worldbookStore = new InMemoryDynamicWorldbookStore();
     const worldbookValidators = createWorldbookSchemaValidators();
     const retrievalValidators = createRetrievalSchemaValidators();
-    const allValidators = { ...worldbookValidators, ...retrievalValidators };
+    const memoryValidators = createMemorySchemaValidators();
+    const allValidators = { ...worldbookValidators, ...retrievalValidators, ...memoryValidators };
     setRuntimeSchemaValidator((schemaId, data) => {
       const validator = allValidators[schemaId];
       return validator ? validator(data) : true; // pass-through for unknown schemas
@@ -149,6 +160,11 @@ const initPlugins = async () => {
     console.log(
       `Retrieval validators: ${Object.keys(retrievalValidators).length} schemas registered`,
     );
+    console.log(`Memory validators: ${Object.keys(memoryValidators).length} schemas registered`);
+
+    // P-5 Memory Store
+    memoryStore = new InMemoryWorkflowMemoryStore();
+    console.log("Memory Store: in-memory store initialized");
 
     // Register available providers
     if (env.openCodeApiKey) {
@@ -222,6 +238,9 @@ const initPlugins = async () => {
       dynamicWorldbook: dynamicWorldbookNode,
       genericRetriever: genericRetrieverNode,
       retrievalResultToMarkdown: retrievalResultToMarkdownNode,
+      memoryWrite: memoryWriteNode,
+      memoryCorpus: memoryCorpusNode,
+      memoryDelete: memoryDeleteNode,
       ...rpRuntime.catalog,
       ...pluginCatalog,
     };

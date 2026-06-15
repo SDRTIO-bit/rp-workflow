@@ -27,6 +27,12 @@ import {
   genericRetrieverExecutor,
   retrievalResultToMarkdownExecutor,
 } from "@awp/workflow-retrieval";
+import {
+  createMemoryWriteExecutor,
+  createMemoryCorpusExecutor,
+  createMemoryDeleteExecutor,
+  type WorkflowMemoryStore,
+} from "@awp/workflow-memory";
 import { rankMemories } from "@awp/memory-core";
 import type { RpRuntimeRegistration } from "@awp/rp-runtime";
 import { readEntries } from "./jsonStore.js";
@@ -90,6 +96,7 @@ export type WorkflowRunnerContext = {
   rpRuntime: RpRuntimeRegistration | null;
   profileRegistry?: SpecializedAgentProfileRegistry;
   worldbookStore?: DynamicWorldbookStore;
+  memoryStore?: WorkflowMemoryStore;
 };
 
 export const createExecutors = async (
@@ -403,6 +410,23 @@ export const createExecutors = async (
     // ============ P-4: Retrieval Layer Executors ============
     genericRetriever: genericRetrieverExecutor,
     retrievalResultToMarkdown: retrievalResultToMarkdownExecutor,
+
+    // ============ P-5: Memory Library Executors ============
+    memoryWrite: context.memoryStore
+      ? createMemoryWriteExecutor(context.memoryStore)
+      : ((async () => {
+          throw new Error("memoryWrite: MemoryStore not configured.");
+        }) as unknown as NodeExecutor),
+    memoryCorpus: context.memoryStore
+      ? createMemoryCorpusExecutor(context.memoryStore)
+      : ((async () => {
+          throw new Error("memoryCorpus: MemoryStore not configured.");
+        }) as unknown as NodeExecutor),
+    memoryDelete: context.memoryStore
+      ? createMemoryDeleteExecutor(context.memoryStore)
+      : ((async () => {
+          throw new Error("memoryDelete: MemoryStore not configured.");
+        }) as unknown as NodeExecutor),
   };
 };
 

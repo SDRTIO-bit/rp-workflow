@@ -1,0 +1,51 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "memory-write-smoke-v1",
+    "name": "Memory Write Smoke Test",
+    "version": 1,
+    "description": "P-5 write smoke: jsonSource(input) -> memoryWrite -> inspectOutput",
+    "nodes": [
+      {
+        "id": "writeInput",
+        "type": "jsonSource",
+        "position": { "x": 100, "y": 200 },
+        "config": {
+          "data": "{\"namespace\": \"rp-session-001\", \"records\": [{\"id\": \"mem-key-event\", \"content\": \"银铃在雨夜把仓库钥匙交给了林舟。\", \"title\": \"钥匙转交事件\", \"type\": \"event\", \"tags\": [\"事件\", \"钥匙\"], \"entityIds\": [\"银铃\", \"林舟\", \"仓库\"], \"importance\": 8}]}"
+        }
+      },
+      {
+        "id": "writer",
+        "type": "memoryWrite",
+        "position": { "x": 400, "y": 200 },
+        "config": {
+          "namespace": "rp-session-001"
+        }
+      },
+      {
+        "id": "insp",
+        "type": "inspectOutput",
+        "position": { "x": 700, "y": 200 },
+        "config": { "displayMode": "json" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_input",
+        "source": "writeInput",
+        "sourcePort": "json",
+        "target": "writer",
+        "targetPort": "input"
+      },
+      {
+        "id": "e_insp",
+        "source": "writer",
+        "sourcePort": "output",
+        "target": "insp",
+        "targetPort": "jsonInput"
+      }
+    ]
+  }
+}

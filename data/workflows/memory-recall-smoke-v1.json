@@ -1,0 +1,159 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "memory-recall-smoke-v1",
+    "name": "Memory Recall Smoke Test",
+    "version": 1,
+    "description": "P-5 recall smoke: memoryCorpus -> genericRetriever -> retrievalResultToMarkdown -> specializedAgent -> playerOutput, with inspect branches",
+    "nodes": [
+      {
+        "id": "corpus",
+        "type": "memoryCorpus",
+        "position": { "x": 100, "y": 200 },
+        "config": {
+          "namespace": "rp-session-001"
+        }
+      },
+      {
+        "id": "retriever",
+        "type": "genericRetriever",
+        "position": { "x": 400, "y": 200 },
+        "config": {
+          "strategy": "keyword",
+          "limit": 5
+        }
+      },
+      {
+        "id": "query",
+        "type": "playerInput",
+        "position": { "x": 100, "y": 350 },
+        "config": {
+          "text": "林舟从哪里得到仓库钥匙？"
+        }
+      },
+      {
+        "id": "toMd",
+        "type": "retrievalResultToMarkdown",
+        "position": { "x": 700, "y": 200 },
+        "config": {
+          "includeScores": false
+        }
+      },
+      {
+        "id": "agent",
+        "type": "specializedAgent",
+        "position": { "x": 1000, "y": 200 },
+        "config": {
+          "profileId": "rp-writer",
+          "modelId": "mock-model"
+        }
+      },
+      {
+        "id": "output",
+        "type": "playerOutput",
+        "position": { "x": 1300, "y": 200 },
+        "config": {
+          "displayLabel": "Answer"
+        }
+      },
+      {
+        "id": "inspCorpus",
+        "type": "inspectOutput",
+        "position": { "x": 700, "y": 350 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspRet",
+        "type": "inspectOutput",
+        "position": { "x": 1000, "y": 350 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspMd",
+        "type": "inspectOutput",
+        "position": { "x": 1300, "y": 350 },
+        "config": { "displayMode": "markdown" }
+      },
+      {
+        "id": "inspAgent",
+        "type": "inspectOutput",
+        "position": { "x": 1300, "y": 500 },
+        "config": { "displayMode": "text" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_corpus",
+        "source": "corpus",
+        "sourcePort": "corpus",
+        "target": "retriever",
+        "targetPort": "corpus"
+      },
+      {
+        "id": "e_query",
+        "source": "query",
+        "sourcePort": "text",
+        "target": "retriever",
+        "targetPort": "query"
+      },
+      {
+        "id": "e_ret_to_md",
+        "source": "retriever",
+        "sourcePort": "result",
+        "target": "toMd",
+        "targetPort": "result"
+      },
+      {
+        "id": "e_md_to_agent",
+        "source": "toMd",
+        "sourcePort": "markdown",
+        "target": "agent",
+        "targetPort": "context"
+      },
+      {
+        "id": "e_query_to_agent",
+        "source": "query",
+        "sourcePort": "text",
+        "target": "agent",
+        "targetPort": "userInput"
+      },
+      {
+        "id": "e_agent_out",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "output",
+        "targetPort": "text"
+      },
+      {
+        "id": "e_insp_corpus",
+        "source": "corpus",
+        "sourcePort": "corpus",
+        "target": "inspCorpus",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_ret",
+        "source": "retriever",
+        "sourcePort": "result",
+        "target": "inspRet",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_md",
+        "source": "toMd",
+        "sourcePort": "markdown",
+        "target": "inspMd",
+        "targetPort": "markdownInput"
+      },
+      {
+        "id": "e_insp_agent",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "inspAgent",
+        "targetPort": "textInput"
+      }
+    ]
+  }
+}

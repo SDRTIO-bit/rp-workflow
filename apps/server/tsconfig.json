@@ -17,6 +17,7 @@
     { "path": "../../packages/rp-runtime" },
     { "path": "../../packages/workflow-stdlib" },
     { "path": "../../packages/workflow-worldbook" },
-    { "path": "../../packages/workflow-retrieval" }
+    { "path": "../../packages/workflow-retrieval" },
+    { "path": "../../packages/workflow-memory" }
   ]
 }
