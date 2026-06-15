@@ -1,6 +1,7 @@
-/**
+﻿/**
  * P-11 Unified Stateful RP Production Workflow E2E Tests
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { readFileSync, unlinkSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, join } from "node:path";
@@ -10,7 +11,7 @@ import {
   nodeRegistry,
   type WorkflowDefinition,
   type NodeExecutor,
-  type NodeCatalog,
+  type WorkflowRunContext,
 } from "@awp/workflow-core";
 import { stdlibNodes, createStdlibExecutors } from "@awp/workflow-stdlib";
 import {
@@ -54,9 +55,8 @@ import {
   type AgentSessionStore,
 } from "./index";
 
-// ============ Helpers ============
-
-function createP11Catalog(): NodeCatalog {
+// ---- helpers ----
+function cat() {
   return {
     ...nodeRegistry,
     ...stdlibNodes,
@@ -72,342 +72,385 @@ function createP11Catalog(): NodeCatalog {
     agentSessionCommitV1: agentSessionCommitV1Definition,
   };
 }
-
-function loadWorkflowJson(filename: string): WorkflowDefinition {
-  const path = resolve(__dirname, "../../../data/workflows", filename);
-  return JSON.parse(readFileSync(path, "utf-8")).workflow as WorkflowDefinition;
+function wf(n: string) {
+  return JSON.parse(readFileSync(resolve(__dirname, "../../../data/workflows", n), "utf-8"))
+    .workflow;
 }
-
-function createUnifiedExecutors(
+function mk(
   pr: InMemorySpecializedAgentProfileRegistry,
-  responses: Array<{ text: string }>,
-  options?: {
-    sessionStore?: AgentSessionStore;
-    memoryStore?: WorkflowMemoryStore;
-    worldbookStore?: DynamicWorldbookStore;
-  },
+  rs: Array<{ text: string }>,
+  o?: { ss?: AgentSessionStore; ms?: WorkflowMemoryStore; ws?: DynamicWorldbookStore },
 ) {
-  let callIndex = -1;
-  const adapter = {
+  let ci = -1;
+  const ad = {
     provider: "mock",
-    async complete(p: { model: string; prompt: string; temperature?: number }) {
-      callIndex++;
-      if (callIndex >= responses.length)
-        throw new Error(`LLM call ${callIndex} exceeds ${responses.length}`);
-      const t = responses[callIndex]!.text;
+    async complete(_p: { model: string; prompt: string; temperature?: number }) {
+      ci++;
+      if (ci >= rs.length) throw new Error("LLM call " + ci + " exceeds " + rs.length);
+      const t = rs[ci]!.text;
       return { text: t, tokenUsage: { input: 100, output: t.length } };
     },
   };
   const r = new ProviderRegistry("mock");
   r.register({
-    providerId: "mock", apiKey: "k", baseUrl: "http://x", defaultModel: "mock-model",
-    createAdapter: () => adapter,
+    providerId: "mock",
+    apiKey: "k",
+    baseUrl: "http://x",
+    defaultModel: "mock-model",
+    createAdapter: () => ad,
   });
-
-  const sessionStore = options?.sessionStore ?? new InMemoryAgentSessionStore();
-  const memStore = options?.memoryStore ?? new InMemoryWorkflowMemoryStore();
-  const wbStore = options?.worldbookStore ?? new InMemoryDynamicWorldbookStore();
-
-  const execs: Record<string, NodeExecutor> = {
-    playerInput: async ({ node }) => ({ outputs: { text: String(node.config.text ?? "") } }),
-    markdownSource: async ({ node }) => ({ outputs: { markdown: String(node.config.content ?? "") } }),
+  const ss = o?.ss ?? new InMemoryAgentSessionStore();
+  const ms = o?.ms ?? new InMemoryWorkflowMemoryStore();
+  const ws = o?.ws ?? new InMemoryDynamicWorldbookStore();
+  const cx: WorkflowRunContext = { sessionId: "session-a" };
+  const e: Record<string, NodeExecutor> = {
+    playerInput: async ({ node }) => ({
+      outputs: { text: String((node.config as any).text ?? "") },
+    }),
+    markdownSource: async ({ node }) => ({
+      outputs: { markdown: String((node.config as any).content ?? "") },
+    }),
     jsonSource: async ({ node }) => {
       let d: unknown;
-      try { d = JSON.parse(String(node.config.data ?? "{}")); } catch { d = {}; }
+      try {
+        d = JSON.parse(String((node.config as any).data ?? "{}"));
+      } catch {
+        d = {};
+      }
       return { outputs: { json: d } };
     },
     playerOutput: async ({ inputs }) => ({ outputs: { final: inputs.text ?? "" } }),
     inspectOutput: async ({ inputs }) => {
       const p: string[] = [];
-      if (inputs.jsonInput != null) p.push(`[JSON]${JSON.stringify(inputs.jsonInput)}`);
-      if (inputs.markdownInput != null) p.push(`[MD]${String(inputs.markdownInput)}`);
-      if (inputs.textInput != null) p.push(`[TXT]${String(inputs.textInput)}`);
+      if (inputs.jsonInput != null) p.push("[JSON]" + JSON.stringify(inputs.jsonInput));
+      if (inputs.markdownInput != null) p.push("[MD]" + String(inputs.markdownInput));
+      if (inputs.textInput != null) p.push("[TXT]" + String(inputs.textInput));
       return { outputs: { debug: p.join("|") || "(none)" } };
     },
     specializedAgent: createSpecializedAgentExecutor({
-      registry: r, profileRegistry: pr, createAdapter: () => adapter,
+      registry: r,
+      profileRegistry: pr,
+      createAdapter: () => ad,
     }),
     rpCriticQualityGate: rpCriticQualityGateExecutor,
     rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,
-    agentSessionLoadV1: createAgentSessionLoadV1Executor({ store: sessionStore }),
-    agentSessionCommitV1: createAgentSessionCommitV1Executor({ store: sessionStore }),
+    agentSessionLoadV1: createAgentSessionLoadV1Executor({ store: ss }),
+    agentSessionCommitV1: createAgentSessionCommitV1Executor({ store: ss }),
     sessionToMarkdown: async ({ inputs }) => {
-      const ctx = inputs.sessionContext as Record<string, unknown> | undefined;
-      if (!ctx) return { outputs: { markdown: "(No session history.)" } };
-      return { outputs: { markdown: sessionContextToMarkdown(ctx as unknown as Parameters<typeof sessionContextToMarkdown>[0]) } };
+      const c = inputs.sessionContext as any;
+      return {
+        outputs: { markdown: c ? sessionContextToMarkdown(c as any) : "(No session history.)" },
+      };
     },
-    dynamicWorldbook: createDynamicWorldbookExecutor({ store: wbStore, scopeContext: {} }),
+    dynamicWorldbook: createDynamicWorldbookExecutor({ store: ws, scopeContext: cx }),
     genericRetriever: genericRetrieverExecutor,
     retrievalResultToMarkdown: retrievalResultToMarkdownExecutor,
-    memoryWrite: createMemoryWriteExecutor(memStore),
-    memoryCorpus: createMemoryCorpusExecutor(memStore),
-    memoryDelete: createMemoryDeleteExecutor(memStore),
+    memoryWrite: createMemoryWriteExecutor(ms),
+    memoryCorpus: createMemoryCorpusExecutor(ms),
+    memoryDelete: createMemoryDeleteExecutor(ms),
   };
-  Object.assign(execs, createStdlibExecutors());
-
-  return { executors: execs, sessionStore, memoryStore: memStore, worldbookStore: wbStore };
+  Object.assign(e, createStdlibExecutors());
+  return { e, cx, ss, ms, ws };
+}
+const W1 = "[yin ling looked at the key]";
+const CA = JSON.stringify({
+  decision: "accept",
+  scores: {
+    continuity: 0.9,
+    characterConsistency: 0.85,
+    playerAgency: 0.95,
+    knowledgeBoundary: 0.9,
+    styleAndFormat: 0.8,
+  },
+  issues: [],
+});
+const CR = JSON.stringify({
+  decision: "revise",
+  scores: {
+    continuity: 0.8,
+    characterConsistency: 0.7,
+    playerAgency: 0.3,
+    knowledgeBoundary: 0.8,
+    styleAndFormat: 0.8,
+  },
+  issues: [
+    { code: "player-agency", severity: "error", message: "Controls player", suggestion: "Remove" },
+  ],
+  revisionInstruction: "Let the player decide.",
+});
+const W2 = "[revised draft yin ling waits]";
+const CUR = JSON.stringify([
+  {
+    kind: "event",
+    summary: "Player gave key",
+    entityIds: ["player", "yin_ling"],
+    importance: 0.8,
+    confidence: 0.9,
+  },
+]);
+async function go(w: WorkflowDefinition, e: Record<string, NodeExecutor>, c: WorkflowRunContext) {
+  return runWorkflowWithBranches(w, e, cat(), c);
 }
 
-const WRITER_ACCEPT = "[银铃看着吧台上的钥匙，没有立刻伸手。]";
-const CRITIC_ACCEPT = JSON.stringify({ decision: "accept", scores: { continuity: 0.9, characterConsistency: 0.85, playerAgency: 0.95, knowledgeBoundary: 0.9, styleAndFormat: 0.8 }, issues: [] });
-const CRITIC_REVISE = JSON.stringify({ decision: "revise", scores: { continuity: 0.8, characterConsistency: 0.7, playerAgency: 0.3, knowledgeBoundary: 0.8, styleAndFormat: 0.8 }, issues: [{ code: "player-agency", severity: "error", message: "Controls player", suggestion: "Remove decision" }], revisionInstruction: "Let the player decide their own action." });
-const WRITER_REVISED = "[银铃看着吧台上的钥匙，等待。\"仓库的钥匙。\"]";
-const CURATOR_OUTPUT = JSON.stringify([{ kind: "event", summary: "Player gave key to Yin Ling", entityIds: ["player", "yin_ling"], importance: 0.8, confidence: 0.9 }]);
-
-// ============ Structure ============
-
-describe("P-11: Structure", () => {
-  const catalog = createP11Catalog();
+// ---- tests ----
+describe("P-11: Validation", () => {
   const pr = createP1ProfileRegistry();
-
-  it("1. unified JSON validates", () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    expect(validateWorkflow(wf, catalog).filter((i) => i.level === "error")).toHaveLength(0);
-  });
-
-  it("2-3. P-9/P-10 regression validates", () => {
-    expect(validateWorkflow(loadWorkflowJson("rp-writer-critic-gate-v1.json"), catalog).filter((i) => i.level === "error")).toHaveLength(0);
-    expect(validateWorkflow(loadWorkflowJson("rp-writer-critic-bounded-revision-v1.json"), catalog).filter((i) => i.level === "error")).toHaveLength(0);
-  });
-
-  it("4. basic P-9 E2E regression", async () => {
-    const wf = loadWorkflowJson("rp-writer-critic-gate-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [{ text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }]);
-    expect((await runWorkflowWithBranches(wf, executors, catalog)).status).toBe("success");
+  it("1. 0 errors", () =>
+    expect(
+      validateWorkflow(wf("rp-unified-stateful-production-v1.json"), cat()).filter(
+        (i: any) => i.level === "error",
+      ),
+    ).toHaveLength(0));
+  it("2. P-9 regression", () =>
+    expect(
+      validateWorkflow(wf("rp-writer-critic-gate-v1.json"), cat()).filter(
+        (i: any) => i.level === "error",
+      ),
+    ).toHaveLength(0));
+  it("3. P-10 regression", () =>
+    expect(
+      validateWorkflow(wf("rp-writer-critic-bounded-revision-v1.json"), cat()).filter(
+        (i: any) => i.level === "error",
+      ),
+    ).toHaveLength(0));
+  it("4. P-9 E2E regression", async () => {
+    const { e, cx } = mk(pr, [{ text: W1 }, { text: CA }]);
+    expect((await go(wf("rp-writer-critic-gate-v1.json"), e, cx)).status).toBe("success");
   });
 });
 
-// ============ Scenario A ============
-
-describe("P-11: A — First-Pass Accept", () => {
+describe("P-11: A - First-Pass Accept", () => {
   const pr = createP1ProfileRegistry();
-  const catalog = createP11Catalog();
-
   it("5. W2/C2/G2 skipped", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [{ text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }]);
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
+    const { e, cx } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }]);
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
     expect(r.status).toBe("success");
-    expect(r.nodeRuns.find((n) => n.nodeId === "writer2")!.status).toBe("skipped");
-    expect(r.nodeRuns.find((n) => n.nodeId === "critic2")!.status).toBe("skipped");
-    expect(r.nodeRuns.find((n) => n.nodeId === "gate2")!.status).toBe("skipped");
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "writer2")!.status).toBe("skipped");
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "critic2")!.status).toBe("skipped");
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "gate2")!.status).toBe("skipped");
   });
-
   it("6. finalDraft=Draft1", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [{ text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }]);
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
-    expect(r.nodeRuns.find((n) => n.nodeId === "selector")!.outputs.finalDraft).toBe(WRITER_ACCEPT);
+    const { e, cx } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }]);
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "selector")!.outputs.finalDraft).toBe(W1);
   });
-
   it("7. playerOutput=Draft1", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [{ text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }]);
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
-    expect(r.nodeRuns.find((n) => n.nodeId === "output")!.outputs.final).toBe(WRITER_ACCEPT);
+    const { e, cx } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }]);
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "output")!.outputs.final).toBe(W1);
   });
-
   it("8. session commit succeeds", async () => {
     const ss = new InMemoryAgentSessionStore();
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [{ text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }], { sessionStore: ss });
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
-    expect(r.nodeRuns.find((n) => n.nodeId === "sessionCommit")!.status).toBe("success");
+    const { e, cx } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }], { ss });
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    expect(r.status).toBe("success");
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "sessionCommit")!.status).toBe("success");
   });
 });
 
-// ============ Scenario B ============
-
-describe("P-11: B — Revision-Pass Accept", () => {
+describe("P-11: B - Revision-Pass", () => {
   const pr = createP1ProfileRegistry();
-  const catalog = createP11Catalog();
-
-  it("9. all 4 LLM calls", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_REVISE }, { text: WRITER_REVISED }, { text: CRITIC_ACCEPT },
+  it("9. writer2 executes", async () => {
+    const { e, cx } = mk(pr, [
+      { text: W1 },
+      { text: CR },
+      { text: W2 },
+      { text: CA },
+      { text: CUR },
     ]);
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
     expect(r.status).toBe("success");
-    expect(r.nodeRuns.find((n) => n.nodeId === "writer2")!.status).toBe("success");
-    expect(r.nodeRuns.find((n) => n.nodeId === "critic2")!.status).toBe("success");
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "writer2")!.status).toBe("success");
   });
-
-  it("10. finalDraft=Draft2 not Draft1", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_REVISE }, { text: WRITER_REVISED }, { text: CRITIC_ACCEPT },
+  it("10. finalDraft=Draft2", async () => {
+    const { e, cx } = mk(pr, [
+      { text: W1 },
+      { text: CR },
+      { text: W2 },
+      { text: CA },
+      { text: CUR },
     ]);
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
-    const s = r.nodeRuns.find((n) => n.nodeId === "selector")!;
-    expect(s.outputs.finalDraft).toBe(WRITER_REVISED);
-    expect(s.outputs.finalDraft).not.toBe(WRITER_ACCEPT);
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    const s = r.nodeRuns.find((n: any) => n.nodeId === "selector")!;
+    expect(s.outputs.finalDraft).toBe(W2);
+    expect(s.outputs.finalDraft).not.toBe(W1);
   });
-
   it("11. session commits Draft2", async () => {
     const ss = new InMemoryAgentSessionStore();
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_REVISE }, { text: WRITER_REVISED }, { text: CRITIC_ACCEPT },
-    ], { sessionStore: ss });
-    await runWorkflowWithBranches(wf, executors, catalog);
-    const ctx = await ss.load({ tenantId: "default", workflowInstanceId: "rp-prod-1", conversationId: "session-a", agentNodeId: "writer-main" });
-    expect(ctx!.turns[0]!.assistantOutput).toBe(WRITER_REVISED);
+    const { e, cx } = mk(
+      pr,
+      [{ text: W1 }, { text: CR }, { text: W2 }, { text: CA }, { text: CUR }],
+      { ss },
+    );
+    await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    const c = await ss.load({
+      tenantId: "default",
+      workflowInstanceId: "rp-prod-1",
+      conversationId: "session-a",
+      agentNodeId: "writer-main",
+    });
+    expect(c!.turns[0]!.assistantOutput).toBe(W2);
   });
-
   it("12. playerOutput=Draft2", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_REVISE }, { text: WRITER_REVISED }, { text: CRITIC_ACCEPT },
+    const { e, cx } = mk(pr, [
+      { text: W1 },
+      { text: CR },
+      { text: W2 },
+      { text: CA },
+      { text: CUR },
     ]);
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
-    expect(r.nodeRuns.find((n) => n.nodeId === "output")!.outputs.final).toBe(WRITER_REVISED);
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "output")!.outputs.final).toBe(W2);
   });
 });
 
-// ============ Scenario C ============
-
-describe("P-11: C — Exhausted", () => {
+describe("P-11: C - Exhausted", () => {
   const pr = createP1ProfileRegistry();
-  const catalog = createP11Catalog();
-  const C2 = JSON.stringify({ decision: "revise", scores: { continuity: 0.8, characterConsistency: 0.7, playerAgency: 0.4, knowledgeBoundary: 0.8, styleAndFormat: 0.7 }, issues: [{ code: "player-agency", severity: "error", message: "x", suggestion: "y" }], revisionInstruction: "Fix" });
-
-  it("13. output=Draft2 despite rejection", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_REVISE }, { text: WRITER_REVISED }, { text: C2 },
-    ]);
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
-    expect(r.nodeRuns.find((n) => n.nodeId === "output")!.outputs.final).toBe(WRITER_REVISED);
+  const C2 = JSON.stringify({
+    decision: "revise",
+    scores: {
+      continuity: 0.8,
+      characterConsistency: 0.7,
+      playerAgency: 0.4,
+      knowledgeBoundary: 0.8,
+      styleAndFormat: 0.7,
+    },
+    issues: [{ code: "player-agency", severity: "error", message: "x", suggestion: "y" }],
+    revisionInstruction: "Fix",
   });
-
-  it("14. no 3rd writer (5th LLM would error)", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_REVISE }, { text: WRITER_REVISED }, { text: C2 }, { text: "SHOULD_NOT_CALL" },
+  it("13. output=Draft2 despite exhaustion", async () => {
+    const { e, cx } = mk(pr, [
+      { text: W1 },
+      { text: CR },
+      { text: W2 },
+      { text: C2 },
+      { text: CUR },
     ]);
-    await runWorkflowWithBranches(wf, executors, catalog);
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    expect(r.nodeRuns.find((n: any) => n.nodeId === "output")!.outputs.final).toBe(W2);
+  });
+  it("14. no 3rd writer", async () => {
+    const { e, cx } = mk(pr, [
+      { text: W1 },
+      { text: CR },
+      { text: W2 },
+      { text: C2 },
+      { text: CUR },
+    ]);
+    await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
   });
 });
-
-// ============ Multi-Turn ============
 
 describe("P-11: Multi-Turn", () => {
   const pr = createP1ProfileRegistry();
-  const catalog = createP11Catalog();
-  const key = { tenantId: "default", workflowInstanceId: "rp-prod-1", conversationId: "session-a", agentNodeId: "writer-main" };
-
-  it("15. session persists across rounds", async () => {
+  const key = {
+    tenantId: "default",
+    workflowInstanceId: "rp-prod-1",
+    conversationId: "session-a",
+    agentNodeId: "writer-main",
+  };
+  it("15. session persists", async () => {
     const ss = new InMemoryAgentSessionStore();
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-
-    const { executors: e1 } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }, { text: CURATOR_OUTPUT },
-    ], { sessionStore: ss });
-    await runWorkflowWithBranches(wf, e1, catalog);
+    const f = wf("rp-unified-stateful-production-v1.json");
+    const { e: e1, cx: c1 } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }], { ss });
+    await go(f, e1, c1);
     expect((await ss.load(key))!.turns.length).toBe(1);
-
-    const { executors: e2 } = createUnifiedExecutors(pr, [
-      { text: "[R2]" }, { text: CRITIC_ACCEPT },
-    ], { sessionStore: ss });
-    await runWorkflowWithBranches(wf, e2, catalog);
+    const { e: e2, cx: c2 } = mk(pr, [{ text: "[R2]" }, { text: CA }, { text: CUR }], { ss });
+    await go(f, e2, c2);
     expect((await ss.load(key))!.turns.length).toBe(2);
   });
-
-  it("16. Round2 sessionMd includes history", async () => {
+  it("16. round2 includes session history", async () => {
     const ss = new InMemoryAgentSessionStore();
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-
-    const { executors: e1 } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT },
-    ], { sessionStore: ss });
-    await runWorkflowWithBranches(wf, e1, catalog);
-
-    const { executors: e2 } = createUnifiedExecutors(pr, [
-      { text: "[R2]" }, { text: CRITIC_ACCEPT },
-    ], { sessionStore: ss });
-    const r2 = await runWorkflowWithBranches(wf, e2, catalog);
-    expect(r2.nodeRuns.find((n) => n.nodeId === "sessionMd")!.outputs.markdown).toContain("Session History");
+    const f = wf("rp-unified-stateful-production-v1.json");
+    const { e: e1, cx: c1 } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }], { ss });
+    await go(f, e1, c1);
+    const { e: e2, cx: c2 } = mk(pr, [{ text: "[R2]" }, { text: CA }, { text: CUR }], { ss });
+    const r2 = await go(f, e2, c2);
+    expect(r2.nodeRuns.find((n: any) => n.nodeId === "sessionMd")!.outputs.markdown).toContain(
+      "Session History",
+    );
   });
 });
-
-// ============ File Persistence ============
 
 describe("P-11: File Persistence", () => {
   const pr = createP1ProfileRegistry();
-  const catalog = createP11Catalog();
   const td = resolve(__dirname, "../../../data/test-memories");
-
-  beforeEach(() => { if (!existsSync(td)) mkdirSync(td, { recursive: true }); });
-  afterEach(() => { try { unlinkSync(join(td, "mem.json")); } catch { /* ok */ } });
-
-  it("17. file store survives instance destruction", async () => {
+  beforeEach(() => {
+    if (!existsSync(td)) mkdirSync(td, { recursive: true });
+  });
+  afterEach(() => {
+    try {
+      unlinkSync(join(td, "mem.json"));
+    } catch { /* cleanup */ }
+  });
+  it("17. file store cross-instance", async () => {
     const fp = join(td, "mem.json");
     const ss = new InMemoryAgentSessionStore();
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-
-    const { executors: e1 } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }, { text: CURATOR_OUTPUT },
-    ], { sessionStore: ss, memoryStore: new FileWorkflowMemoryStore(fp) });
-    await runWorkflowWithBranches(wf, e1, catalog);
-
+    const f = wf("rp-unified-stateful-production-v1.json");
+    const { e: e1, cx: c1 } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }], {
+      ss,
+      ms: new FileWorkflowMemoryStore(fp),
+    });
+    await go(f, e1, c1);
     const s2 = new FileWorkflowMemoryStore(fp);
-    const { executors: e2 } = createUnifiedExecutors(pr, [
-      { text: "[R2]" }, { text: CRITIC_ACCEPT },
-    ], { sessionStore: ss, memoryStore: s2 });
-    const r2 = await runWorkflowWithBranches(wf, e2, catalog);
-    expect(r2.nodeRuns.find((n) => n.nodeId === "memCorpus")!.status).toBe("success");
+    const { e: e2, cx: c2 } = mk(pr, [{ text: "[R2]" }, { text: CA }, { text: CUR }], {
+      ss,
+      ms: s2,
+    });
+    const r2 = await go(f, e2, c2);
+    expect(r2.nodeRuns.find((n: any) => n.nodeId === "memCorpus")!.status).toBe("success");
   });
 });
 
-// ============ Isolation ============
-
 describe("P-11: Isolation", () => {
   const pr = createP1ProfileRegistry();
-  const catalog = createP11Catalog();
-
   it("18. session isolation", async () => {
     const ss = new InMemoryAgentSessionStore();
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT },
-    ], { sessionStore: ss });
-    await runWorkflowWithBranches(wf, executors, catalog);
-    expect(await ss.load({ tenantId: "default", workflowInstanceId: "rp-prod-1", conversationId: "other", agentNodeId: "writer-main" })).toBeNull();
+    const { e, cx } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }], { ss });
+    await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    expect(
+      await ss.load({
+        tenantId: "default",
+        workflowInstanceId: "rp-prod-1",
+        conversationId: "other",
+        agentNodeId: "writer-main",
+      }),
+    ).toBeNull();
   });
-
   it("19. memory namespace isolation", async () => {
     const ms = new InMemoryWorkflowMemoryStore();
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [
-      { text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }, { text: CURATOR_OUTPUT },
-    ], { memoryStore: ms });
-    await runWorkflowWithBranches(wf, executors, catalog);
+    const { e, cx } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }], { ms });
+    await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
     expect((await ms.list("rp-memory")).length).toBeGreaterThan(0);
     expect((await ms.list("other")).length).toBe(0);
   });
 });
 
-// ============ Branch Trace ============
-
 describe("P-11: Branch Trace", () => {
   const pr = createP1ProfileRegistry();
-  const catalog = createP11Catalog();
-
-  it("20. skipped nodes have correct metadata", async () => {
-    const wf = loadWorkflowJson("rp-unified-stateful-production-v1.json");
-    const { executors } = createUnifiedExecutors(pr, [{ text: WRITER_ACCEPT }, { text: CRITIC_ACCEPT }]);
-    const r = await runWorkflowWithBranches(wf, executors, catalog);
-    const skipped = r.nodeRuns.filter((n) => n.status === "skipped");
-    expect(skipped.map((n) => n.nodeId)).toEqual(expect.arrayContaining(["writer2", "critic2", "gate2"]));
+  it("20. skipped nodes metadata", async () => {
+    const { e, cx } = mk(pr, [{ text: W1 }, { text: CA }, { text: CUR }]);
+    const r = await go(wf("rp-unified-stateful-production-v1.json"), e, cx);
+    const skipped = r.nodeRuns.filter((n: any) => n.status === "skipped");
+    expect(skipped.map((n: any) => n.nodeId)).toEqual(
+      expect.arrayContaining(["writer2", "critic2", "gate2"]),
+    );
     for (const s of skipped) expect(s.metadata?.skippedReason).toBe("inactive-branch");
   });
-
   it("21. buildSessionDelta valid", async () => {
-    const { executors } = createUnifiedExecutors(pr, []);
-    const r = await executors.buildSessionDelta!({
+    const { e } = mk(pr, []);
+    const r = await e.buildSessionDelta!({
       node: { id: "t", type: "buildSessionDelta", position: { x: 0, y: 0 }, config: {} },
-      inputs: { sessionKey: { tenantId: "t", workflowInstanceId: "w", conversationId: "c", agentNodeId: "a" }, playerInput: "hi", finalDraft: "hey" },
+      inputs: {
+        sessionKey: {
+          tenantId: "t",
+          workflowInstanceId: "w",
+          conversationId: "c",
+          agentNodeId: "a",
+        },
+        playerInput: "hi",
+        finalDraft: "hey",
+      },
     });
     expect(r.outputs.sessionDelta).toBeDefined();
   });

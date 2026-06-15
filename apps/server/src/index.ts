@@ -186,7 +186,9 @@ const initPlugins = async () => {
       memoryStore = new InMemoryWorkflowMemoryStore();
       console.log("Memory Store: in-memory store initialized");
     } else {
-      throw new Error(`Unknown WORKFLOW_MEMORY_STORE: "${env.workflowMemoryStore}". Supported: in-memory, file`);
+      throw new Error(
+        `Unknown WORKFLOW_MEMORY_STORE: "${env.workflowMemoryStore}". Supported: in-memory, file`,
+      );
     }
 
     // P-7 Agent Session Store

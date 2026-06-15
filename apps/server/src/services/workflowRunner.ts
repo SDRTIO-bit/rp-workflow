@@ -453,7 +453,9 @@ export const createExecutors = async (
       if (!ctx || typeof ctx !== "object") {
         return { outputs: { markdown: "(No session history.)" } };
       }
-      const markdown = sessionContextToMarkdown(ctx as unknown as Parameters<typeof sessionContextToMarkdown>[0]);
+      const markdown = sessionContextToMarkdown(
+        ctx as unknown as Parameters<typeof sessionContextToMarkdown>[0],
+      );
       return { outputs: { markdown } };
     },
 

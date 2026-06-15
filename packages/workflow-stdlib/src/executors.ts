@@ -217,12 +217,30 @@ export const buildSessionDeltaExecutor: NodeExecutor = async ({ inputs }) => {
       input: { text: playerInput },
       assistantOutput: finalDraft,
       modelConfig: { model: "workflow" },
-      tokenUsage: { input: Math.ceil((playerInput.length + finalDraft.length) / 4), output: Math.ceil(finalDraft.length / 4) },
+      tokenUsage: {
+        input: Math.ceil((playerInput.length + finalDraft.length) / 4),
+        output: Math.ceil(finalDraft.length / 4),
+      },
       createdAt: new Date().toISOString(),
     },
   };
 
   return { outputs: { sessionDelta } };
+};
+
+// ============ P-11: Text to JSON Parser ============
+
+export const parseJsonExecutor: NodeExecutor = async ({ inputs }) => {
+  const text = typeof inputs.text === "string" ? inputs.text : String(inputs.text ?? "");
+  if (!text.trim()) {
+    throw new Error("parseJson: text input is empty");
+  }
+  try {
+    const data = JSON.parse(text);
+    return { outputs: { json: data } };
+  } catch (e) {
+    throw new Error(`parseJson: invalid JSON: ${(e as Error).message}`);
+  }
 };
 
 // ============ Executor Registry ============
@@ -242,5 +260,6 @@ export function createStdlibExecutors(resolver?: ResourceResolver): Record<strin
     conditionalRoute: conditionalRouteExecutor,
     finalDraftSelector: finalDraftSelectorExecutor,
     buildSessionDelta: buildSessionDeltaExecutor,
+    parseJson: parseJsonExecutor,
   };
 }

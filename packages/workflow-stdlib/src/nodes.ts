@@ -278,6 +278,25 @@ export const stdlibNodes: NodeCatalog = {
       wOut("sessionDelta", "Session Delta", "json"),
     ],
   },
+
+  // ============ P-11: Text to JSON Parser ============
+
+  parseJson: {
+    type: "parseJson",
+    label: "Parse JSON",
+    labelI18n: { zh: "解析 JSON", en: "Parse JSON" },
+    category: "utility",
+    description: "Parses a text string as JSON. Deterministic, no LLM. Fails on invalid JSON.",
+    descriptionI18n: {
+      zh: "将文本字符串解析为 JSON。确定性，不调用 LLM。无效 JSON 会失败。",
+      en: "Parses a text string as JSON. Deterministic, no LLM. Fails on invalid JSON.",
+    },
+    color: "#475569",
+    panelLayout: "generic",
+    defaultConfig: {},
+    configFields: [],
+    ports: [wIn("text", "Text", "text", true), wOut("json", "JSON", "json")],
+  },
 };
 
 /** Merge stdlib nodes into a target catalog. */
