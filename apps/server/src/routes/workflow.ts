@@ -8,7 +8,7 @@ import {
 } from "../services/workflowRunner.js";
 import type { NodePlugin, SkillItem } from "../services/pluginLoader.js";
 import type { RpRuntimeRegistration } from "@awp/rp-runtime";
-import type { SpecializedAgentProfileRegistry } from "@awp/agent-runtime";
+import type { SpecializedAgentProfileRegistry, AgentSessionStore } from "@awp/agent-runtime";
 import type { DynamicWorldbookStore } from "@awp/workflow-worldbook";
 import type { WorkflowMemoryStore } from "@awp/workflow-memory";
 
@@ -24,6 +24,7 @@ export type WorkflowRuntime = {
   profileRegistry?: SpecializedAgentProfileRegistry;
   worldbookStore?: DynamicWorldbookStore;
   memoryStore?: WorkflowMemoryStore;
+  sessionStore?: AgentSessionStore;
 };
 
 export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
@@ -57,6 +58,7 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
       profileRegistry: runtime.profileRegistry,
       worldbookStore: runtime.worldbookStore,
       memoryStore: runtime.memoryStore,
+      sessionStore: runtime.sessionStore,
     };
     const executors = await createExecutors(body.workflow, context);
     const { runWorkflow } = await import("@awp/workflow-core");
@@ -86,6 +88,7 @@ export const createWorkflowRoutes = (getRuntime: () => WorkflowRuntime) => {
       profileRegistry: runtime.profileRegistry,
       worldbookStore: runtime.worldbookStore,
       memoryStore: runtime.memoryStore,
+      sessionStore: runtime.sessionStore,
     };
 
     // Extract WorkflowRunContext from request body if provided

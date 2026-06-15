@@ -16,7 +16,10 @@ import {
   executeAgentNode,
   createGenericAgentExecutor,
   createSpecializedAgentExecutor,
+  createAgentSessionLoadV1Executor,
+  createAgentSessionCommitV1Executor,
   type SpecializedAgentProfileRegistry,
+  type AgentSessionStore,
 } from "@awp/agent-runtime";
 import { createStdlibExecutors } from "@awp/workflow-stdlib";
 import {
@@ -97,6 +100,7 @@ export type WorkflowRunnerContext = {
   profileRegistry?: SpecializedAgentProfileRegistry;
   worldbookStore?: DynamicWorldbookStore;
   memoryStore?: WorkflowMemoryStore;
+  sessionStore?: AgentSessionStore;
 };
 
 export const createExecutors = async (
@@ -426,6 +430,18 @@ export const createExecutors = async (
       ? createMemoryDeleteExecutor(context.memoryStore)
       : ((async () => {
           throw new Error("memoryDelete: MemoryStore not configured.");
+        }) as unknown as NodeExecutor),
+
+    // ============ P-7: Agent Session Executors ============
+    agentSessionLoadV1: context.sessionStore
+      ? createAgentSessionLoadV1Executor({ store: context.sessionStore })
+      : ((async () => {
+          throw new Error("agentSessionLoadV1: SessionStore not configured.");
+        }) as unknown as NodeExecutor),
+    agentSessionCommitV1: context.sessionStore
+      ? createAgentSessionCommitV1Executor({ store: context.sessionStore })
+      : ((async () => {
+          throw new Error("agentSessionCommitV1: SessionStore not configured.");
         }) as unknown as NodeExecutor),
   };
 };

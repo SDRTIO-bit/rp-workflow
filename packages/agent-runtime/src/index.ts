@@ -1,5 +1,6 @@
 export * from "./agentExecutor";
 export * from "./agentKernel";
+export * from "./sessionMarkdown";
 export * from "./agentSession";
 export * from "./agentSessionNode";
 export * from "./agentSessionStore";

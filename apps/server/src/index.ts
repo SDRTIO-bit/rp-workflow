@@ -56,8 +56,10 @@ import {
   ProviderRegistry,
   LlmRouter,
   createP1ProfileRegistry,
+  InMemoryAgentSessionStore,
   type NodeModelConfig,
   type SpecializedAgentProfileRegistry,
+  type AgentSessionStore,
 } from "@awp/agent-runtime";
 
 const app = new Hono();
@@ -81,6 +83,7 @@ let skillCatalog: SkillItem[] = [];
 let profileRegistry: SpecializedAgentProfileRegistry | undefined;
 let worldbookStore: DynamicWorldbookStore | undefined;
 let memoryStore: WorkflowMemoryStore | undefined;
+let sessionStore: AgentSessionStore | undefined;
 
 const getPluginRuntime = (): PluginRuntime => ({
   pluginState,
@@ -112,6 +115,7 @@ const getWorkflowRuntime = () => ({
   profileRegistry,
   worldbookStore,
   memoryStore,
+  sessionStore,
 });
 const getLlmConfig = () => ({
   llmRouter: llmRouter!,
@@ -165,6 +169,10 @@ const initPlugins = async () => {
     // P-5 Memory Store
     memoryStore = new InMemoryWorkflowMemoryStore();
     console.log("Memory Store: in-memory store initialized");
+
+    // P-7 Agent Session Store
+    sessionStore = new InMemoryAgentSessionStore();
+    console.log("Session Store: in-memory store initialized");
 
     // Register available providers
     if (env.openCodeApiKey) {
