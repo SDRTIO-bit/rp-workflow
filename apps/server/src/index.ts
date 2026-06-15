@@ -56,6 +56,7 @@ import {
   ProviderRegistry,
   LlmRouter,
   createP1ProfileRegistry,
+  rpMemoryCommitPolicyNode,
   InMemoryAgentSessionStore,
   type NodeModelConfig,
   type SpecializedAgentProfileRegistry,
@@ -249,6 +250,7 @@ const initPlugins = async () => {
       memoryWrite: memoryWriteNode,
       memoryCorpus: memoryCorpusNode,
       memoryDelete: memoryDeleteNode,
+      rpMemoryCommitPolicy: rpMemoryCommitPolicyNode,
       ...rpRuntime.catalog,
       ...pluginCatalog,
     };

@@ -202,6 +202,67 @@ const STORY_WRITER_PROFILE: SpecializedAgentProfile = {
   declaredToolPermissions: [],
 };
 
+const RP_MEMORY_CURATOR_PROFILE: SpecializedAgentProfile = {
+  profileId: "rp-memory-curator",
+  label: { zh: "RP 记忆策展人", en: "RP Memory Curator" },
+  description: {
+    zh: "从一轮 RP 对话中提取值得长期保存的关键事件、关系变化和状态变更。",
+    en: "Extracts key events, relationship changes, and state changes from an RP turn worth preserving in long-term memory.",
+  },
+  foundationalSystemPrompt: [
+    "You are an RP memory curator. Your job is to extract structured memory candidates from a completed RP turn.",
+    "",
+    "## What to capture",
+    "- Events where characters gain, lose, or transfer important items",
+    "- Relationship changes (trust broken, alliance formed, betrayal)",
+    "- Secrets discovered or identities revealed",
+    "- Commitments, promises, or decisions made",
+    "- Scene state changes with lasting consequences",
+    "- New goals, conflicts, or unresolved threads",
+    "",
+    "## What NOT to capture",
+    "- Casual greetings or small talk",
+    "- Atmospheric descriptions or weather (unless plot-critical)",
+    "- Literary style or word choices",
+    "- Routine actions without consequence",
+    "- Transient emotions without lasting impact",
+    "- Static world facts already in the worldbook",
+    "- Unconfirmed speculation or guesses",
+    "- The full writer output verbatim",
+    "",
+    "## Output format",
+    "Output a JSON array of memory candidates. Each candidate must have:",
+    "- kind: one of event, relationship-change, state-change, commitment, discovery, unresolved-thread",
+    "- summary: one concise sentence describing what happened (max 200 chars)",
+    "- entityIds: array of entity IDs involved (must be non-empty)",
+    "- tags: optional array of tags",
+    "- importance: number 0.0-1.0 (how critical this is for future rounds)",
+    "- confidence: number 0.0-1.0 (how certain you are this should be saved)",
+    "- evidence: optional short supporting quote (max 150 chars)",
+    "",
+    "Output ONLY the JSON array. No explanation, no markdown wrapping.",
+  ].join("\n"),
+  requiredInputs: {
+    userInput: { required: true, order: 5 },
+    instruction: { required: false, order: 1 },
+    context: { required: true, order: 2 },
+    data: { required: false, order: 3, jsonRenderer: false },
+  },
+  inputOrder: {
+    instruction: 1,
+    context: 2,
+    data: 3,
+    userInput: 5,
+  },
+  defaultModelConfig: {
+    temperature: 0.3,
+    maxTokens: 1024,
+    responseFormat: "text",
+  },
+  lockedFields: [],
+  declaredToolPermissions: [],
+};
+
 // ============ Factory ============
 
 /**
@@ -211,5 +272,6 @@ export function createP1ProfileRegistry(): InMemorySpecializedAgentProfileRegist
   const registry = new InMemorySpecializedAgentProfileRegistry();
   registry.register(RP_WRITER_PROFILE);
   registry.register(STORY_WRITER_PROFILE);
+  registry.register(RP_MEMORY_CURATOR_PROFILE);
   return registry;
 }

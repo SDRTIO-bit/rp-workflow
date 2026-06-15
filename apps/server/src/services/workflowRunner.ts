@@ -18,6 +18,7 @@ import {
   createSpecializedAgentExecutor,
   createAgentSessionLoadV1Executor,
   createAgentSessionCommitV1Executor,
+  rpMemoryCommitPolicyExecutor,
   type SpecializedAgentProfileRegistry,
   type AgentSessionStore,
 } from "@awp/agent-runtime";
@@ -443,6 +444,9 @@ export const createExecutors = async (
       : ((async () => {
           throw new Error("agentSessionCommitV1: SessionStore not configured.");
         }) as unknown as NodeExecutor),
+
+    // ============ P-8: RP Memory Commit Policy ============
+    rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,
   };
 };
 
