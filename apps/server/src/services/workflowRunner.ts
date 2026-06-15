@@ -18,6 +18,7 @@ import {
   createSpecializedAgentExecutor,
   type SpecializedAgentProfileRegistry,
 } from "@awp/agent-runtime";
+import { createStdlibExecutors } from "@awp/workflow-stdlib";
 import { rankMemories } from "@awp/memory-core";
 import type { RpRuntimeRegistration } from "@awp/rp-runtime";
 import { readEntries } from "./jsonStore.js";
@@ -316,26 +317,14 @@ export const createExecutors = async (
     textOutput: async ({ inputs }) => ({ outputs: { final: inputs.text ?? "" } }),
     debugLog: async ({ inputs }) => ({ outputs: { debug: JSON.stringify(inputs, null, 2) } }),
 
-    // ============ P-1: Wire-Native Node Executors ============
+    // ============ P-2: Enhanced Source + Stdlib Executors ============
+
+    // Use stdlib enhanced source executors (supports both inline and resourceRef)
+    ...createStdlibExecutors(/* resolver not yet injected for P-2 production */),
 
     playerInput: async ({ node }) => ({
       outputs: { text: String(node.config.text ?? "") },
     }),
-
-    markdownSource: async ({ node }) => ({
-      outputs: { markdown: String(node.config.content ?? "") },
-    }),
-
-    jsonSource: async ({ node }) => {
-      const raw = String(node.config.data ?? "{}");
-      let data: unknown;
-      try {
-        data = JSON.parse(raw);
-      } catch {
-        data = raw;
-      }
-      return { outputs: { json: data } };
-    },
 
     playerOutput: async ({ inputs }) => ({
       outputs: { final: inputs.text ?? "" },

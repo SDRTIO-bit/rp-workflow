@@ -21,6 +21,7 @@ import {
   type PluginState,
 } from "./services/pluginLoader.js";
 import { nodeRegistry, type NodeCatalog } from "@awp/workflow-core";
+import { stdlibNodes } from "@awp/workflow-stdlib";
 import { createRpLlmBridge } from "./services/rpLlmBridge.js";
 import {
   registerRpRuntime,
@@ -187,9 +188,10 @@ const initPlugins = async () => {
       );
     }
 
-    // Merge catalogs: nodeRegistry + rpCatalog + pluginCatalog
+    // Merge catalogs: nodeRegistry + stdlibNodes + rpCatalog + pluginCatalog
     runtimeNodeCatalog = {
       ...nodeRegistry,
+      ...stdlibNodes,
       ...rpRuntime.catalog,
       ...pluginCatalog,
     };
