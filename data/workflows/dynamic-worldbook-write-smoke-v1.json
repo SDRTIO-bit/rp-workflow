@@ -1,0 +1,82 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "dynamic-worldbook-write-smoke-v1",
+    "name": "Dynamic Worldbook Write Smoke Test",
+    "version": 1,
+    "description": "P-3 write smoke: jsonSource(command: upsert) + jsonSource(payload) -> dynamicWorldbook -> inspectOutput(result) + inspectOutput(status)",
+    "nodes": [
+      {
+        "id": "cmd",
+        "type": "jsonSource",
+        "position": { "x": 100, "y": 100 },
+        "config": {
+          "data": "{\"operation\": \"upsert\", \"operationId\": \"smoke-write-1\", \"baseVersion\": 0}"
+        }
+      },
+      {
+        "id": "payload",
+        "type": "jsonSource",
+        "position": { "x": 100, "y": 300 },
+        "config": {
+          "data": "{\"entries\": [{\"id\": \"char_dragon\", \"content\": \"A wise old dragon named Ember who guards the Crystal Mountains.\", \"title\": \"Ember the Dragon\", \"type\": \"character\", \"tags\": [\"dragon\", \"guardian\", \"wise\"], \"entityIds\": [\"npc_ember\"], \"priority\": 5}]}"
+        }
+      },
+      {
+        "id": "wb",
+        "type": "dynamicWorldbook",
+        "position": { "x": 500, "y": 200 },
+        "config": {
+          "resourceRef": "worldbook:smoke-test",
+          "lifecycle": "session",
+          "allowedOperations": ["query", "filter", "append", "upsert", "merge", "replace", "delete"],
+          "allowDelete": true
+        }
+      },
+      {
+        "id": "inspResult",
+        "type": "inspectOutput",
+        "position": { "x": 900, "y": 100 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspStatus",
+        "type": "inspectOutput",
+        "position": { "x": 900, "y": 300 },
+        "config": { "displayMode": "json" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_cmd",
+        "source": "cmd",
+        "sourcePort": "json",
+        "target": "wb",
+        "targetPort": "command"
+      },
+      {
+        "id": "e_payload",
+        "source": "payload",
+        "sourcePort": "json",
+        "target": "wb",
+        "targetPort": "payload"
+      },
+      {
+        "id": "e_result",
+        "source": "wb",
+        "sourcePort": "result",
+        "target": "inspResult",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_status",
+        "source": "wb",
+        "sourcePort": "status",
+        "target": "inspStatus",
+        "targetPort": "jsonInput"
+      }
+    ]
+  }
+}

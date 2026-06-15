@@ -19,6 +19,10 @@ import {
   type SpecializedAgentProfileRegistry,
 } from "@awp/agent-runtime";
 import { createStdlibExecutors } from "@awp/workflow-stdlib";
+import {
+  createDynamicWorldbookExecutor,
+  type DynamicWorldbookStore,
+} from "@awp/workflow-worldbook";
 import { rankMemories } from "@awp/memory-core";
 import type { RpRuntimeRegistration } from "@awp/rp-runtime";
 import { readEntries } from "./jsonStore.js";
@@ -81,6 +85,7 @@ export type WorkflowRunnerContext = {
   pluginCatalog: NodeCatalog;
   rpRuntime: RpRuntimeRegistration | null;
   profileRegistry?: SpecializedAgentProfileRegistry;
+  worldbookStore?: DynamicWorldbookStore;
 };
 
 export const createExecutors = async (
@@ -372,6 +377,24 @@ export const createExecutors = async (
     ...pluginExecutors,
     // Merge RP Runtime executors
     ...(context.rpRuntime?.executors ?? {}),
+
+    // ============ P-3: Dynamic Worldbook Executor ============
+    dynamicWorldbook: context.worldbookStore
+      ? async (input) => {
+          // Resolve scope context from workflow run context
+          const scopeContext = {
+            runId: input.context?.runId,
+            sessionId: input.context?.sessionId,
+          };
+          const executor = createDynamicWorldbookExecutor({
+            store: context.worldbookStore!,
+            scopeContext,
+          });
+          return executor(input);
+        }
+      : ((async () => {
+          throw new Error("dynamicWorldbook: WorldbookStore not configured.");
+        }) as unknown as NodeExecutor),
   };
 };
 

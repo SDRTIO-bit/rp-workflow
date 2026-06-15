@@ -1,0 +1,124 @@
+{
+  "kind": "agent-workflow-platform.workflow",
+  "version": 1,
+  "exportedAt": "2026-06-15T00:00:00.000Z",
+  "workflow": {
+    "id": "dynamic-worldbook-query-smoke-v1",
+    "name": "Dynamic Worldbook Query Smoke Test",
+    "version": 1,
+    "description": "P-3 query smoke: jsonSource(query command) -> dynamicWorldbook -> jsonToMarkdown -> specializedAgent -> playerOutput, with inspectOutput branches",
+    "nodes": [
+      {
+        "id": "cmd",
+        "type": "jsonSource",
+        "position": { "x": 100, "y": 200 },
+        "config": {
+          "data": "{\"operation\": \"query\", \"selector\": {\"keywords\": [\"dragon\", \"crystal\"]}, \"limit\": 5}"
+        }
+      },
+      {
+        "id": "wb",
+        "type": "dynamicWorldbook",
+        "position": { "x": 500, "y": 200 },
+        "config": {
+          "resourceRef": "worldbook:smoke-test",
+          "lifecycle": "session",
+          "allowedOperations": ["query", "filter"],
+          "allowDelete": false
+        }
+      },
+      {
+        "id": "toMd",
+        "type": "jsonToMarkdown",
+        "position": { "x": 500, "y": 400 },
+        "config": {}
+      },
+      {
+        "id": "agent",
+        "type": "specializedAgent",
+        "position": { "x": 900, "y": 400 },
+        "config": {
+          "profileId": "rp-writer",
+          "modelId": "mock-model"
+        }
+      },
+      {
+        "id": "output",
+        "type": "playerOutput",
+        "position": { "x": 1300, "y": 400 },
+        "config": {
+          "displayLabel": "Query Result"
+        }
+      },
+      {
+        "id": "inspResult",
+        "type": "inspectOutput",
+        "position": { "x": 900, "y": 100 },
+        "config": { "displayMode": "json" }
+      },
+      {
+        "id": "inspMd",
+        "type": "inspectOutput",
+        "position": { "x": 1300, "y": 100 },
+        "config": { "displayMode": "markdown" }
+      },
+      {
+        "id": "inspText",
+        "type": "inspectOutput",
+        "position": { "x": 1300, "y": 600 },
+        "config": { "displayMode": "text" }
+      }
+    ],
+    "edges": [
+      {
+        "id": "e_cmd",
+        "source": "cmd",
+        "sourcePort": "json",
+        "target": "wb",
+        "targetPort": "command"
+      },
+      {
+        "id": "e_result",
+        "source": "wb",
+        "sourcePort": "result",
+        "target": "toMd",
+        "targetPort": "input"
+      },
+      {
+        "id": "e_md_to_agent",
+        "source": "toMd",
+        "sourcePort": "output",
+        "target": "agent",
+        "targetPort": "context"
+      },
+      {
+        "id": "e_agent_out",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "output",
+        "targetPort": "text"
+      },
+      {
+        "id": "e_insp_result",
+        "source": "wb",
+        "sourcePort": "result",
+        "target": "inspResult",
+        "targetPort": "jsonInput"
+      },
+      {
+        "id": "e_insp_md",
+        "source": "toMd",
+        "sourcePort": "output",
+        "target": "inspMd",
+        "targetPort": "markdownInput"
+      },
+      {
+        "id": "e_insp_text",
+        "source": "agent",
+        "sourcePort": "result",
+        "target": "inspText",
+        "targetPort": "textInput"
+      }
+    ]
+  }
+}

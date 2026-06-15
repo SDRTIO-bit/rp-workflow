@@ -20,8 +20,14 @@ import {
   type SkillItem,
   type PluginState,
 } from "./services/pluginLoader.js";
-import { nodeRegistry, type NodeCatalog } from "@awp/workflow-core";
+import { nodeRegistry, setRuntimeSchemaValidator, type NodeCatalog } from "@awp/workflow-core";
 import { stdlibNodes } from "@awp/workflow-stdlib";
+import {
+  dynamicWorldbookNode,
+  InMemoryDynamicWorldbookStore,
+  createWorldbookSchemaValidators,
+  type DynamicWorldbookStore,
+} from "@awp/workflow-worldbook";
 import { createRpLlmBridge } from "./services/rpLlmBridge.js";
 import {
   registerRpRuntime,
@@ -60,6 +66,7 @@ let rpRuntime: RpRuntimeRegistration | null = null;
 let runtimeNodeCatalog: NodeCatalog = { ...nodeRegistry };
 let skillCatalog: SkillItem[] = [];
 let profileRegistry: SpecializedAgentProfileRegistry | undefined;
+let worldbookStore: DynamicWorldbookStore | undefined;
 
 const getPluginRuntime = (): PluginRuntime => ({
   pluginState,
@@ -89,6 +96,7 @@ const getWorkflowRuntime = () => ({
   runtimeNodeCatalog,
   rpRuntime,
   profileRegistry,
+  worldbookStore,
 });
 const getLlmConfig = () => ({
   llmRouter: llmRouter!,
@@ -122,6 +130,15 @@ const initPlugins = async () => {
     // Initialize P-1 Profile Registry (built-in mock profiles)
     profileRegistry = createP1ProfileRegistry();
     console.log(`Profile Registry: ${profileRegistry.list().length} profiles registered`);
+
+    // Initialize P-3 Dynamic Worldbook Store & Schema Validators
+    worldbookStore = new InMemoryDynamicWorldbookStore();
+    const worldbookValidators = createWorldbookSchemaValidators();
+    setRuntimeSchemaValidator((schemaId, data) => {
+      const validator = worldbookValidators[schemaId];
+      return validator ? validator(data) : true; // pass-through for unknown schemas
+    });
+    console.log("Worldbook Store: in-memory store initialized");
 
     // Register available providers
     if (env.openCodeApiKey) {
@@ -188,10 +205,11 @@ const initPlugins = async () => {
       );
     }
 
-    // Merge catalogs: nodeRegistry + stdlibNodes + rpCatalog + pluginCatalog
+    // Merge catalogs: nodeRegistry + stdlibNodes + dynamicWorldbook + rpCatalog + pluginCatalog
     runtimeNodeCatalog = {
       ...nodeRegistry,
       ...stdlibNodes,
+      dynamicWorldbook: dynamicWorldbookNode,
       ...rpRuntime.catalog,
       ...pluginCatalog,
     };
