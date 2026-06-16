@@ -1,4 +1,5 @@
 import type { LlmAdapter } from "./types";
+import { normalizeOpenAiCompatibleUsage } from "./llmUsage";
 
 type DeepSeekAdapterOptions = {
   apiKey: string;
@@ -34,12 +35,6 @@ const requestBody = (input: {
     ...(input.stream ? { stream_options: { include_usage: true } } : {}),
   });
 
-const usageFrom = (usage: DeepSeekResponse["usage"]) => ({
-  input: usage?.prompt_tokens ?? 0,
-  output: usage?.completion_tokens ?? 0,
-  cachedInput: usage?.prompt_cache_hit_tokens,
-});
-
 export const createDeepSeekAdapter = (options: DeepSeekAdapterOptions): LlmAdapter => {
   const request = options.fetch ?? globalThis.fetch;
   const baseUrl = options.baseUrl ?? "https://api.deepseek.com";
@@ -73,7 +68,7 @@ export const createDeepSeekAdapter = (options: DeepSeekAdapterOptions): LlmAdapt
 
       return {
         text,
-        tokenUsage: usageFrom(data.usage),
+        tokenUsage: normalizeOpenAiCompatibleUsage(data.usage),
       };
     },
     async stream(input) {
@@ -150,7 +145,7 @@ export const createDeepSeekAdapter = (options: DeepSeekAdapterOptions): LlmAdapt
 
       return {
         text,
-        tokenUsage: usageFrom(usage),
+        tokenUsage: normalizeOpenAiCompatibleUsage(usage),
       };
     },
   };

@@ -1,3 +1,6 @@
+import type { WorkflowTelemetrySink } from "./telemetry";
+import type { WorkflowUsageBudgetController } from "./usageBudget";
+
 export type DataType =
   | "text"
   | "user_input"
@@ -191,7 +194,12 @@ export type WorkflowValidationIssue = {
 
 export type WorkflowRunContext = {
   runId?: string;
+  traceId?: string;
   sessionId?: string;
+  telemetrySink?: WorkflowTelemetrySink;
+  telemetryWarnings?: string[];
+  telemetrySinkFailureMode?: "warn" | "error";
+  usageBudgetController?: WorkflowUsageBudgetController;
   values?: Readonly<Record<string, unknown>>;
 };
 

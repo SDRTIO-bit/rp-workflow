@@ -36,6 +36,9 @@ export type OfficialRpRequestV1 = {
     onExhausted?: "return-latest" | "fail";
   };
 
+  /** Optional per-turn LLM usage budget for the unified runtime path. */
+  usageBudget?: import("@awp/workflow-core").WorkflowUsageBudgetV1;
+
   /** Per-request workflow version override (allowed values only) */
   workflowVersion?: "unified-v1" | "legacy";
 };
@@ -76,6 +79,26 @@ export type OfficialRpResponseV1 = {
     deduplicated: boolean;
   };
 
+  observability?: {
+    llmCalls: number;
+    totalLatencyMs: number;
+    usage: {
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+      unavailableInvocationCount: number;
+    };
+    roles: {
+      writer: number;
+      critic: number;
+      memoryCurator: number;
+    };
+    budget: {
+      exceeded: boolean;
+      reasons: string[];
+    };
+  };
+
   traceId: string;
 };
 
@@ -101,6 +124,9 @@ export type OfficialRpServiceContext = {
 
   /** Workflow data directory */
   dataDir: string;
+
+  /** Optional external telemetry sink for tests/local diagnostics. */
+  telemetrySink?: import("@awp/workflow-core").WorkflowTelemetrySink;
 
   /** Legacy RP path executor (for legacy fallback) */
   legacyRpExecutor?: LegacyRpExecutor;

@@ -7,6 +7,7 @@ export * from "./agentSessionStore";
 export * from "./agentV2";
 export * from "./deepSeekAdapter";
 export * from "./llmRouter";
+export * from "./llmUsage";
 export * from "./modelConfig";
 export * from "./mockLlm";
 export * from "./openCodeAdapter";

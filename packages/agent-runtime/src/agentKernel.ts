@@ -9,10 +9,16 @@
  */
 
 import type { NodeExecutor, NodeExecutionInput } from "@awp/workflow-core";
+import {
+  safeRecordLlmInvocation,
+  type LlmInvocationRoleV1,
+  type LlmInvocationTelemetryV1,
+} from "@awp/workflow-core";
 import type { LlmAdapter } from "./types.js";
 import type { NodeModelConfig, ResolvedModelRequest } from "./modelConfig.js";
 import type { ProviderRegistry } from "./providerRegistry.js";
 import { resolveModelConfig } from "./providerRegistry.js";
+import { coerceLlmTokenUsage, unavailableTokenUsage } from "./llmUsage.js";
 import type {
   SpecializedAgentProfile,
   SpecializedAgentProfileRegistry,
@@ -278,7 +284,9 @@ function createAgentExecutor(services: AgentKernelServices, opts: ExecutorOption
 
     // Call LLM
     const startedAt = Date.now();
-    let llmResult: { text: string; tokenUsage: { input: number; output: number } };
+    const startedIso = new Date(startedAt).toISOString();
+    let llmResult: Awaited<ReturnType<LlmAdapter["complete"]>>;
+    let invocationEvent: LlmInvocationTelemetryV1;
     try {
       llmResult = await adapter.complete({
         model: resolvedModel.model,
@@ -287,9 +295,71 @@ function createAgentExecutor(services: AgentKernelServices, opts: ExecutorOption
         topP: resolvedModel.topP,
         maxTokens: resolvedModel.maxTokens,
       });
+      const endedAt = Date.now();
+      invocationEvent = {
+        invocationId: createInvocationId(),
+        traceId: input.context?.traceId ?? input.context?.runId ?? "trace-unavailable",
+        runId: input.context?.runId ?? "run-unavailable",
+        workflowId: getStringValue(input.context?.values, "workflowId"),
+        workflowVersion: getNumberValue(input.context?.values, "workflowVersion"),
+        nodeId: node.id,
+        nodeType: node.type,
+        profileId: profile?.profileId,
+        role: resolveTelemetryRole(node.type, profile?.profileId, config),
+        attempt: resolveTelemetryAttempt(config),
+        providerId: resolvedModel.providerId,
+        model: resolvedModel.model,
+        startedAt: startedIso,
+        endedAt: new Date(endedAt).toISOString(),
+        latencyMs: Math.max(0, endedAt - startedAt),
+        status: "success",
+        tokenUsage: coerceLlmTokenUsage(llmResult.tokenUsage),
+        finishReason: llmResult.finishReason,
+      };
     } catch (error) {
+      const endedAt = Date.now();
+      await safeRecordLlmInvocation({
+        sink: input.context?.telemetrySink,
+        warnings: input.context?.telemetryWarnings,
+        event: {
+          invocationId: createInvocationId(),
+          traceId: input.context?.traceId ?? input.context?.runId ?? "trace-unavailable",
+          runId: input.context?.runId ?? "run-unavailable",
+          workflowId: getStringValue(input.context?.values, "workflowId"),
+          workflowVersion: getNumberValue(input.context?.values, "workflowVersion"),
+          nodeId: node.id,
+          nodeType: node.type,
+          profileId: profile?.profileId,
+          role: resolveTelemetryRole(node.type, profile?.profileId, config),
+          attempt: resolveTelemetryAttempt(config),
+          providerId: resolvedModel.providerId,
+          model: resolvedModel.model,
+          startedAt: startedIso,
+          endedAt: new Date(endedAt).toISOString(),
+          latencyMs: Math.max(0, endedAt - startedAt),
+          status: "error",
+          tokenUsage: unavailableTokenUsage(),
+          errorCode: "LLM_PROVIDER_ERROR",
+        },
+      });
       const message = error instanceof Error ? error.message : String(error);
       throw new Error(`Agent kernel: LLM call failed: ${message}`);
+    }
+
+    let budgetError: unknown;
+    try {
+      input.context?.usageBudgetController?.recordLlmInvocation(invocationEvent);
+    } catch (error) {
+      budgetError = error;
+    }
+    await safeRecordLlmInvocation({
+      sink: input.context?.telemetrySink,
+      warnings: input.context?.telemetryWarnings,
+      failureMode: input.context?.telemetrySinkFailureMode,
+      event: invocationEvent,
+    });
+    if (budgetError) {
+      throw budgetError;
     }
     const latencyMs = Date.now() - startedAt;
 
@@ -352,7 +422,7 @@ function createAgentExecutor(services: AgentKernelServices, opts: ExecutorOption
       maxTokens: resolvedModel.maxTokens,
       responseFormat: resolvedModel.responseFormat,
       latencyMs,
-      tokenUsage: llmResult.tokenUsage,
+      tokenUsage: coerceLlmTokenUsage(llmResult.tokenUsage),
       profileId: profile?.profileId ?? null,
       jsonRendererEnabled,
       sectionCount: promptAssembly.sections.length,
@@ -367,4 +437,49 @@ function createAgentExecutor(services: AgentKernelServices, opts: ExecutorOption
       metadata,
     };
   };
+}
+
+function resolveTelemetryRole(
+  nodeType: string,
+  profileId: string | undefined,
+  config: Record<string, unknown>,
+): LlmInvocationRoleV1 {
+  const telemetry = config.telemetry as Record<string, unknown> | undefined;
+  const configured = telemetry?.role;
+  if (
+    configured === "writer" ||
+    configured === "critic" ||
+    configured === "memory-curator" ||
+    configured === "generic" ||
+    configured === "other"
+  ) {
+    return configured;
+  }
+  if (nodeType === "genericAgent") return "generic";
+  if (profileId === "rp-writer") return "writer";
+  if (profileId === "rp-critic") return "critic";
+  if (profileId === "rp-memory-curator") return "memory-curator";
+  return "other";
+}
+
+function resolveTelemetryAttempt(config: Record<string, unknown>): number | undefined {
+  const telemetry = config.telemetry as Record<string, unknown> | undefined;
+  const attempt = telemetry?.attempt;
+  return typeof attempt === "number" && Number.isInteger(attempt) && attempt >= 0
+    ? attempt
+    : undefined;
+}
+
+function createInvocationId(): string {
+  return `inv_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getStringValue(values: Readonly<Record<string, unknown>> | undefined, key: string) {
+  const value = values?.[key];
+  return typeof value === "string" ? value : undefined;
+}
+
+function getNumberValue(values: Readonly<Record<string, unknown>> | undefined, key: string) {
+  const value = values?.[key];
+  return typeof value === "number" ? value : undefined;
 }

@@ -1,6 +1,7 @@
 import { buildPromptAssembly } from "./promptBuilder";
 import { mockLlmAdapter } from "./mockLlm";
 import type { AgentExecutionInput, AgentExecutionResult, LlmAdapter } from "./types";
+import { coerceLlmTokenUsage } from "./llmUsage";
 
 export const executeAgentNode = async (
   input: AgentExecutionInput,
@@ -29,7 +30,7 @@ export const executeAgentNode = async (
       dynamicInputHash: assembly.dynamicInputHash,
       visibleSkillIds: assembly.visibleSkillIds,
       visiblePluginIds: assembly.visiblePluginIds,
-      tokenUsage: completion.tokenUsage,
+      tokenUsage: coerceLlmTokenUsage(completion.tokenUsage),
       latencyMs: Math.round(performance.now() - startedAt),
     },
   };

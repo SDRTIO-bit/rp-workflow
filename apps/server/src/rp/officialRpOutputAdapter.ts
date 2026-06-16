@@ -18,8 +18,8 @@
  *  - Mask errors as success
  */
 import type { WorkflowRunResult } from "@awp/workflow-core";
+import type { WorkflowRunTelemetrySummaryV1 } from "@awp/workflow-core";
 import type { OfficialRpResponseV1 } from "./officialRpTypes.js";
-import { randomUUID } from "node:crypto";
 
 // ── Known internal node IDs (package-private) ──
 const NODE_OUTPUT = "output";
@@ -27,6 +27,7 @@ const NODE_SESSION_COMMIT = "sessionCommit";
 const NODE_MEM_WRITE = "memWrite";
 const NODE_MEM_POLICY = "memPolicy";
 const NODE_DECISION = "decision";
+const NODE_SELECTOR = "selector";
 
 // ── Adapter ──
 
@@ -37,9 +38,9 @@ export function adaptRpOutput(
   workflowId: string,
   workflowVersion: number,
   mode: "unified-v1" | "legacy",
+  traceId: string,
+  summary?: WorkflowRunTelemetrySummaryV1,
 ): OfficialRpResponseV1 {
-  const traceId = randomUUID();
-
   // 1. Extract narrative from designated output node
   const outputRun = result.nodeRuns.find((r) => r.nodeId === NODE_OUTPUT);
   const narrative =
@@ -51,21 +52,25 @@ export function adaptRpOutput(
       sessionId,
       turnId,
       workflow: { id: workflowId, version: workflowVersion, mode },
+      observability: summary ? toOfficialObservability(summary) : undefined,
       traceId,
     };
   }
 
   // 2. Extract loop result
+  const selectorRun = result.nodeRuns.find((r) => r.nodeId === NODE_SELECTOR);
+  const loopResult = selectorRun?.outputs?.loopResult as Record<string, unknown> | undefined;
   const decisionRun = result.nodeRuns.find((r) => r.nodeId === NODE_DECISION);
   const decisionOutput = decisionRun?.outputs?.decision as Record<string, unknown> | undefined;
 
-  const quality = decisionOutput
+  const qualitySource = loopResult ?? decisionOutput;
+  const quality = qualitySource
     ? {
-        accepted: Boolean(decisionOutput.accepted),
-        exhausted: Boolean(decisionOutput.exhausted),
-        writerAttempts: Number(decisionOutput.writerAttempts ?? 1),
-        criticAttempts: Number(decisionOutput.criticAttempts ?? 1),
-        revisionApplied: Boolean(decisionOutput.revisionApplied),
+        accepted: Boolean(qualitySource.accepted),
+        exhausted: Boolean(qualitySource.exhausted),
+        writerAttempts: Number(qualitySource.writerAttempts ?? 1),
+        criticAttempts: Number(qualitySource.criticAttempts ?? 1),
+        revisionApplied: Boolean(qualitySource.revisionApplied),
       }
     : undefined;
 
@@ -111,6 +116,21 @@ export function adaptRpOutput(
     quality,
     sessionCommit,
     memoryCommit,
+    observability: summary ? toOfficialObservability(summary) : undefined,
     traceId,
+  };
+}
+
+function toOfficialObservability(summary: WorkflowRunTelemetrySummaryV1) {
+  return {
+    llmCalls: summary.llmCalls,
+    totalLatencyMs: summary.totalLatencyMs,
+    usage: summary.usage,
+    roles: {
+      writer: summary.byRole.writer,
+      critic: summary.byRole.critic,
+      memoryCurator: summary.byRole.memoryCurator,
+    },
+    budget: summary.budget,
   };
 }

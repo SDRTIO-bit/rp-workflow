@@ -46,6 +46,10 @@ describe("agent runtime", () => {
 
     expect(result.text).toContain("[mock:mock-pro:");
     expect(result.metadata.visibleSkillIds).toEqual(["prose"]);
+    expect(result.metadata.tokenUsage.availability).toBe("available");
+    if (result.metadata.tokenUsage.availability !== "available") {
+      throw new Error("expected available token usage");
+    }
     expect(result.metadata.tokenUsage.cachedInput).toBeGreaterThan(0);
   });
 

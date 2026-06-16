@@ -1,4 +1,11 @@
 import type { PluginDefinition } from "@awp/plugin-sdk";
+import type { LlmTokenUsageV1 } from "@awp/workflow-core";
+
+export type LegacyLlmTokenUsage = {
+  input: number;
+  output: number;
+  cachedInput?: number;
+};
 
 export type AgentNodeConfig = {
   model: string;
@@ -43,11 +50,7 @@ export type AgentExecutionResult = {
     dynamicInputHash: string;
     visibleSkillIds: string[];
     visiblePluginIds: string[];
-    tokenUsage: {
-      input: number;
-      output: number;
-      cachedInput?: number;
-    };
+    tokenUsage: LlmTokenUsageV1;
     latencyMs: number;
   };
 };
@@ -70,5 +73,7 @@ export type LlmCompletionInput = {
 
 export type LlmCompletionResult = {
   text: string;
-  tokenUsage: AgentExecutionResult["metadata"]["tokenUsage"];
+  tokenUsage: LlmTokenUsageV1 | LegacyLlmTokenUsage;
+  finishReason?: string;
+  providerRequestId?: string;
 };

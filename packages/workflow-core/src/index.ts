@@ -3,5 +3,7 @@ export * from "./resourceResolver";
 export * from "./runner";
 export * from "./runnerCheckpoint";
 export * from "./scheduler";
+export * from "./telemetry";
 export * from "./types";
+export * from "./usageBudget";
 export * from "./validation";

@@ -5,7 +5,11 @@
  * profile resolution, missing profile error, missing provider error.
  */
 import { describe, expect, it, vi } from "vitest";
-import type { NodeExecutionInput } from "@awp/workflow-core";
+import {
+  InMemoryWorkflowTelemetrySink,
+  WorkflowUsageBudgetController,
+  type NodeExecutionInput,
+} from "@awp/workflow-core";
 import {
   ProviderRegistry,
   InMemorySpecializedAgentProfileRegistry,
@@ -76,6 +80,28 @@ describe("createGenericAgentExecutor", () => {
     );
     expect(result.outputs.result).toBeDefined();
     expect(typeof result.outputs.result).toBe("string");
+  });
+
+  it("records the invocation then stops when usage budget is exceeded", async () => {
+    const telemetrySink = new InMemoryWorkflowTelemetrySink();
+    const executor = createGenericAgentExecutor(createMockServices());
+
+    await expect(
+      executor({
+        ...createNodeInput("genericAgent", { modelId: "mock-model" }, { userInput: "Hello" }),
+        context: {
+          runId: "run-budget",
+          traceId: "trace-budget",
+          telemetrySink,
+          usageBudgetController: new WorkflowUsageBudgetController({ maxTotalTokens: 12 }),
+        },
+      }),
+    ).rejects.toThrow("Workflow usage budget exceeded");
+
+    const events = telemetrySink.getLlmInvocations("run-budget");
+    expect(events).toHaveLength(1);
+    expect(events[0]?.status).toBe("success");
+    expect(events[0]?.tokenUsage).toMatchObject({ total: 15 });
   });
 
   it("assembles prompt with all 4 inputs in correct order", async () => {

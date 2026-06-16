@@ -44,7 +44,14 @@ describe("deepSeek adapter", () => {
     });
     expect(result).toEqual({
       text: "真实 Agent 回复",
-      tokenUsage: { input: 120, output: 30, cachedInput: 80 },
+      tokenUsage: {
+        availability: "available",
+        source: "provider",
+        input: 120,
+        output: 30,
+        cachedInput: 80,
+        total: 150,
+      },
     });
   });
 
@@ -94,7 +101,14 @@ describe("deepSeek adapter", () => {
     expect(tokens).toEqual(["你", "好"]);
     expect(result).toEqual({
       text: "你好",
-      tokenUsage: { input: 3, output: 2, cachedInput: 1 },
+      tokenUsage: {
+        availability: "available",
+        source: "provider",
+        input: 3,
+        output: 2,
+        cachedInput: 1,
+        total: 5,
+      },
     });
   });
 });

@@ -17,6 +17,7 @@ import type {
   WorkflowRunResult,
 } from "./types";
 import { computeInactiveBranchNodes } from "./runner";
+import type { WorkflowUsageBudgetStateV1 } from "./usageBudget";
 
 // ============ Workflow Hash ============
 
@@ -43,13 +44,15 @@ export function computeWorkflowHash(workflow: WorkflowDefinition): string {
 
 // ============ Checkpoint Types (inline to avoid circular deps) ============
 
-interface LightCheckpoint {
+export interface LightCheckpoint {
   runId: string;
   workflowId: string;
   workflowHash: string;
   completedNodeIds: string[];
   skippedNodeIds: string[];
   nodeOutputs: Record<string, Record<string, unknown>>;
+  usageBudgetState?: WorkflowUsageBudgetStateV1;
+  recordedInvocationIds?: string[];
 }
 
 export interface CheckpointCallbacks {
@@ -58,6 +61,7 @@ export interface CheckpointCallbacks {
     nodeId: string,
     outputs: Record<string, unknown>,
   ) => Promise<void>;
+  onUsageBudgetStateChanged?: (runId: string, state: WorkflowUsageBudgetStateV1) => Promise<void>;
   onRunCompleted?: (runId: string, status: string) => Promise<void>;
 }
 
@@ -144,6 +148,7 @@ export async function runWorkflowWithCheckpoint(
 
           // Fire checkpoint hook
           await callbacks?.onNodeCompleted?.(id, nodeId, result.outputs);
+          await notifyUsageBudgetState(callbacks, id, context);
 
           return {
             nodeId,
@@ -160,6 +165,7 @@ export async function runWorkflowWithCheckpoint(
           };
         } catch (error) {
           hasError = true;
+          await notifyUsageBudgetState(callbacks, id, context);
           return {
             nodeId,
             status: "error" as const,
@@ -198,6 +204,10 @@ export async function resumeWorkflow(
   context?: WorkflowRunContext,
   callbacks?: CheckpointCallbacks,
 ): Promise<WorkflowRunResult> {
+  if (checkpoint.usageBudgetState) {
+    context?.usageBudgetController?.restore(checkpoint.usageBudgetState);
+  }
+
   // Verify workflow hasn't changed
   const currentHash = computeWorkflowHash(workflow);
   if (currentHash !== checkpoint.workflowHash) {
@@ -347,6 +357,7 @@ export async function resumeWorkflow(
           }
 
           await callbacks?.onNodeCompleted?.(checkpoint.runId, nodeId, result.outputs);
+          await notifyUsageBudgetState(callbacks, checkpoint.runId, context);
 
           return {
             nodeId,
@@ -363,6 +374,7 @@ export async function resumeWorkflow(
           };
         } catch (error) {
           hasError = true;
+          await notifyUsageBudgetState(callbacks, checkpoint.runId, context);
           return {
             nodeId,
             status: "error" as const,
@@ -389,4 +401,13 @@ export async function resumeWorkflow(
     nodeRuns,
     validationIssues,
   };
+}
+
+async function notifyUsageBudgetState(
+  callbacks: CheckpointCallbacks | undefined,
+  runId: string,
+  context: WorkflowRunContext | undefined,
+): Promise<void> {
+  if (!callbacks?.onUsageBudgetStateChanged || !context?.usageBudgetController) return;
+  await callbacks.onUsageBudgetStateChanged(runId, context.usageBudgetController.getState());
 }

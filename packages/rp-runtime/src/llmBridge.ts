@@ -11,7 +11,12 @@
  * exposed to RP nodes, traces, or outputs.
  */
 
-import type { LlmRouter, NodeModelConfig } from "@awp/agent-runtime";
+import {
+  coerceLlmTokenUsage,
+  getKnownTokenUsage,
+  type LlmRouter,
+  type NodeModelConfig,
+} from "@awp/agent-runtime";
 import type { RpLlmAdapter } from "./nodes/rpWriterV1.js";
 
 /** Extended RP adapter with per-node model config support. */
@@ -44,11 +49,15 @@ export function createRpLlmBridge(
 
     async complete(prompt: string) {
       const result = await router.completeWithConfig(undefined, workflowModelConfig, prompt);
+      const knownUsage = getKnownTokenUsage(coerceLlmTokenUsage(result.tokenUsage)) ?? {
+        input: 0,
+        output: 0,
+      };
       return {
         text: result.text,
         tokenUsage: {
-          prompt: result.tokenUsage.input,
-          completion: result.tokenUsage.output,
+          prompt: knownUsage.input,
+          completion: knownUsage.output,
         },
       };
     },
@@ -56,11 +65,15 @@ export function createRpLlmBridge(
     async completeWithModelConfig(prompt: string, nodeModelConfig?: NodeModelConfig) {
       const result = await router.completeWithConfig(nodeModelConfig, workflowModelConfig, prompt);
       const resolved = router.resolveConfig(nodeModelConfig, workflowModelConfig);
+      const knownUsage = getKnownTokenUsage(coerceLlmTokenUsage(result.tokenUsage)) ?? {
+        input: 0,
+        output: 0,
+      };
       return {
         text: result.text,
         tokenUsage: {
-          prompt: result.tokenUsage.input,
-          completion: result.tokenUsage.output,
+          prompt: knownUsage.input,
+          completion: knownUsage.output,
         },
         providerId: resolved.providerId,
         model: resolved.model,

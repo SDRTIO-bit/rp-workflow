@@ -271,7 +271,15 @@ describe("P-12: Output Adapter", () => {
         endedAt: 1,
       },
     ];
-    const response = adaptRpOutput(result, "session-a", "turn-1", "test-wf", 1, "unified-v1");
+    const response = adaptRpOutput(
+      result,
+      "session-a",
+      "turn-1",
+      "test-wf",
+      1,
+      "unified-v1",
+      "trace-test",
+    );
     expect(response.narrative).toBe("银铃接过钥匙，微微一笑。");
   });
 
@@ -299,7 +307,7 @@ describe("P-12: Output Adapter", () => {
         endedAt: 1,
       },
     ];
-    const response = adaptRpOutput(result, "s", "t", "w", 1, "unified-v1");
+    const response = adaptRpOutput(result, "s", "t", "w", 1, "unified-v1", "trace-test");
     expect(response.quality?.accepted).toBe(true);
     expect(response.quality?.exhausted).toBe(false);
     expect(response.quality?.writerAttempts).toBe(1);
@@ -308,19 +316,19 @@ describe("P-12: Output Adapter", () => {
   it("20. error result does not mask as success", () => {
     const result = makeEmptyRunResult();
     result.status = "error";
-    const response = adaptRpOutput(result, "s", "t", "w", 1, "unified-v1");
+    const response = adaptRpOutput(result, "s", "t", "w", 1, "unified-v1", "trace-test");
     expect(response.narrative).toBe("");
   });
 
   it("21. missing output node returns empty narrative", () => {
     const result = makeEmptyRunResult();
-    const response = adaptRpOutput(result, "s", "t", "w", 1, "unified-v1");
+    const response = adaptRpOutput(result, "s", "t", "w", 1, "unified-v1", "trace-test");
     expect(response.narrative).toBe("");
   });
 
   it("22. traceId is always present", () => {
     const result = makeEmptyRunResult();
-    const response = adaptRpOutput(result, "s", "t", "w", 1, "unified-v1");
+    const response = adaptRpOutput(result, "s", "t", "w", 1, "unified-v1", "trace-test");
     expect(response.traceId).toBeDefined();
     expect(typeof response.traceId).toBe("string");
     expect(response.traceId.length).toBeGreaterThan(0);
@@ -469,7 +477,15 @@ describe("P-12: Legacy", () => {
 
 describe("P-12: Response Contract", () => {
   it("37. response has all required fields", () => {
-    const response = adaptRpOutput(makeEmptyRunResult(), "s", "t", "w", 1, "unified-v1");
+    const response = adaptRpOutput(
+      makeEmptyRunResult(),
+      "s",
+      "t",
+      "w",
+      1,
+      "unified-v1",
+      "trace-test",
+    );
     expect(response.narrative).toBeDefined();
     expect(response.sessionId).toBe("s");
     expect(response.turnId).toBe("t");
@@ -480,7 +496,7 @@ describe("P-12: Response Contract", () => {
   });
 
   it("38. legacy mode reflected in response", () => {
-    const response = adaptRpOutput(makeEmptyRunResult(), "s", "t", "w", 1, "legacy");
+    const response = adaptRpOutput(makeEmptyRunResult(), "s", "t", "w", 1, "legacy", "trace-test");
     expect(response.workflow.mode).toBe("legacy");
   });
 });

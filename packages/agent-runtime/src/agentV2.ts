@@ -27,6 +27,7 @@ import type {
 } from "./agentSession.js";
 import { DEFAULT_SESSION_CONFIG } from "./agentSession.js";
 import type { NodeModelConfig } from "./modelConfig.js";
+import { coerceLlmTokenUsage, getKnownTokenUsage } from "./llmUsage.js";
 
 // ============ Budget ============
 
@@ -275,6 +276,10 @@ export function createAgentV2Executor(services: AgentV2Services): NodeExecutor {
 
     // Build session delta (only if stateful)
     const turnIndex = (effectiveSessionContext?.turns.length ?? 0) + 1;
+    const knownUsage = getKnownTokenUsage(coerceLlmTokenUsage(llmResult.tokenUsage)) ?? {
+      input: 0,
+      output: 0,
+    };
     const sessionDelta: AgentSessionDeltaV1 | undefined =
       isStateful && effectiveSessionContext
         ? {
@@ -287,10 +292,7 @@ export function createAgentV2Executor(services: AgentV2Services): NodeExecutor {
               },
               assistantOutput: llmResult.text,
               modelConfig: { model },
-              tokenUsage: {
-                input: llmResult.tokenUsage.input,
-                output: llmResult.tokenUsage.output,
-              },
+              tokenUsage: knownUsage,
               createdAt: new Date().toISOString(),
             },
           }

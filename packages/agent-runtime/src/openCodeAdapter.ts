@@ -1,5 +1,7 @@
 ﻿import type { LlmAdapter } from "./types";
 
+import { normalizeOpenAiCompatibleUsage } from "./llmUsage";
+
 type OpenCodeAdapterOptions = {
   apiKey: string;
   baseUrl?: string;
@@ -33,12 +35,6 @@ const requestBody = (input: {
     temperature: input.temperature,
     ...(input.stream ? { stream_options: { include_usage: true } } : {}),
   });
-
-const usageFrom = (usage: OpenCodeResponse["usage"]) => ({
-  input: usage?.prompt_tokens ?? 0,
-  output: usage?.completion_tokens ?? 0,
-  cachedInput: usage?.prompt_cache_hit_tokens,
-});
 
 export const createOpenCodeAdapter = (options: OpenCodeAdapterOptions): LlmAdapter => {
   const request = options.fetch ?? globalThis.fetch;
@@ -81,7 +77,7 @@ export const createOpenCodeAdapter = (options: OpenCodeAdapterOptions): LlmAdapt
 
       return {
         text,
-        tokenUsage: usageFrom(data.usage),
+        tokenUsage: normalizeOpenAiCompatibleUsage(data.usage),
       };
     },
     async stream(input) {
@@ -166,7 +162,7 @@ export const createOpenCodeAdapter = (options: OpenCodeAdapterOptions): LlmAdapt
 
       return {
         text,
-        tokenUsage: usageFrom(usage),
+        tokenUsage: normalizeOpenAiCompatibleUsage(usage),
       };
     },
   };

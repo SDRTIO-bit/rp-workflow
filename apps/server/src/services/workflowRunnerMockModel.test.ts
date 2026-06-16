@@ -74,7 +74,13 @@ describe("createExecutors mock model selection", () => {
         dynamicInputHash: "def",
         visibleSkillIds: [],
         visiblePluginIds: [],
-        tokenUsage: { input: 0, output: 0 },
+        tokenUsage: {
+          availability: "available",
+          source: "estimated",
+          input: 0,
+          output: 0,
+          total: 0,
+        },
         latencyMs: 0,
       },
     });
@@ -151,7 +157,13 @@ describe("createExecutors mock model selection", () => {
           dynamicInputHash: "y",
           visibleSkillIds: [],
           visiblePluginIds: [],
-          tokenUsage: { input: 0, output: 0 },
+          tokenUsage: {
+            availability: "available",
+            source: "estimated",
+            input: 0,
+            output: 0,
+            total: 0,
+          },
           latencyMs: 0,
         },
       });

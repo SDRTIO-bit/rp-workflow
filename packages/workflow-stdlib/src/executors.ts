@@ -188,11 +188,11 @@ export const finalDraftSelectorExecutor: NodeExecutor = async ({ inputs }) => {
   // Build the loop result from gate results
   const firstGateResult = inputs.firstGateResult as Record<string, unknown> | undefined;
   const secondGateResult = inputs.secondGateResult as Record<string, unknown> | undefined;
-  const acceptRouting = inputs.acceptRouting as Record<string, unknown> | undefined;
-  const accepted = acceptRouting?.accepted === true;
-
   const hasRevision = secondGateResult && Object.keys(secondGateResult).length > 0;
   const effectiveGateResult = hasRevision && secondGateResult ? secondGateResult : firstGateResult;
+  const acceptRouting = inputs.acceptRouting as Record<string, unknown> | undefined;
+  const accepted =
+    effectiveGateResult?.accepted === true || (!hasRevision && acceptRouting?.accepted === true);
 
   // Determine exhausted state
   const exhausted = !accepted && hasRevision;
