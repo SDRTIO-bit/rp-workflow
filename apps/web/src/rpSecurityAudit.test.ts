@@ -90,10 +90,24 @@ describe("RP sessionStorage security audit", () => {
       observability: {
         llmCalls: 5,
         totalLatencyMs: 12000,
-        usage: { inputTokens: 1000, outputTokens: 500, totalTokens: 1500, unavailableInvocationCount: 0 },
+        usage: {
+          inputTokens: 1000,
+          outputTokens: 500,
+          totalTokens: 1500,
+          unavailableInvocationCount: 0,
+        },
         roles: { writer: 2, critic: 2, memoryCurator: 1 },
         budget: { exceeded: false, reasons: [] },
-        modelUsage: [{ providerId: "openai", model: "gpt-4", calls: 5, inputTokens: 1000, outputTokens: 500, totalTokens: 1500 }],
+        modelUsage: [
+          {
+            providerId: "openai",
+            model: "gpt-4",
+            calls: 5,
+            inputTokens: 1000,
+            outputTokens: 500,
+            totalTokens: 1500,
+          },
+        ],
       },
     });
 
@@ -169,7 +183,13 @@ describe("RP sessionStorage security audit", () => {
       status: "sending",
       pendingTurn: { turnId: "turn-0005", turnNumber: 5, userInput: "injected prompt" },
       lastError: { kind: "provider", message: "secret error", retryable: true },
-      lastQuality: { accepted: true, exhausted: false, writerAttempts: 1, criticAttempts: 1, revisionApplied: false },
+      lastQuality: {
+        accepted: true,
+        exhausted: false,
+        writerAttempts: 1,
+        criticAttempts: 1,
+        revisionApplied: false,
+      },
       lastObservability: { llmCalls: 10, totalLatencyMs: 50000 },
     };
 
@@ -198,8 +218,6 @@ describe("RP sessionStorage security audit", () => {
     const fallback = createInitialRpSession({ sessionId: "rp-web-fallback" });
 
     expect(restoreRpSession({ sessionId: "rp-web-x" }, fallback)).toBe(fallback);
-    expect(
-      restoreRpSession({ sessionId: "rp-web-x", nextTurnNumber: 1 }, fallback),
-    ).toBe(fallback);
+    expect(restoreRpSession({ sessionId: "rp-web-x", nextTurnNumber: 1 }, fallback)).toBe(fallback);
   });
 });

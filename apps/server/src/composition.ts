@@ -124,7 +124,10 @@ export type ServerComposition = {
  * Build the production server composition. Idempotent per process: each call
  * returns a fresh Hono app and runtime state.
  */
-export async function bootstrap(env: Env, adapters: CompositionAdapters = {}): Promise<ServerComposition> {
+export async function bootstrap(
+  env: Env,
+  adapters: CompositionAdapters = {},
+): Promise<ServerComposition> {
   const app = new Hono();
   app.get("/api/health", (c) => c.json({ status: "ok", timestamp: new Date().toISOString() }));
 
@@ -348,10 +351,7 @@ export async function bootstrap(env: Env, adapters: CompositionAdapters = {}): P
   rpRuntime = registerRpRuntime(rpServices);
 
   const rpNodeTypes = Object.keys(rpRuntime.catalog);
-  const existingNodeTypes = new Set([
-    ...Object.keys(nodeRegistry),
-    ...Object.keys(pluginCatalog),
-  ]);
+  const existingNodeTypes = new Set([...Object.keys(nodeRegistry), ...Object.keys(pluginCatalog)]);
   const conflicts = rpNodeTypes.filter((type) => existingNodeTypes.has(type));
   if (conflicts.length > 0) {
     throw new Error(

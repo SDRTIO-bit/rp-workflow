@@ -24,7 +24,9 @@ const expectError = async (
   await expect(promise).rejects.toMatchObject({
     kind: expected.kind,
     retryable: expected.retryable,
-    ...(expected.messageIncludes ? { message: expect.stringContaining(expected.messageIncludes) } : {}),
+    ...(expected.messageIncludes
+      ? { message: expect.stringContaining(expected.messageIncludes) }
+      : {}),
   });
 };
 
@@ -85,7 +87,10 @@ describe("runOfficialRpTurn", () => {
   it("maps 409 to conflict error (non-retryable) with safe message", async () => {
     const error = await runOfficialRpTurn(request, {
       fetcher: async () =>
-        jsonResponse({ error: "turn already committed with different input", traceId: "trace-409" }, 409),
+        jsonResponse(
+          { error: "turn already committed with different input", traceId: "trace-409" },
+          409,
+        ),
     }).catch((e) => e);
 
     expect(error).toMatchObject({
@@ -140,7 +145,8 @@ describe("runOfficialRpTurn", () => {
   it("maps 500 server error to provider failure (retryable)", async () => {
     await expectError(
       runOfficialRpTurn(request, {
-        fetcher: async () => jsonResponse({ error: "Internal server error", traceId: "trace-500" }, 500),
+        fetcher: async () =>
+          jsonResponse({ error: "Internal server error", traceId: "trace-500" }, 500),
       }),
       { kind: "provider", retryable: true },
     );
@@ -213,8 +219,7 @@ describe("runOfficialRpTurn", () => {
   it("does not expose raw provider error messages to the caller", async () => {
     const rawProviderMessage = "OPENAI_API_KEY expired: sk-*** internal detail";
     const error = await runOfficialRpTurn(request, {
-      fetcher: async () =>
-        jsonResponse({ error: rawProviderMessage, traceId: "trace-leak" }, 500),
+      fetcher: async () => jsonResponse({ error: rawProviderMessage, traceId: "trace-leak" }, 500),
     }).catch((e) => e);
 
     // 错误消息是安全的通用描述
@@ -228,8 +233,7 @@ describe("runOfficialRpTurn", () => {
   it("handles malformed error body gracefully", async () => {
     await expectError(
       runOfficialRpTurn(request, {
-        fetcher: async () =>
-          new Response("not json at all", { status: 500 }),
+        fetcher: async () => new Response("not json at all", { status: 500 }),
       }),
       { kind: "provider", retryable: true },
     );
@@ -258,8 +262,7 @@ describe("runOfficialRpTurn", () => {
     // budget 关键词在 500 响应中应优先匹配为 budget 而非 provider
     await expectError(
       runOfficialRpTurn(request, {
-        fetcher: async () =>
-          jsonResponse({ error: "budget exceeded: maxTokens" }, 500),
+        fetcher: async () => jsonResponse({ error: "budget exceeded: maxTokens" }, 500),
       }),
       { kind: "budget", retryable: false },
     );

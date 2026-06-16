@@ -279,7 +279,13 @@ describe("RP session state", () => {
       sessionId: "rp-web-fixed",
       nextTurnNumber: 3,
       messages: [
-        { id: "user-turn-0001", role: "user", text: "Hello", turnId: "turn-0001", createdAt: "2026-06-16T00:00:00.000Z" },
+        {
+          id: "user-turn-0001",
+          role: "user",
+          text: "Hello",
+          turnId: "turn-0001",
+          createdAt: "2026-06-16T00:00:00.000Z",
+        },
       ],
       worldbookResourceRef: "worldbook:demo",
       memoryNamespace: "rp-session:rp-web-fixed",
@@ -287,7 +293,13 @@ describe("RP session state", () => {
       status: "sending",
       pendingTurn: { turnId: "turn-0003", turnNumber: 3, userInput: "injected" },
       lastError: { kind: "provider", message: "injected", retryable: true },
-      lastQuality: { accepted: true, exhausted: false, writerAttempts: 1, criticAttempts: 1, revisionApplied: false },
+      lastQuality: {
+        accepted: true,
+        exhausted: false,
+        writerAttempts: 1,
+        criticAttempts: 1,
+        revisionApplied: false,
+      },
       lastObservability: { llmCalls: 5, totalLatencyMs: 1000 },
     };
 

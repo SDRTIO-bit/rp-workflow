@@ -154,10 +154,7 @@ describe("P-14: Official RP two-turn E2E (production composition root)", () => {
       composition.app,
       buildRequest({ turnId: "turn-a", userInput: "我把钥匙放到银铃面前。" }),
     );
-    const r2 = await postRp(
-      composition.app,
-      buildRequest({ turnId: "turn-b", userInput: "继续" }),
-    );
+    const r2 = await postRp(composition.app, buildRequest({ turnId: "turn-b", userInput: "继续" }));
 
     expect(r1.status).toBe(200);
     expect(r2.status).toBe(200);
@@ -171,7 +168,9 @@ describe("P-14: Official RP two-turn E2E (production composition root)", () => {
 
   it("refuses to bootstrap when mock is selected in production", async () => {
     await expect(
-      bootstrap(makeTestEnv({ nodeEnv: "production", rpProviderId: "mock", rpModel: "mock-model" })),
+      bootstrap(
+        makeTestEnv({ nodeEnv: "production", rpProviderId: "mock", rpModel: "mock-model" }),
+      ),
     ).rejects.toThrow(/not allowed in production/);
   });
 

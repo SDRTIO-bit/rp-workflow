@@ -16,10 +16,10 @@ import { bootstrap } from "./composition.js";
 async function main(): Promise<void> {
   const env = resolveEnv();
   const composition = await bootstrap(env);
-  console.log(`LLM Router: rpProvider=${composition.llm.providerId}, rpModel=${composition.llm.model}`);
   console.log(
-    `LLM providers: ${composition.llm.registeredProviders.join(" ") || "none"}`,
+    `LLM Router: rpProvider=${composition.llm.providerId}, rpModel=${composition.llm.model}`,
   );
+  console.log(`LLM providers: ${composition.llm.registeredProviders.join(" ") || "none"}`);
 
   serve({ fetch: composition.app.fetch, port: env.port }, (info) => {
     console.log(`@awp/server running at http://${info.address}:${info.port}`);

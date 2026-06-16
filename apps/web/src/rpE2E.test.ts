@@ -131,7 +131,11 @@ describe("Browser E2E: Normal two rounds", () => {
 
     // Round 1 断言
     expect(session.messages).toHaveLength(2); // user + assistant
-    expect(session.messages[0]).toMatchObject({ role: "user", text: "I enter the tavern.", turnId: "turn-0001" });
+    expect(session.messages[0]).toMatchObject({
+      role: "user",
+      text: "I enter the tavern.",
+      turnId: "turn-0001",
+    });
     expect(session.messages[1]).toMatchObject({
       role: "assistant",
       text: "The tavern is warm and dimly lit.",
@@ -150,7 +154,11 @@ describe("Browser E2E: Normal two rounds", () => {
 
     // Round 2 断言
     expect(session.messages).toHaveLength(4); // 2 user + 2 assistant
-    expect(session.messages[2]).toMatchObject({ role: "user", text: "Continue", turnId: "turn-0002" });
+    expect(session.messages[2]).toMatchObject({
+      role: "user",
+      text: "Continue",
+      turnId: "turn-0002",
+    });
     expect(session.messages[3]).toMatchObject({
       role: "assistant",
       text: "The bartender nods in your direction.",
@@ -346,7 +354,6 @@ describe("Browser E2E: Modified failed content creates new turn", () => {
 
 describe("Browser E2E: sessionStorage round-trip", () => {
   it("session survives serialization/deserialization without leaking", () => {
-
     let session = createInitialRpSession({
       sessionId: "rp-web-storage",
       worldbookResourceRef: "worldbook:demo",

@@ -5,9 +5,7 @@
 import type { OfficialRpResponseV1 } from "./officialRpClient";
 
 /** 将 quality 对象转为人类可读的状态描述 */
-export const describeRpQuality = (
-  quality: OfficialRpResponseV1["quality"],
-): string => {
+export const describeRpQuality = (quality: OfficialRpResponseV1["quality"]): string => {
   if (!quality) {
     return "Quality unavailable";
   }
@@ -24,9 +22,7 @@ export const describeRpQuality = (
 };
 
 /** 将 observability 对象转为人类可读的用量摘要 */
-export const formatRpUsage = (
-  observability: OfficialRpResponseV1["observability"],
-): string => {
+export const formatRpUsage = (observability: OfficialRpResponseV1["observability"]): string => {
   if (!observability) {
     return "Usage unavailable";
   }
