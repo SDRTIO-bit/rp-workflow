@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { rankMemories } from "./rankMemories";
-import type { MemoryEntry } from "./types";
+import { rankMemories } from "./rankMemories.js";
+import type { MemoryEntry } from "./types.js";
 
 const memories: MemoryEntry[] = [
   {

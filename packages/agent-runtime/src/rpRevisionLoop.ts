@@ -7,7 +7,7 @@
  * No LLM calls. No loops. Pure deterministic logic.
  */
 
-import type { RpCriticGateResultV1 } from "./rpCriticGate";
+import type { RpCriticGateResultV1 } from "./rpCriticGate.js";
 
 // ============ Constants ============
 

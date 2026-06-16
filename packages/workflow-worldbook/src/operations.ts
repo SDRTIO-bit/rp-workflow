@@ -15,8 +15,8 @@ import type {
   DynamicWorldbookStore,
   DynamicWorldbookNodeConfig,
   DynamicWorldbookOperation,
-} from "./types";
-import { deepClone } from "./normalize";
+} from "./types.js";
+import { deepClone } from "./normalize.js";
 
 // ============ Operation Context ============
 

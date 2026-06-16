@@ -10,7 +10,7 @@
  * - Empty tokens removed
  * - Output stable and deterministic
  */
-import { normalizeText } from "./normalize";
+import { normalizeText } from "./normalize.js";
 
 const CJK_RANGE =
   /[\u4e00-\u9fff\u3400-\u4dbf\u{20000}-\u{2a6df}\u{2a700}-\u{2b73f}\u{2b740}-\u{2b81f}\u{2b820}-\u{2ceaf}\u3000-\u303f\uff00-\uffef]/u;

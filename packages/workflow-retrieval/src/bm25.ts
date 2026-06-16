@@ -13,9 +13,9 @@
  *   f(t,d) = weighted frequency of token in document
  *   |d| = weighted document length, avgdl = average weighted doc length
  */
-import { tokenize } from "./tokenizer";
-import type { RetrievalDocumentV1, RetrievalFieldWeights } from "./types";
-import { DEFAULT_FIELD_WEIGHTS } from "./types";
+import { tokenize } from "./tokenizer.js";
+import type { RetrievalDocumentV1, RetrievalFieldWeights } from "./types.js";
+import { DEFAULT_FIELD_WEIGHTS } from "./types.js";
 
 const K1 = 1.2;
 const B = 0.75;

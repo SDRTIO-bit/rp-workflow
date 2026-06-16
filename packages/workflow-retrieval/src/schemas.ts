@@ -7,7 +7,7 @@ import {
   RETRIEVAL_FILTER_SCHEMA,
   RETRIEVAL_HINTS_SCHEMA,
   RETRIEVAL_RESULT_SCHEMA,
-} from "./types";
+} from "./types.js";
 
 export function validateDocumentSchema(data: unknown): boolean {
   if (data === null || typeof data !== "object" || Array.isArray(data)) return false;

@@ -4,7 +4,7 @@
  * Applies RetrievalFilterV1 to a corpus before scoring.
  * All conditions are ANDed; array internals use ANY or ALL as named.
  */
-import type { RetrievalDocumentV1, RetrievalFilterV1 } from "./types";
+import type { RetrievalDocumentV1, RetrievalFilterV1 } from "./types.js";
 
 export function applyFilter(
   entries: RetrievalDocumentV1[],

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPromptAssembly, executeAgentNode } from "./index";
+import { buildPromptAssembly, executeAgentNode } from "./index.js";
 
 const baseInput = {
   nodeId: "agent_a",

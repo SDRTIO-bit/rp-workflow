@@ -3,7 +3,7 @@
  *
  * Converts AgentSessionContextV1 to readable markdown for LLM context injection.
  */
-import type { AgentSessionContextV1 } from "./agentSession";
+import type { AgentSessionContextV1 } from "./agentSession.js";
 
 export function sessionContextToMarkdown(ctx: AgentSessionContextV1): string {
   if (!ctx.turns || ctx.turns.length === 0) return "(No session history.)";

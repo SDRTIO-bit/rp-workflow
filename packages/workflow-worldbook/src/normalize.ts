@@ -4,7 +4,7 @@
  * Validates and normalizes DynamicWorldbookEntryV1 instances.
  * Deep clones input so upstream data is never mutated.
  */
-import type { DynamicWorldbookEntryV1 } from "./types";
+import type { DynamicWorldbookEntryV1 } from "./types.js";
 
 /** Maximum string length for id and content fields. */
 const MAX_STRING_LENGTH = 10_000;

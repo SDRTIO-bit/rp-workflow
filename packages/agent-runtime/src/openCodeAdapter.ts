@@ -1,6 +1,6 @@
-﻿import type { LlmAdapter } from "./types";
+﻿import type { LlmAdapter } from "./types.js";
 
-import { normalizeOpenAiCompatibleUsage } from "./llmUsage";
+import { normalizeOpenAiCompatibleUsage } from "./llmUsage.js";
 
 type OpenCodeAdapterOptions = {
   apiKey: string;

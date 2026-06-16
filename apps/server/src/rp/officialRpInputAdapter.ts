@@ -176,7 +176,31 @@ export function adaptRpInput(
     }
   }
 
-  // 11. Build context
+  // 11. Normalize model overrides for official specialized agents.
+  for (const node of wf.nodes) {
+    if (node.type !== "specializedAgent") continue;
+    const config = { ...(node.config ?? {}) };
+
+    if (request.model?.providerId) {
+      config.providerId = request.model.providerId;
+    } else {
+      delete config.providerId;
+    }
+
+    if (request.model?.model) {
+      config.modelId = request.model.model;
+    } else if (config.modelId === "mock-model") {
+      delete config.modelId;
+    }
+
+    if (typeof request.model?.temperature === "number") {
+      config.temperature = request.model.temperature;
+    }
+
+    node.config = config;
+  }
+
+  // 12. Build context
   const context: WorkflowRunContext = {
     sessionId: request.sessionId,
     // Inject per-run RP scope for worldbook

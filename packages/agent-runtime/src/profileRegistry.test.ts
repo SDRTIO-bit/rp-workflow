@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   InMemorySpecializedAgentProfileRegistry,
   createP1ProfileRegistry,
-} from "./profileRegistry";
+} from "./profileRegistry.js";
 
 describe("InMemorySpecializedAgentProfileRegistry", () => {
   it("returns undefined for missing profiles", () => {

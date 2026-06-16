@@ -132,5 +132,6 @@ function toOfficialObservability(summary: WorkflowRunTelemetrySummaryV1) {
       memoryCurator: summary.byRole.memoryCurator,
     },
     budget: summary.budget,
+    modelUsage: summary.modelUsage,
   };
 }

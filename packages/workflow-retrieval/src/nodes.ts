@@ -2,7 +2,11 @@
  * Retrieval Node Definitions — P-4
  */
 import type { NodeDefinition } from "@awp/workflow-core";
-import { RETRIEVAL_FILTER_SCHEMA, RETRIEVAL_HINTS_SCHEMA, RETRIEVAL_RESULT_SCHEMA } from "./types";
+import {
+  RETRIEVAL_FILTER_SCHEMA,
+  RETRIEVAL_HINTS_SCHEMA,
+  RETRIEVAL_RESULT_SCHEMA,
+} from "./types.js";
 
 function wIn(
   id: string,

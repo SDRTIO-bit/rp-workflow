@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { Hono } from "hono";
-import { createMemoriesRoutes } from "./memories";
+import { createMemoriesRoutes } from "./memories.js";
 
 const tmpDir = join(import.meta.dirname, "__tmp_memories__");
 const memoryFile = join(tmpDir, "memories.json");

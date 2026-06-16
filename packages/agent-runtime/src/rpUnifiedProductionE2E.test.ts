@@ -57,7 +57,7 @@ import {
   agentSessionLoadV1Definition,
   agentSessionCommitV1Definition,
   type AgentSessionStore,
-} from "./index";
+} from "./index.js";
 
 // ---- helpers ----
 function cat() {

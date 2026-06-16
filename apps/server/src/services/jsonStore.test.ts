@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { readEntries, writeEntries, createEntry, updateEntry } from "./jsonStore";
+import { readEntries, writeEntries, createEntry, updateEntry } from "./jsonStore.js";
 
 const tmpDir = join(import.meta.dirname, "__tmp_jsonstore__");
 

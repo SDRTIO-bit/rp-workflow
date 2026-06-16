@@ -5,8 +5,8 @@ import {
   buildWorkflowRunTelemetrySummaryV1,
   validateLlmInvocationTelemetryV1,
   type LlmInvocationTelemetryV1,
-} from "./telemetry";
-import type { WorkflowRunResult } from "./types";
+} from "./telemetry.js";
+import type { WorkflowRunResult } from "./types.js";
 
 const baseInvocation = (): LlmInvocationTelemetryV1 => ({
   invocationId: "inv-1",

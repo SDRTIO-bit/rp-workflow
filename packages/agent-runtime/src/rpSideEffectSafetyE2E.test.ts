@@ -61,7 +61,7 @@ import {
   computeSideEffectDecision,
   type RpRevisionLoopResultV1,
   type AgentSessionStore,
-} from "../src/index";
+} from "../src/index.js";
 
 // ---- helpers ----
 function cat() {

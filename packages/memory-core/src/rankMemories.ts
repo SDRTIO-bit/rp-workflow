@@ -1,4 +1,4 @@
-import type { MemoryEntry } from "./types";
+import type { MemoryEntry } from "./types.js";
 
 const segment = (text: string): Set<string> => {
   const normalized = text.toLowerCase();

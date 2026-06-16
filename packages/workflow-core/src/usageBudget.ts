@@ -1,4 +1,4 @@
-import type { LlmInvocationTelemetryV1 } from "./telemetry";
+import type { LlmInvocationTelemetryV1 } from "./telemetry.js";
 
 export type WorkflowUsageBudgetV1 = {
   maxLlmCalls?: number;

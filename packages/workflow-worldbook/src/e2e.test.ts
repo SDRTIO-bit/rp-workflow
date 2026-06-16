@@ -37,7 +37,7 @@ import {
   type DynamicWorldbookCommandV1,
   type DynamicWorldbookPayloadV1,
   type DynamicWorldbookNodeConfig,
-} from "./index";
+} from "./index.js";
 
 // ============ Helpers ============
 

@@ -7,7 +7,7 @@ import type {
   MemoryWriteOutputV1,
   MemoryQueryFilterV1,
   MemoryDeleteOutputV1,
-} from "./types";
+} from "./types.js";
 
 export class InMemoryWorkflowMemoryStore implements WorkflowMemoryStore {
   private records = new Map<string, Map<string, MemoryRecordV1>>();

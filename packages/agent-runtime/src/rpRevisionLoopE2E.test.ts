@@ -26,7 +26,7 @@ import {
   rpCriticQualityGateNode,
   rpCriticQualityGateExecutor,
   type RpCriticGateResultV1,
-} from "./index";
+} from "./index.js";
 import {
   createRevisionRequest,
   renderRevisionPrompt,
@@ -35,7 +35,7 @@ import {
   buildExhaustedResult,
   validateLoopResult,
   type RpRevisionLoopResultV1,
-} from "./rpRevisionLoop";
+} from "./rpRevisionLoop.js";
 
 // ============ Helpers ============
 

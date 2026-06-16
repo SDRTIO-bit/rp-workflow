@@ -4,9 +4,9 @@
  * Coordinates: filter → score → rank → limit.
  * Supports keyword, bm25, and hybrid strategies.
  */
-import { applyFilter } from "./filters";
-import { computeKeywordScore } from "./scoring";
-import { computeBM25Scores } from "./bm25";
+import { applyFilter } from "./filters.js";
+import { computeKeywordScore } from "./scoring.js";
+import { computeBM25Scores } from "./bm25.js";
 import type {
   RetrievalCorpusV1,
   RetrievalFilterV1,
@@ -15,13 +15,13 @@ import type {
   RetrievalResultV1,
   GenericRetrieverConfig,
   RetrievalFieldWeights,
-} from "./types";
+} from "./types.js";
 import {
   DEFAULT_FIELD_WEIGHTS,
   DEFAULT_PRIORITY_WEIGHT,
   DEFAULT_LIMIT,
   DEFAULT_HYBRID_WEIGHTS,
-} from "./types";
+} from "./types.js";
 
 export function retrieve(
   query: string,

@@ -8,7 +8,7 @@ import type {
   MemoryQueryFilterV1,
   MemoryCorpusOutputV1,
   MemoryDeleteInputV1,
-} from "./types";
+} from "./types.js";
 
 export function createMemoryWriteExecutor(store: WorkflowMemoryStore): NodeExecutor {
   return async (input: NodeExecutionInput) => {

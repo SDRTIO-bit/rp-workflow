@@ -14,12 +14,12 @@ import {
   ProviderRegistry,
   InMemorySpecializedAgentProfileRegistry,
   createP1ProfileRegistry,
-} from "./index";
-import type { LlmAdapter } from "./types";
+} from "./index.js";
+import type { LlmAdapter } from "./types.js";
 
 // Import after mocks to avoid module-level side effects
-import { createGenericAgentExecutor, createSpecializedAgentExecutor } from "./agentKernel";
-import type { AgentKernelServices } from "./agentKernel";
+import { createGenericAgentExecutor, createSpecializedAgentExecutor } from "./agentKernel.js";
+import type { AgentKernelServices } from "./agentKernel.js";
 
 // ============ Helpers ============
 

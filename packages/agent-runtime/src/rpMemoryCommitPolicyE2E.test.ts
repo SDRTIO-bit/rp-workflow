@@ -17,7 +17,7 @@ import {
   rpMemoryCommitPolicyExecutor,
   rpMemoryCommitPolicyNode,
   createP1ProfileRegistry,
-} from "./index";
+} from "./index.js";
 import {
   InMemoryWorkflowMemoryStore,
   memoryWriteNode,

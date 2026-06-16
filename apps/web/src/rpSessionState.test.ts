@@ -67,6 +67,16 @@ describe("RP session state", () => {
           },
           roles: { writer: 1, critic: 1, memoryCurator: 0 },
           budget: { exceeded: false, reasons: [] },
+          modelUsage: [
+            {
+              providerId: "mock",
+              model: "mock-model",
+              calls: 2,
+              inputTokens: 100,
+              outputTokens: 200,
+              totalTokens: 300,
+            },
+          ],
         },
       },
       { now: () => "2026-06-16T00:00:02.000Z" },

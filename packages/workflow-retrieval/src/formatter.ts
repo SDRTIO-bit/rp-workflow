@@ -4,8 +4,8 @@
  * Converts a RetrievalResultV1 into Agent-readable Markdown.
  * Does NOT call LLM. Deterministic output.
  */
-import type { RetrievalResultV1, RetrievalResultMarkdownConfig } from "./types";
-import { DEFAULT_MARKDOWN_CONFIG } from "./types";
+import type { RetrievalResultV1, RetrievalResultMarkdownConfig } from "./types.js";
+import { DEFAULT_MARKDOWN_CONFIG } from "./types.js";
 
 export function formatRetrievalResult(
   result: RetrievalResultV1,

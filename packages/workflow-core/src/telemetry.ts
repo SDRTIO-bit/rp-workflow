@@ -1,4 +1,4 @@
-import type { WorkflowRunResult } from "./types";
+import type { WorkflowRunResult } from "./types.js";
 
 export type LlmTokenUsageV1 =
   | {

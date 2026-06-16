@@ -18,7 +18,7 @@ import {
   createP1ProfileRegistry,
   createGenericAgentExecutor,
   createSpecializedAgentExecutor,
-} from "./index";
+} from "./index.js";
 
 function loadWorkflowJson(filename: string): WorkflowDefinition {
   const path = resolve(__dirname, "../../../data/workflows", filename);

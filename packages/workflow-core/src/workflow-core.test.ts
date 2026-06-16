@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { areTypesCompatible, createExecutionBatches, runWorkflow, validateWorkflow } from "./index";
-import type { NodeCatalog, WorkflowDefinition } from "./types";
+import {
+  areTypesCompatible,
+  createExecutionBatches,
+  runWorkflow,
+  validateWorkflow,
+} from "./index.js";
+import type { NodeCatalog, WorkflowDefinition } from "./types.js";
 
 const simpleWorkflow: WorkflowDefinition = {
   id: "wf_simple",

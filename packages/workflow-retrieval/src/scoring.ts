@@ -5,10 +5,10 @@
  * based on query substring/token matches across title, content, tags,
  * entityIds, and type fields.
  */
-import { tokenize } from "./tokenizer";
-import { normalizeText } from "./normalize";
-import type { RetrievalDocumentV1, RetrievalFieldWeights, RetrievalHintsV1 } from "./types";
-import { DEFAULT_FIELD_WEIGHTS, DEFAULT_PRIORITY_WEIGHT } from "./types";
+import { tokenize } from "./tokenizer.js";
+import { normalizeText } from "./normalize.js";
+import type { RetrievalDocumentV1, RetrievalFieldWeights, RetrievalHintsV1 } from "./types.js";
+import { DEFAULT_FIELD_WEIGHTS, DEFAULT_PRIORITY_WEIGHT } from "./types.js";
 
 export interface KeywordScoreResult {
   score: number;

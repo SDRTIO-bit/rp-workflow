@@ -1,5 +1,5 @@
-import type { WorkflowTelemetrySink } from "./telemetry";
-import type { WorkflowUsageBudgetController } from "./usageBudget";
+import type { WorkflowTelemetrySink } from "./telemetry.js";
+import type { WorkflowUsageBudgetController } from "./usageBudget.js";
 
 export type DataType =
   | "text"

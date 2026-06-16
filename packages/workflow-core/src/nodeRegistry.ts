@@ -8,8 +8,8 @@ import type {
   SchemaCompatResult,
   WirePortDefinition,
   WireType,
-} from "./types";
-import { isLegacyPort, isWirePort } from "./types";
+} from "./types.js";
+import { isLegacyPort, isWirePort } from "./types.js";
 
 // ============ Port Factory Helpers ============
 

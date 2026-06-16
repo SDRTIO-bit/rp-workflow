@@ -5,9 +5,9 @@
  * and resumeWorkflow (restore from checkpoint, skip completed nodes).
  */
 
-import { createExecutionBatches } from "./scheduler";
-import { validateWorkflow } from "./validation";
-import { nodeRegistry } from "./nodeRegistry";
+import { createExecutionBatches } from "./scheduler.js";
+import { validateWorkflow } from "./validation.js";
+import { nodeRegistry } from "./nodeRegistry.js";
 import type {
   NodeCatalog,
   NodeExecutor,
@@ -15,9 +15,9 @@ import type {
   WorkflowDefinition,
   WorkflowRunContext,
   WorkflowRunResult,
-} from "./types";
-import { computeInactiveBranchNodes } from "./runner";
-import type { WorkflowUsageBudgetStateV1 } from "./usageBudget";
+} from "./types.js";
+import { computeInactiveBranchNodes } from "./runner.js";
+import type { WorkflowUsageBudgetStateV1 } from "./usageBudget.js";
 
 // ============ Workflow Hash ============
 

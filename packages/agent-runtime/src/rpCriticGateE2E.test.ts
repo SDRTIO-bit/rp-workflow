@@ -27,7 +27,7 @@ import {
   applyGate,
   DEFAULT_GATE_CONFIG,
   type RpCriticReviewV1,
-} from "./index";
+} from "./index.js";
 
 // ============ Helpers ============
 

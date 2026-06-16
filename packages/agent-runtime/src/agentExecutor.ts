@@ -1,7 +1,7 @@
-import { buildPromptAssembly } from "./promptBuilder";
-import { mockLlmAdapter } from "./mockLlm";
-import type { AgentExecutionInput, AgentExecutionResult, LlmAdapter } from "./types";
-import { coerceLlmTokenUsage } from "./llmUsage";
+import { buildPromptAssembly } from "./promptBuilder.js";
+import { mockLlmAdapter } from "./mockLlm.js";
+import type { AgentExecutionInput, AgentExecutionResult, LlmAdapter } from "./types.js";
+import { coerceLlmTokenUsage } from "./llmUsage.js";
 
 export const executeAgentNode = async (
   input: AgentExecutionInput,

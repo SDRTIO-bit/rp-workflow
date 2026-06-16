@@ -2,7 +2,7 @@
  * Merge Function Tests — P-2
  */
 import { describe, expect, it } from "vitest";
-import { jsonMerge, markdownMerge, textMerge } from "./merge";
+import { jsonMerge, markdownMerge, textMerge } from "./merge.js";
 
 describe("jsonMerge", () => {
   describe("array-concat", () => {

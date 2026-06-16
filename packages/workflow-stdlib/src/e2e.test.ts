@@ -12,7 +12,7 @@ import {
   type WorkflowDefinition,
   type NodeCatalog,
 } from "@awp/workflow-core";
-import { stdlibNodes, createStdlibExecutors } from "./index";
+import { stdlibNodes, createStdlibExecutors } from "./index.js";
 
 function buildCatalog(): NodeCatalog {
   return {

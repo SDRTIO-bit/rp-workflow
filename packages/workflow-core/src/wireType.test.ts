@@ -15,8 +15,8 @@ import {
   nodeRegistry,
   runWorkflow,
   setRuntimeSchemaValidator,
-} from "./index";
-import type { WorkflowDefinition, NodeCatalog } from "./types";
+} from "./index.js";
+import type { WorkflowDefinition, NodeCatalog } from "./types.js";
 
 describe("areWireTypesCompatible", () => {
   it("allows same wire type connections", () => {

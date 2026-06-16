@@ -7,7 +7,7 @@ import {
   MEMORY_WRITE_OUTPUT_SCHEMA,
   MEMORY_QUERY_INPUT_SCHEMA,
   MEMORY_CORPUS_OUTPUT_SCHEMA,
-} from "./types";
+} from "./types.js";
 
 function wIn(
   id: string,

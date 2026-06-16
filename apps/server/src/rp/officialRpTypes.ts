@@ -97,6 +97,14 @@ export type OfficialRpResponseV1 = {
       exceeded: boolean;
       reasons: string[];
     };
+    modelUsage: Array<{
+      providerId?: string;
+      model: string;
+      calls: number;
+      inputTokens?: number;
+      outputTokens?: number;
+      totalTokens?: number;
+    }>;
   };
 
   traceId: string;

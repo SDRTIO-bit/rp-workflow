@@ -3,7 +3,7 @@ import {
   createMockLlmAdapter,
   normalizeOpenAiCompatibleUsage,
   unavailableTokenUsage,
-} from "./llmUsage";
+} from "./llmUsage.js";
 import type { LlmTokenUsageV1 } from "@awp/workflow-core";
 
 describe("P-13A LLM token usage", () => {

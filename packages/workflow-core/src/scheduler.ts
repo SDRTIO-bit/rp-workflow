@@ -1,4 +1,4 @@
-import type { WorkflowDefinition } from "./types";
+import type { WorkflowDefinition } from "./types.js";
 
 export const createExecutionBatches = (workflow: WorkflowDefinition): string[][] => {
   const remaining = new Set(workflow.nodes.map((node) => node.id));

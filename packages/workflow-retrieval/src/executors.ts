@@ -2,8 +2,8 @@
  * Retrieval Executors — P-4
  */
 import type { NodeExecutor, NodeExecutionInput } from "@awp/workflow-core";
-import { retrieve } from "./retrieve";
-import { formatRetrievalResult } from "./formatter";
+import { retrieve } from "./retrieve.js";
+import { formatRetrievalResult } from "./formatter.js";
 import type {
   RetrievalCorpusV1,
   RetrievalFilterV1,
@@ -11,7 +11,7 @@ import type {
   GenericRetrieverConfig,
   RetrievalResultV1,
   RetrievalResultMarkdownConfig,
-} from "./types";
+} from "./types.js";
 
 export const genericRetrieverExecutor: NodeExecutor = async (input: NodeExecutionInput) => {
   const node = input.node;

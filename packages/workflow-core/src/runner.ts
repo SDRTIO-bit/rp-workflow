@@ -1,6 +1,6 @@
-import { createExecutionBatches } from "./scheduler";
-import { validateWorkflow } from "./validation";
-import { nodeRegistry, getRuntimeSchemaValidator } from "./nodeRegistry";
+import { createExecutionBatches } from "./scheduler.js";
+import { validateWorkflow } from "./validation.js";
+import { nodeRegistry, getRuntimeSchemaValidator } from "./nodeRegistry.js";
 import type {
   NodeCatalog,
   NodeExecutor,
@@ -8,9 +8,9 @@ import type {
   WorkflowDefinition,
   WorkflowRunContext,
   WorkflowRunResult,
-} from "./types";
-import { isWirePort } from "./types";
-import { findPortInCatalog, checkSchemaCompatibility } from "./nodeRegistry";
+} from "./types.js";
+import { isWirePort } from "./types.js";
+import { findPortInCatalog, checkSchemaCompatibility } from "./nodeRegistry.js";
 
 export const runWorkflow = async (
   workflow: WorkflowDefinition,

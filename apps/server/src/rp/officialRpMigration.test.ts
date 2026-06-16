@@ -255,6 +255,34 @@ describe("P-12: Input Adapter", () => {
     const decNode = result.workflow.nodes.find((n: any) => n.id === "decision");
     expect(decNode?.config?.onExhausted).toBe("fail");
   });
+
+  it("17a. strips fixture mock-model overrides when request has no model", () => {
+    const result = adaptRpInput(makeRequest(), workflow);
+    const agentNodes = result.workflow.nodes.filter((n: any) => n.type === "specializedAgent");
+
+    expect(agentNodes.length).toBeGreaterThan(0);
+    for (const node of agentNodes) {
+      expect(node.config?.modelId).toBeUndefined();
+      expect(node.config?.providerId).toBeUndefined();
+    }
+  });
+
+  it("17b. applies explicit provider and model overrides to official agents", () => {
+    const result = adaptRpInput(
+      makeRequest({
+        model: { providerId: "deepseek", model: "deepseek-v4-flash", temperature: 0.4 },
+      }),
+      workflow,
+    );
+    const agentNodes = result.workflow.nodes.filter((n: any) => n.type === "specializedAgent");
+
+    expect(agentNodes.length).toBeGreaterThan(0);
+    for (const node of agentNodes) {
+      expect(node.config?.providerId).toBe("deepseek");
+      expect(node.config?.modelId).toBe("deepseek-v4-flash");
+      expect(node.config?.temperature).toBe(0.4);
+    }
+  });
 });
 
 // ── Output Adapter Tests ──

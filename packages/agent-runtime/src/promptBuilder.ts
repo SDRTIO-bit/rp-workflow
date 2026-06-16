@@ -1,5 +1,5 @@
 import type { PluginDefinition } from "@awp/plugin-sdk";
-import type { AgentExecutionInput, PromptAssembly, SkillDefinition } from "./types";
+import type { AgentExecutionInput, PromptAssembly, SkillDefinition } from "./types.js";
 
 const stableStringify = (value: unknown): string => {
   if (Array.isArray(value)) {

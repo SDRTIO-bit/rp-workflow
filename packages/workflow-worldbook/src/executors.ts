@@ -10,9 +10,9 @@ import type {
   DynamicWorldbookCommandV1,
   DynamicWorldbookPayloadV1,
   DynamicWorldbookNodeConfig,
-} from "./types";
-import { executeOperation, buildScopeKey } from "./operations";
-import { normalizeEntries } from "./normalize";
+} from "./types.js";
+import { executeOperation, buildScopeKey } from "./operations.js";
+import { normalizeEntries } from "./normalize.js";
 
 // ============ Executor Services ============
 

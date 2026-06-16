@@ -8,7 +8,7 @@ import type {
   DynamicWorldbookSnapshotV1,
   DynamicWorldbookStore,
   DynamicWorldbookOperationRecordV1,
-} from "./types";
+} from "./types.js";
 
 type StoreScope = `${string}::${string}`;
 

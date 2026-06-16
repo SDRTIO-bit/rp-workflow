@@ -6,9 +6,9 @@ import {
   nodeRegistry,
   resolvePortWireType,
   validatePortSchemaId,
-} from "./nodeRegistry";
-import { isLegacyPort, isWirePort } from "./types";
-import type { NodeCatalog, WorkflowDefinition, WorkflowValidationIssue } from "./types";
+} from "./nodeRegistry.js";
+import { isLegacyPort, isWirePort } from "./types.js";
+import type { NodeCatalog, WorkflowDefinition, WorkflowValidationIssue } from "./types.js";
 
 export const validateWorkflow = (
   workflow: WorkflowDefinition,

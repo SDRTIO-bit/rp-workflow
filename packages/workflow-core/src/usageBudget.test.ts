@@ -7,7 +7,7 @@ import {
   WorkflowUsageBudgetExceededError,
   type LlmInvocationTelemetryV1,
   type WorkflowDefinition,
-} from "./index";
+} from "./index.js";
 
 describe("P-13B workflow usage budget", () => {
   it("accumulates available usage, counts unavailable calls, and deduplicates by invocation id", () => {

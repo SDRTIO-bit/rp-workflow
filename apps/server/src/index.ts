@@ -68,6 +68,7 @@ import {
   type NodeModelConfig,
   type SpecializedAgentProfileRegistry,
   type AgentSessionStore,
+  type LlmAdapter,
 } from "@awp/agent-runtime";
 import type { OfficialRpServiceContext } from "./rp/officialRpTypes.js";
 
@@ -163,8 +164,15 @@ const initPlugins = async () => {
 
   // Initialize RP Runtime
   try {
-    // Build ProviderRegistry (explicit default, no auto-detection from API keys)
-    const registry = new ProviderRegistry(env.defaultProviderId);
+    // Build ProviderRegistry using unified RP provider for RP/default routing.
+    // Fail fast in production if mock provider is selected.
+    if (env.nodeEnv === "production" && env.rpProviderId === "mock") {
+      throw new Error(
+        `Cannot use rpProviderId="mock" in production. Set RP_PROVIDER to a real provider (e.g. "deepseek").`,
+      );
+    }
+
+    const registry = new ProviderRegistry(env.rpProviderId);
 
     // Initialize P-1 Profile Registry (built-in mock profiles)
     profileRegistry = createP1ProfileRegistry();
@@ -210,7 +218,31 @@ const initPlugins = async () => {
     sessionStore = new InMemoryAgentSessionStore();
     console.log("Session Store: in-memory store initialized");
 
-    // Register available providers
+    // Register providers. Mock is always registered when it is the rpProviderId.
+    if (env.rpProviderId === "mock") {
+      registry.register({
+        providerId: "mock",
+        apiKey: "mock-key",
+        baseUrl: "mock://local",
+        defaultModel: env.rpModel,
+        createAdapter: () => createOfficialRpMockAdapter(),
+      });
+    }
+
+    // Register deepseek provider (only when API key is available).
+    if (env.deepseekApiKey) {
+      const deepseekDefaultModel =
+        env.rpProviderId === "deepseek" ? env.rpModel : env.deepseekModel;
+      registry.register({
+        providerId: "deepseek",
+        apiKey: env.deepseekApiKey,
+        baseUrl: "https://api.deepseek.com",
+        defaultModel: deepseekDefaultModel,
+        createAdapter: (apiKey, baseUrl) => createDeepSeekAdapter({ apiKey, baseUrl }),
+      });
+    }
+
+    // Register opencode provider (only when API key is available).
     if (env.openCodeApiKey) {
       registry.register({
         providerId: "opencode",
@@ -220,30 +252,29 @@ const initPlugins = async () => {
         createAdapter: (apiKey, baseUrl) => createOpenCodeAdapter({ apiKey, baseUrl }),
       });
     }
-    if (env.deepseekApiKey) {
-      registry.register({
-        providerId: "deepseek",
-        apiKey: env.deepseekApiKey,
-        baseUrl: "https://api.deepseek.com",
-        defaultModel: env.deepseekModel,
-        createAdapter: (apiKey, baseUrl) => createDeepSeekAdapter({ apiKey, baseUrl }),
-      });
+
+    // Fail fast if the selected rpProviderId is not registered.
+    // This replaces the legacy silent fallback — unified RP routing must have its
+    // provider present.
+    try {
+      registry.getDefault();
+    } catch (err) {
+      throw new Error(
+        `RP provider "${env.rpProviderId}" is not registered. ` +
+          `Set RP_PROVIDER to one of the registered providers (mock, deepseek, opencode) ` +
+          `or configure the required API key.`,
+        { cause: err },
+      );
     }
 
     const router = new LlmRouter(registry);
     llmRegistry = registry;
     llmRouter = router;
 
-    // Create RP LLM bridge through router (no fixed adapter or model).
-    // If no provider is registered, rpLlmAdapter stays undefined → RP Writer
-    // operates in echo_fallback mode.
-    let rpLlmAdapter: ReturnType<typeof createRpLlmBridge> | undefined;
-    try {
-      registry.getDefault(); // throws if default provider not registered
-      rpLlmAdapter = createRpLlmBridge(router);
-    } catch {
-      // No LLM provider configured — RP Writer runs in echo_fallback mode
-    }
+    // Create RP LLM bridge through router.
+    // The default provider is guaranteed to be registered at this point
+    // (fail-fast check above).
+    const rpLlmAdapter = createRpLlmBridge(router);
 
     const rpServices = {
       stores: {
@@ -329,16 +360,20 @@ const start = async () => {
     console.log(`@awp/server running at http://127.0.0.1:${info.port}`);
     console.log(
       llmRouter
-        ? `LLM Router: defaultProvider=${env.defaultProviderId}, providers=[${[...((llmRegistry as ProviderRegistry).getDefault ? "" : "")]}]`
+        ? `LLM Router: rpProvider=${env.rpProviderId}, rpModel=${env.rpModel}`
         : "LLM: no provider configured",
     );
     // Log registered providers
     if (llmRegistry) {
-      // Providers are registered; log them
-      console.log(
-        `LLM providers: ${env.openCodeApiKey ? "opencode " : ""}${env.deepseekApiKey ? "deepseek " : ""}`.trim() ||
-          "none",
-      );
+      const providerIds =
+        [
+          env.rpProviderId === "mock" ? "mock" : "",
+          env.deepseekApiKey ? "deepseek" : "",
+          env.openCodeApiKey ? "opencode" : "",
+        ]
+          .filter(Boolean)
+          .join(" ") || "none";
+      console.log(`LLM providers: ${providerIds}`);
     }
   });
 };
@@ -346,3 +381,51 @@ const start = async () => {
 start();
 
 export { app };
+
+function createOfficialRpMockAdapter(): LlmAdapter {
+  return {
+    provider: "mock",
+    async complete(input) {
+      const prompt = input.prompt;
+      const text = buildOfficialRpMockText(prompt);
+      return {
+        text,
+        tokenUsage: {
+          input: Math.max(1, Math.ceil(prompt.length / 4)),
+          output: Math.max(1, Math.ceil(text.length / 4)),
+        },
+      };
+    },
+  };
+}
+
+function buildOfficialRpMockText(prompt: string): string {
+  if (prompt.includes('"decision": "accept" | "revise"')) {
+    return JSON.stringify({
+      decision: "accept",
+      scores: {
+        continuity: 0.95,
+        characterConsistency: 0.95,
+        playerAgency: 0.95,
+        knowledgeBoundary: 0.95,
+        styleAndFormat: 0.95,
+      },
+      issues: [],
+    });
+  }
+
+  if (prompt.includes("Output a JSON array of memory candidates")) {
+    return "[]";
+  }
+
+  const playerInput = extractLastUserInput(prompt);
+  return `银铃垂下眼，看见你放在面前的钥匙。她没有立刻伸手，只让指尖停在银光边缘，像是在确认这份托付的重量。片刻后，她轻声说：“我会记住这一刻。”${playerInput ? `\n\n你的动作仍留在她的视线里：${playerInput}` : ""}`;
+}
+
+function extractLastUserInput(prompt: string): string {
+  const marker = "## userInput";
+  const index = prompt.lastIndexOf(marker);
+  if (index < 0) return "";
+  const section = prompt.slice(index + marker.length).split("\n## ")[0] ?? "";
+  return section.trim().slice(0, 120);
+}

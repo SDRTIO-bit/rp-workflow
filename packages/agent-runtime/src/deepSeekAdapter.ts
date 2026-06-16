@@ -1,5 +1,5 @@
-import type { LlmAdapter } from "./types";
-import { normalizeOpenAiCompatibleUsage } from "./llmUsage";
+import type { LlmAdapter } from "./types.js";
+import { normalizeOpenAiCompatibleUsage } from "./llmUsage.js";
 
 type DeepSeekAdapterOptions = {
   apiKey: string;

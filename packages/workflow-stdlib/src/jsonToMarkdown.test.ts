@@ -2,7 +2,7 @@
  * JSON → Markdown Renderer Tests — P-2 (in stdlib)
  */
 import { describe, expect, it } from "vitest";
-import { renderJsonToMarkdown } from "./jsonToMarkdown";
+import { renderJsonToMarkdown } from "./jsonToMarkdown.js";
 
 describe("renderJsonToMarkdown", () => {
   it("renders null and undefined as (empty)", () => {

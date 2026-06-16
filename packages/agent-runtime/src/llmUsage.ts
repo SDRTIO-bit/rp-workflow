@@ -1,5 +1,5 @@
-import { hashText } from "./promptBuilder";
-import type { LlmAdapter, LlmCompletionInput, LlmCompletionResult } from "./types";
+import { hashText } from "./promptBuilder.js";
+import type { LlmAdapter, LlmCompletionInput, LlmCompletionResult } from "./types.js";
 import type { LlmTokenUsageV1 } from "@awp/workflow-core";
 
 type OpenAiCompatibleUsage = {

@@ -50,7 +50,7 @@ import {
   type RetrievalDocumentV1,
   type GenericRetrieverConfig,
   type RetrievalResultV1,
-} from "./index";
+} from "./index.js";
 
 // ============ Helpers ============
 

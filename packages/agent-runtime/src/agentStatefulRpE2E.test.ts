@@ -22,7 +22,7 @@ import {
   sessionContextToMarkdown,
   type AgentSessionStore,
   type AgentSessionKeyV1,
-} from "./index";
+} from "./index.js";
 import {
   InMemoryDynamicWorldbookStore,
   createDynamicWorldbookExecutor,

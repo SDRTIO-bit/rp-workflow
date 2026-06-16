@@ -39,7 +39,7 @@ import {
   validateRecordSchema,
   type WorkflowMemoryStore,
   type MemoryRecordV1,
-} from "./index";
+} from "./index.js";
 
 // ============ Helpers ============
 

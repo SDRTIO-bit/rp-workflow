@@ -6,10 +6,10 @@
  */
 
 import type { NodeExecutor, ResourceResolver } from "@awp/workflow-core";
-import { jsonMerge, type JsonMergeMode } from "./merge";
-import { markdownMerge, textMerge } from "./merge";
-import { renderJsonToMarkdown } from "./jsonToMarkdown";
-import { markdownToText } from "./markdownToText";
+import { jsonMerge, type JsonMergeMode } from "./merge.js";
+import { markdownMerge, textMerge } from "./merge.js";
+import { renderJsonToMarkdown } from "./jsonToMarkdown.js";
+import { markdownToText } from "./markdownToText.js";
 
 // ============ Merge Executors ============
 

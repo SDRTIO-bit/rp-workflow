@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateNodePluginManifest, validateSkillPluginManifest } from "./index";
+import { validateNodePluginManifest, validateSkillPluginManifest } from "./index.js";
 
 describe("plugin sdk", () => {
   it("accepts a minimal node plugin manifest", () => {

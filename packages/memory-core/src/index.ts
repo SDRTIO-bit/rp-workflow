@@ -1,2 +1,2 @@
-export * from "./rankMemories";
-export * from "./types";
+export * from "./rankMemories.js";
+export * from "./types.js";

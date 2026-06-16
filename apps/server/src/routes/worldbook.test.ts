@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { mkdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { Hono } from "hono";
-import { createWorldbookRoutes } from "./worldbook";
+import { createWorldbookRoutes } from "./worldbook.js";
 
 const tmpDir = join(import.meta.dirname, "__tmp_worldbook__");
 const worldbookFile = join(tmpDir, "worldbook.json");

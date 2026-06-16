@@ -2,7 +2,7 @@
  * Markdown → Text Converter Tests — P-2
  */
 import { describe, expect, it } from "vitest";
-import { markdownToText } from "./markdownToText";
+import { markdownToText } from "./markdownToText.js";
 
 describe("markdownToText", () => {
   it("strips headers", () => {

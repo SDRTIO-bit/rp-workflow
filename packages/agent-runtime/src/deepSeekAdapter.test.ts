@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createDeepSeekAdapter } from "./deepSeekAdapter";
+import { createDeepSeekAdapter } from "./deepSeekAdapter.js";
 
 describe("deepSeek adapter", () => {
   it("calls the DeepSeek chat completion endpoint with OpenAI-compatible messages", async () => {

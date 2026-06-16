@@ -12,7 +12,7 @@ import type {
   MemoryWriteOutputV1,
   MemoryQueryFilterV1,
   MemoryDeleteOutputV1,
-} from "./types";
+} from "./types.js";
 
 interface FileData {
   version: 1;

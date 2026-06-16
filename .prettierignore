@@ -6,4 +6,6 @@ pnpm-lock.yaml
 artifacts
 data
 apps/data
+.agents
+plugins/codex-budget-router
 *.tsbuildinfo
