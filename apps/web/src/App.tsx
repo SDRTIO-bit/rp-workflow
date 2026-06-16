@@ -53,7 +53,24 @@ import {
   type PluginSummary,
   type SkillSummary,
 } from "./runWorkflowClient";
+import {
+  runOfficialRpTurn,
+  type OfficialRpResponseV1,
+  type RpWebErrorV1,
+} from "./officialRpClient";
 import { createLocalNodeExecutors } from "./runtime/localNodeExecutors";
+import {
+  buildOfficialRpRequest,
+  createInitialRpSession,
+  markRpTurnCanceled,
+  markRpTurnFailed,
+  markRpTurnSucceeded,
+  prepareRpTurn,
+  resetRpSession,
+  restoreRpSession,
+  serializeRpSession,
+  type RpChatSessionV1,
+} from "./rpSessionState";
 import {
   emptyWorkflow,
   samplePlugins,
@@ -355,6 +372,65 @@ const getCategoryLabel = (category: string, language: Language) =>
   nodeCategories[category]?.[language] ?? category;
 
 const stringifySnapshot = (value: unknown) => JSON.stringify(value ?? {}, null, 2);
+const rpSessionStorageKey = "awp:official-rp-session:v1";
+
+const loadRpSessionFromBrowser = () => {
+  if (typeof window === "undefined") {
+    return createInitialRpSession();
+  }
+  try {
+    const stored = window.sessionStorage.getItem(rpSessionStorageKey);
+    return restoreRpSession(stored ? JSON.parse(stored) : undefined);
+  } catch {
+    return createInitialRpSession();
+  }
+};
+
+const describeRpQuality = (quality: OfficialRpResponseV1["quality"]): string => {
+  if (!quality) {
+    return "Quality unavailable";
+  }
+  if (quality.exhausted) {
+    return "Quality: revision limit reached";
+  }
+  if (quality.accepted && quality.revisionApplied) {
+    return "Quality: accepted after revision";
+  }
+  if (quality.accepted) {
+    return "Quality: accepted";
+  }
+  return "Quality: not accepted";
+};
+
+const formatRpUsage = (observability: OfficialRpResponseV1["observability"]): string => {
+  if (!observability) {
+    return "Usage unavailable";
+  }
+  const calls = `${observability.llmCalls} model calls`;
+  const latency = `${(observability.totalLatencyMs / 1000).toFixed(1)}s`;
+  const usage = observability.usage;
+  if (usage.totalTokens === undefined || usage.unavailableInvocationCount > 0) {
+    return `${calls} · ${latency} · Token usage incomplete`;
+  }
+  return `${calls} · ${latency} · ${usage.totalTokens.toLocaleString()} tokens`;
+};
+
+const toRpWebError = (error: unknown): RpWebErrorV1 => {
+  if (
+    error &&
+    typeof error === "object" &&
+    "kind" in error &&
+    "message" in error &&
+    "retryable" in error
+  ) {
+    return error as RpWebErrorV1;
+  }
+  return {
+    kind: "unknown",
+    message: "Official RP request failed.",
+    retryable: true,
+  };
+};
 
 export function App() {
   const [workflow, setWorkflow] = useState<WorkflowDefinition>(emptyWorkflow);
@@ -385,7 +461,10 @@ export function App() {
   const [skillSummaries, setSkillSummaries] = useState<SkillSummary[]>([]);
   const [showPluginPanel, setShowPluginPanel] = useState(false);
   const [pluginPanelError, setPluginPanelError] = useState("");
+  const [rpSession, setRpSession] = useState<RpChatSessionV1>(loadRpSessionFromBrowser);
+  const [rpInput, setRpInput] = useState("");
   const dragRef = useRef<{ id: string; offset: Point } | undefined>(undefined);
+  const rpAbortRef = useRef<AbortController | undefined>(undefined);
   const panRef = useRef<
     | {
         pointerId: number;
@@ -580,6 +659,79 @@ export function App() {
       window.removeEventListener("keyup", onKeyUp);
     };
   }, []);
+
+  useEffect(() => {
+    window.sessionStorage.setItem(
+      rpSessionStorageKey,
+      JSON.stringify(serializeRpSession(rpSession)),
+    );
+  }, [rpSession]);
+
+  const updateRpWorldbookRef = (resourceRef: string) => {
+    setRpSession((current) => ({
+      ...current,
+      worldbookResourceRef: resourceRef.trim(),
+      lastError: undefined,
+    }));
+  };
+
+  const submitRpInput = async (input: string) => {
+    if (rpSession.status === "sending") {
+      return;
+    }
+
+    const prepared = prepareRpTurn(rpSession, input);
+    if (!prepared.pendingTurn || prepared === rpSession) {
+      return;
+    }
+    if (!prepared.worldbookResourceRef.trim()) {
+      setRpSession(
+        markRpTurnFailed(prepared, {
+          kind: "validation",
+          message: "Choose a worldbook resource before sending.",
+          retryable: false,
+        }),
+      );
+      return;
+    }
+
+    setRpSession(prepared);
+    const controller = new AbortController();
+    rpAbortRef.current = controller;
+
+    try {
+      const response = await runOfficialRpTurn(buildOfficialRpRequest(prepared), {
+        signal: controller.signal,
+      });
+      setRpSession((current) => markRpTurnSucceeded(current, response));
+      setRpInput("");
+    } catch (error) {
+      setRpSession((current) => markRpTurnFailed(current, toRpWebError(error)));
+    } finally {
+      rpAbortRef.current = undefined;
+    }
+  };
+
+  const retryRpTurn = async () => {
+    if (!rpSession.pendingTurn) {
+      return;
+    }
+    await submitRpInput(rpSession.pendingTurn.userInput);
+  };
+
+  const cancelRpTurn = () => {
+    rpAbortRef.current?.abort();
+    setRpSession((current) => markRpTurnCanceled(current));
+  };
+
+  const startNewRpSession = () => {
+    const confirmed = window.confirm("Start a new RP conversation?");
+    if (!confirmed) {
+      return;
+    }
+    setRpSession((current) => resetRpSession(current));
+    setRpInput("");
+  };
 
   const getScreenPoint = (event: ReactPointerEvent | ReactWheelEvent): Point => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -1588,6 +1740,108 @@ export function App() {
           {text.run}
         </button>
       </header>
+
+      <section className="rp-panel panel" aria-label="Official RP">
+        <div className="rp-header">
+          <div>
+            <h2>Official RP</h2>
+            <span className="rp-session-meta">
+              {rpSession.sessionId} · next{" "}
+              {`turn-${String(rpSession.nextTurnNumber).padStart(4, "0")}`}
+            </span>
+          </div>
+          <div className="rp-actions">
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => {
+                void submitRpInput("Continue");
+              }}
+              disabled={rpSession.status === "sending"}
+            >
+              Continue
+            </button>
+            <button className="secondary-button" type="button" onClick={startNewRpSession}>
+              New conversation
+            </button>
+          </div>
+        </div>
+
+        <div className="rp-body">
+          <label className="rp-worldbook">
+            <span>Worldbook</span>
+            <input
+              value={rpSession.worldbookResourceRef}
+              onChange={(event) => updateRpWorldbookRef(event.target.value)}
+            />
+          </label>
+
+          <div className="rp-chat-log" aria-live="polite">
+            {rpSession.messages.length === 0 ? (
+              <p className="muted">No RP turns yet.</p>
+            ) : (
+              rpSession.messages.map((message) => (
+                <article key={message.id} className={`rp-message rp-message-${message.role}`}>
+                  <span>{message.role}</span>
+                  <p>{message.text}</p>
+                </article>
+              ))
+            )}
+          </div>
+
+          <form
+            className="rp-compose"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submitRpInput(rpInput);
+            }}
+          >
+            <textarea
+              value={rpInput}
+              onChange={(event) => setRpInput(event.target.value)}
+              disabled={rpSession.status === "sending"}
+              rows={3}
+            />
+            <div className="rp-compose-actions">
+              {rpSession.status === "sending" ? (
+                <button className="secondary-button" type="button" onClick={cancelRpTurn}>
+                  Cancel
+                </button>
+              ) : null}
+              {rpSession.status === "error" && rpSession.lastError?.retryable ? (
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => {
+                    void retryRpTurn();
+                  }}
+                >
+                  Retry
+                </button>
+              ) : null}
+              <button
+                className="primary-button"
+                type="submit"
+                disabled={rpSession.status === "sending" || !rpInput.trim()}
+              >
+                Send
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div className="rp-status-row">
+          <span>{describeRpQuality(rpSession.lastQuality)}</span>
+          <span>{formatRpUsage(rpSession.lastObservability)}</span>
+          {rpSession.lastObservability?.budget.exceeded ? <span>Budget exceeded</span> : null}
+          {rpSession.lastError ? (
+            <span className="rp-error">
+              {rpSession.lastError.message}
+              {rpSession.lastError.traceId ? ` (${rpSession.lastError.traceId})` : ""}
+            </span>
+          ) : null}
+        </div>
+      </section>
 
       <section className="workspace">
         <aside className="palette panel">

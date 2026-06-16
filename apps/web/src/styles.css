@@ -46,7 +46,7 @@ select {
   background: var(--app-bg);
   color: var(--text);
   display: grid;
-  grid-template-rows: 48px minmax(420px, 1fr) 130px;
+  grid-template-rows: 48px auto minmax(360px, 1fr) 130px;
   height: 100vh;
   min-width: 0;
   isolation: isolate;
@@ -194,6 +194,145 @@ select {
   display: grid;
   grid-template-columns: 170px minmax(0, 1fr) 240px;
   min-height: 0;
+}
+
+.rp-panel {
+  border-width: 0 0 1px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: minmax(190px, 260px) minmax(0, 1fr) minmax(220px, 320px);
+  gap: 12px;
+  align-items: stretch;
+  min-height: 150px;
+  max-height: 220px;
+  overflow: hidden;
+}
+
+.rp-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.rp-header h2 {
+  margin: 0 0 6px;
+}
+
+.rp-session-meta {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.rp-actions,
+.rp-compose-actions,
+.rp-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.rp-body {
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) minmax(220px, 320px);
+  gap: 10px;
+  min-width: 0;
+}
+
+.rp-worldbook {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  color: var(--label);
+  font-size: 12px;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.rp-worldbook input {
+  width: 100%;
+}
+
+.rp-chat-log {
+  min-height: 112px;
+  max-height: 178px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--canvas-bg) 76%, transparent);
+  padding: 8px;
+}
+
+.rp-message {
+  display: grid;
+  gap: 4px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--panel-bg) 82%, transparent);
+}
+
+.rp-message + .rp-message {
+  margin-top: 7px;
+}
+
+.rp-message span {
+  color: var(--label);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.rp-message p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+
+.rp-message-assistant {
+  border-left: 3px solid var(--ok);
+}
+
+.rp-message-user {
+  border-left: 3px solid #94a3b8;
+}
+
+.rp-compose {
+  display: grid;
+  grid-template-rows: minmax(72px, 1fr) auto;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rp-compose textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.rp-status-row {
+  align-content: start;
+  align-items: flex-start;
+  color: var(--label);
+  font-size: 12px;
+}
+
+.rp-status-row span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: var(--control-bg);
+}
+
+.rp-status-row .rp-error {
+  border-color: #b91c1c;
+  color: #fca5a5;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
 }
 
 .panel {
@@ -1178,7 +1317,10 @@ code {
 
 @media (max-width: 800px) {
   .app-shell {
-    grid-template-rows: 48px minmax(400px, 1fr) 220px;
+    grid-template-rows: 48px auto minmax(400px, 1fr) 220px;
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
   }
 
   .topbar {
@@ -1205,6 +1347,38 @@ code {
 
   .primary-button span {
     font-size: 16px;
+  }
+
+  .rp-panel {
+    display: flex;
+    flex-direction: column;
+    max-height: none;
+    overflow: hidden;
+  }
+
+  .rp-body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rp-chat-log {
+    min-height: 86px;
+    max-height: 130px;
+  }
+
+  .rp-compose textarea {
+    min-height: 72px;
+  }
+
+  .rp-panel .secondary-button {
+    display: inline-flex;
+  }
+
+  .rp-panel .primary-button {
+    position: static;
+    width: auto;
+    padding: 0 12px;
+    font-size: 13px;
   }
 
   .workspace {
