@@ -1353,12 +1353,16 @@ code {
     display: flex;
     flex-direction: column;
     max-height: none;
-    overflow: hidden;
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+    border-bottom: 1px solid var(--border);
   }
 
   .rp-body {
     display: flex;
     flex-direction: column;
+    gap: 8px;
   }
 
   .rp-chat-log {
@@ -1366,8 +1370,23 @@ code {
     max-height: 130px;
   }
 
+  .rp-compose {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
   .rp-compose textarea {
     min-height: 72px;
+  }
+
+  .rp-compose-actions {
+    flex-wrap: nowrap;
+  }
+
+  .rp-status-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .rp-panel .secondary-button {
@@ -1382,8 +1401,10 @@ code {
   }
 
   .workspace {
-    grid-template-columns: 180px minmax(500px, 1fr);
+    grid-template-columns: 180px minmax(0, 1fr);
     overflow-x: auto;
+    position: relative;
+    z-index: 0;
   }
 
   .inspector {

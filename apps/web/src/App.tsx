@@ -55,7 +55,6 @@ import {
 } from "./runWorkflowClient";
 import {
   runOfficialRpTurn,
-  type OfficialRpResponseV1,
   type RpWebErrorV1,
 } from "./officialRpClient";
 import { createLocalNodeExecutors } from "./runtime/localNodeExecutors";
@@ -71,6 +70,7 @@ import {
   serializeRpSession,
   type RpChatSessionV1,
 } from "./rpSessionState";
+import { describeRpQuality, formatRpUsage } from "./rpDisplayHelpers";
 import {
   emptyWorkflow,
   samplePlugins,
@@ -386,34 +386,7 @@ const loadRpSessionFromBrowser = () => {
   }
 };
 
-const describeRpQuality = (quality: OfficialRpResponseV1["quality"]): string => {
-  if (!quality) {
-    return "Quality unavailable";
-  }
-  if (quality.exhausted) {
-    return "Quality: revision limit reached";
-  }
-  if (quality.accepted && quality.revisionApplied) {
-    return "Quality: accepted after revision";
-  }
-  if (quality.accepted) {
-    return "Quality: accepted";
-  }
-  return "Quality: not accepted";
-};
-
-const formatRpUsage = (observability: OfficialRpResponseV1["observability"]): string => {
-  if (!observability) {
-    return "Usage unavailable";
-  }
-  const calls = `${observability.llmCalls} model calls`;
-  const latency = `${(observability.totalLatencyMs / 1000).toFixed(1)}s`;
-  const usage = observability.usage;
-  if (usage.totalTokens === undefined || usage.unavailableInvocationCount > 0) {
-    return `${calls} · ${latency} · Token usage incomplete`;
-  }
-  return `${calls} · ${latency} · ${usage.totalTokens.toLocaleString()} tokens`;
-};
+// describeRpQuality 和 formatRpUsage 已提取到 rpDisplayHelpers.ts
 
 const toRpWebError = (error: unknown): RpWebErrorV1 => {
   if (
