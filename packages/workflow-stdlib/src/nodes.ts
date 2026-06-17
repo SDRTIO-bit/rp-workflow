@@ -346,6 +346,41 @@ export const stdlibNodes: NodeCatalog = {
     ports: [wOut("text", "Text", "text")],
   },
 
+  // ============ P-15.2: Text Novelty Check ============
+
+  textNoveltyCheck: {
+    type: "textNoveltyCheck",
+    label: "Text Novelty Check",
+    labelI18n: { zh: "文本新颖度检查", en: "Text Novelty Check" },
+    category: "utility",
+    description:
+      "Deterministic exact-duplicate detector. Compares current text against a reference after normalization. No LLM.",
+    descriptionI18n: {
+      zh: "确定性精确重复检测器。归一化后比较当前文本与参考文本。不调用 LLM。",
+      en: "Deterministic exact-duplicate detector. Compares current text against a reference after normalization. No LLM.",
+    },
+    color: "#f59e0b",
+    panelLayout: "generic",
+    defaultConfig: { minNormalizedLength: 64 },
+    configFields: [
+      {
+        key: "minNormalizedLength",
+        label: { zh: "最小归一化长度", en: "Min Normalized Length" },
+        kind: "number",
+        min: 0,
+        help: {
+          zh: "归一化后文本长度低于此值时跳过检查",
+          en: "Skip check when normalized text length is below this value",
+        },
+      },
+    ],
+    ports: [
+      wIn("current", "Current", "text", true),
+      wIn("reference", "Reference", "text", true),
+      wOut("report", "Report", "json"),
+    ],
+  },
+
   // ============ P-11.1: Inspect Output (formalized) ============
 
   inspectOutput: {

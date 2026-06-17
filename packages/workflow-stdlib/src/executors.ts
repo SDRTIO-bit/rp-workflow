@@ -10,6 +10,7 @@ import { jsonMerge, type JsonMergeMode } from "./merge.js";
 import { markdownMerge, textMerge } from "./merge.js";
 import { renderJsonToMarkdown } from "./jsonToMarkdown.js";
 import { markdownToText } from "./markdownToText.js";
+import { checkNovelty, DEFAULT_NOVELTY_CONFIG } from "./textNoveltyCheck.js";
 
 // ============ Merge Executors ============
 
@@ -271,6 +272,50 @@ export const parseJsonExecutor: NodeExecutor = async ({ inputs }) => {
   }
 };
 
+// ============ P-15.2: Text Novelty Check ============
+
+export const textNoveltyCheckExecutor: NodeExecutor = async ({ node, inputs }) => {
+  const currentRaw = inputs.current;
+  const referenceRaw = inputs.reference;
+
+  // Type validation: must be strings
+  if (typeof currentRaw !== "string") {
+    throw new Error(
+      `textNoveltyCheck at "${node.id}": current input must be a string, got ${typeof currentRaw}`,
+    );
+  }
+  if (typeof referenceRaw !== "string") {
+    throw new Error(
+      `textNoveltyCheck at "${node.id}": reference input must be a string, got ${typeof referenceRaw}`,
+    );
+  }
+
+  const nodeConfig = node.config as Record<string, unknown> | undefined;
+  const config = {
+    minNormalizedLength:
+      typeof nodeConfig?.minNormalizedLength === "number"
+        ? nodeConfig.minNormalizedLength
+        : DEFAULT_NOVELTY_CONFIG.minNormalizedLength,
+  };
+
+  if (config.minNormalizedLength < 0) {
+    throw new Error(
+      `textNoveltyCheck at "${node.id}": minNormalizedLength must be >= 0, got ${config.minNormalizedLength}`,
+    );
+  }
+
+  const report = checkNovelty(currentRaw, referenceRaw, config);
+
+  return {
+    outputs: { report },
+    metadata: {
+      evaluated: report.evaluated,
+      exactDuplicate: report.exactDuplicate,
+      reason: report.reason,
+    },
+  };
+};
+
 // ============ Executor Registry ============
 
 /**
@@ -289,5 +334,6 @@ export function createStdlibExecutors(resolver?: ResourceResolver): Record<strin
     finalDraftSelector: finalDraftSelectorExecutor,
     buildSessionDelta: buildSessionDeltaExecutor,
     parseJson: parseJsonExecutor,
+    textNoveltyCheck: textNoveltyCheckExecutor,
   };
 }
