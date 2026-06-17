@@ -150,4 +150,20 @@ describe("resolveEnv", () => {
     process.env.RP_MODEL = MOCK_MODEL;
     expect(() => resolveEnv()).toThrow(/cannot use model "mock-model"/);
   });
+
+  it("defaults agent session store to in-memory", () => {
+    delete process.env.AGENT_SESSION_STORE;
+    delete process.env.AGENT_SESSION_DIR;
+    const env = resolveEnv();
+    expect(env.agentSessionStore).toBe("in-memory");
+    expect(env.agentSessionDir).toBe("");
+  });
+
+  it("reads file agent session store settings", () => {
+    process.env.AGENT_SESSION_STORE = "file";
+    process.env.AGENT_SESSION_DIR = "/tmp/awp-agent-sessions";
+    const env = resolveEnv();
+    expect(env.agentSessionStore).toBe("file");
+    expect(env.agentSessionDir).toBe("/tmp/awp-agent-sessions");
+  });
 });

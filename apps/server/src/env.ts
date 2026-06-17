@@ -40,6 +40,10 @@ export type Env = {
   workflowMemoryStore: "in-memory" | "file";
   /** Directory for file-based memory store. Required when workflowMemoryStore is "file". */
   workflowMemoryDir: string;
+  /** Agent session store backend: "in-memory" (default) or "file". */
+  agentSessionStore: "in-memory" | "file";
+  /** Directory for file-based agent session store. Required when agentSessionStore is "file". */
+  agentSessionDir: string;
   /** Official RP workflow version: "unified-v1" (default) or "legacy". */
   rpWorkflowVersion: "unified-v1" | "legacy";
 };
@@ -157,6 +161,8 @@ export const resolveEnv = (): Env => {
     rpMockOptIn,
     workflowMemoryStore: (process.env.WORKFLOW_MEMORY_STORE as "in-memory" | "file") ?? "in-memory",
     workflowMemoryDir: process.env.WORKFLOW_MEMORY_DIR ?? "",
+    agentSessionStore: (process.env.AGENT_SESSION_STORE as "in-memory" | "file") ?? "in-memory",
+    agentSessionDir: process.env.AGENT_SESSION_DIR ?? "",
     rpWorkflowVersion:
       (process.env.RP_WORKFLOW_VERSION as "unified-v1" | "legacy" | undefined) ?? "unified-v1",
   };

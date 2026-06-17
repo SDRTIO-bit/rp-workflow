@@ -23,12 +23,15 @@
  * Hono app in-process via `bootstrap()` and uses Hono's built-in
  * `app.request()` to make real HTTP-shaped requests against it.
  */
-import { describe, expect, it, beforeAll } from "vitest";
-import { resolve } from "node:path";
+import { describe, expect, it, beforeAll, afterEach } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { bootstrap } from "../composition.js";
 import type { ServerComposition } from "../composition.js";
 import type { OfficialRpRequestV1, OfficialRpResponseV1 } from "./officialRpTypes.js";
 import type { Env } from "../env.js";
+import { FileAgentSessionStore } from "@awp/agent-runtime";
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -56,6 +59,8 @@ function makeTestEnv(overrides: Partial<Env> = {}): Env {
     rpMockOptIn: true,
     workflowMemoryStore: "in-memory",
     workflowMemoryDir: "",
+    agentSessionStore: "in-memory",
+    agentSessionDir: "",
     rpWorkflowVersion: "unified-v1",
     ...overrides,
   };
@@ -89,15 +94,33 @@ async function postRp(
 
 describe("P-14: Official RP two-turn E2E (production composition root)", () => {
   let composition: ServerComposition;
+  let tempDirs: string[] = [];
 
   beforeAll(async () => {
     composition = await bootstrap(makeTestEnv());
   }, 30_000);
 
+  afterEach(() => {
+    for (const dir of tempDirs) {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    tempDirs = [];
+  });
+
   it("boots the production composition root with explicit mock provider", () => {
     expect(composition.llm.providerId).toBe("mock");
     expect(composition.llm.model).toBe("mock-model");
     expect(composition.llm.registeredProviders).toContain("mock");
+  });
+
+  it("uses a file-backed agent session store when configured", async () => {
+    const sessionDir = mkdtempSync(join(tmpdir(), "awp-server-agent-session-"));
+    tempDirs.push(sessionDir);
+    const fileComposition = await bootstrap(
+      makeTestEnv({ agentSessionStore: "file", agentSessionDir: sessionDir }),
+    );
+
+    expect(fileComposition.getWorkflowRuntime().sessionStore).toBeInstanceOf(FileAgentSessionStore);
   });
 
   it("round 1 returns HTTP 200 with a unified-v1 narrative and observability", async () => {
@@ -127,6 +150,26 @@ describe("P-14: Official RP two-turn E2E (production composition root)", () => {
     expect(data.observability?.llmCalls).toBeGreaterThan(0);
     expect(data.observability?.totalLatencyMs).toBeGreaterThanOrEqual(0);
     expect(data.observability?.roles.writer).toBeGreaterThan(0);
+  });
+
+  it("seeds the session worldbook scope from the data worldbook file", async () => {
+    const seededComposition = await bootstrap(makeTestEnv());
+    const request = buildRequest({
+      sessionId: "session-worldbook-seed",
+      turnId: "turn-worldbook-seed",
+      userInput: "广播和旧车站有什么关系？",
+    });
+    const { status, data } = await postRp(seededComposition.app, request);
+
+    expect(status).toBe(200);
+    if ("error" in data) throw new Error(`Unexpected error response: ${data.error}`);
+
+    const snapshot = await seededComposition
+      .getRpServiceContext()
+      .worldbookStore.load("session:session-worldbook-seed:worldbook:default", "worldbook:default");
+
+    expect(snapshot.entries.length).toBeGreaterThan(0);
+    expect(snapshot.entries.map((entry) => entry.id)).toContain("world_rp_station_broadcast");
   });
 
   it("round 2 with 继续 reuses the same session and produces a fresh turnId", async () => {

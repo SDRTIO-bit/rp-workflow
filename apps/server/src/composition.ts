@@ -85,10 +85,12 @@ import {
   rpSideEffectDecisionNode,
   failWorkflowNode,
   InMemoryAgentSessionStore,
+  FileAgentSessionStore,
   agentSessionLoadV1Definition,
   agentSessionCommitV1Definition,
   type NodeModelConfig,
   type LlmAdapter,
+  type AgentSessionStore,
 } from "@awp/agent-runtime";
 import type { OfficialRpServiceContext } from "./rp/officialRpTypes.js";
 
@@ -148,7 +150,7 @@ export async function bootstrap(
   const profileRegistry = createP1ProfileRegistry();
   const worldbookStore: DynamicWorldbookStore = new InMemoryDynamicWorldbookStore();
   let memoryStore: WorkflowMemoryStore | undefined;
-  const sessionStore = new InMemoryAgentSessionStore();
+  let sessionStore: AgentSessionStore | undefined;
 
   const getPluginRuntime = (): PluginRuntime => ({
     pluginState,
@@ -178,7 +180,7 @@ export async function bootstrap(
     profileRegistry,
     worldbookStore,
     memoryStore,
-    sessionStore,
+    sessionStore: sessionStore!,
   });
   const getLlmConfig = (): LlmConfig => ({
     llmRouter: llmRouter!,
@@ -188,7 +190,7 @@ export async function bootstrap(
     serverWorkflowVersion: env.rpWorkflowVersion,
     llmRouter: llmRouter!,
     profileRegistry,
-    sessionStore,
+    sessionStore: sessionStore!,
     memoryStore: memoryStore!,
     worldbookStore,
     runtimeNodeCatalog,
@@ -286,7 +288,24 @@ export async function bootstrap(
     );
   }
 
-  console.log("Session Store: in-memory store initialized");
+  if (env.agentSessionStore === "file") {
+    if (!env.agentSessionDir) {
+      throw new Error(
+        "AGENT_SESSION_STORE=file requires AGENT_SESSION_DIR to be set to a non-empty directory path.",
+      );
+    }
+    const sessionDir = resolve(env.agentSessionDir);
+    const sessionFilePath = join(sessionDir, "agent-sessions.json");
+    sessionStore = new FileAgentSessionStore(sessionFilePath);
+    console.log(`Session Store: file store initialized at ${sessionFilePath}`);
+  } else if (env.agentSessionStore === "in-memory") {
+    sessionStore = new InMemoryAgentSessionStore();
+    console.log("Session Store: in-memory store initialized");
+  } else {
+    throw new Error(
+      `Unknown AGENT_SESSION_STORE: "${env.agentSessionStore}". Supported: in-memory, file`,
+    );
+  }
 
   if (env.rpProviderId === "mock") {
     registry.register({
