@@ -35,6 +35,37 @@ const requestBody = (input: {
     ...(input.stream ? { stream_options: { include_usage: true } } : {}),
   });
 
+async function requestWithTransportRetry(
+  request: typeof fetch,
+  url: string,
+  init: RequestInit,
+): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await request(url, init);
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableTransportError(error) || attempt === 3) {
+        throw error;
+      }
+      await sleep(250 * attempt);
+    }
+  }
+  throw lastError;
+}
+
+function isRetryableTransportError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return (
+    error instanceof TypeError || /fetch failed|network|ECONNRESET|ETIMEDOUT/i.test(error.message)
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export const createDeepSeekAdapter = (options: DeepSeekAdapterOptions): LlmAdapter => {
   const request = options.fetch ?? globalThis.fetch;
   const baseUrl = options.baseUrl ?? "https://api.deepseek.com";
@@ -46,7 +77,7 @@ export const createDeepSeekAdapter = (options: DeepSeekAdapterOptions): LlmAdapt
   return {
     provider: "deepseek",
     async complete(input) {
-      const response = await request(`${baseUrl}/chat/completions`, {
+      const response = await requestWithTransportRetry(request, `${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${options.apiKey}`,
@@ -72,7 +103,7 @@ export const createDeepSeekAdapter = (options: DeepSeekAdapterOptions): LlmAdapt
       };
     },
     async stream(input) {
-      const response = await request(`${baseUrl}/chat/completions`, {
+      const response = await requestWithTransportRetry(request, `${baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${options.apiKey}`,

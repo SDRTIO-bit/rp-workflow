@@ -66,6 +66,34 @@ describe("deepSeek adapter", () => {
     );
   });
 
+  it("retries one transient transport failure before succeeding", async () => {
+    let calls = 0;
+    const adapter = createDeepSeekAdapter({
+      apiKey: "test-key",
+      fetch: async () => {
+        calls++;
+        if (calls === 1) {
+          throw new TypeError("fetch failed");
+        }
+        return new Response(
+          JSON.stringify({
+            choices: [{ message: { content: "retry success" } }],
+            usage: {
+              prompt_tokens: 12,
+              completion_tokens: 3,
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        );
+      },
+    });
+
+    const result = await adapter.complete({ model: "deepseek-v4-flash", prompt: "hello" });
+
+    expect(calls).toBe(2);
+    expect(result.text).toBe("retry success");
+  });
+
   it("streams DeepSeek delta chunks and returns the assembled text", async () => {
     const calls: Array<{ url: string; init: RequestInit }> = [];
     const adapter = createDeepSeekAdapter({
