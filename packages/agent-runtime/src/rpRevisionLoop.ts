@@ -54,16 +54,42 @@ export function createRevisionRequest(
     return { ok: false, error: "revisionInstruction must be a non-empty string" };
   }
 
-  if (revisionInstruction.length > 2000) {
+  if (revisionInstruction.length > 1000) {
     return {
       ok: false,
-      error: `revisionInstruction too long: ${revisionInstruction.length} > 2000`,
+      error: `revisionInstruction too long: ${revisionInstruction.length} > 1000`,
     };
   }
 
   const failedChecks = [...gateResult.failedChecks];
 
-  const issues = (gateResult.review.issues ?? []).map((iss) => ({
+  // Prioritize issues: all errors + max 2 high-priority warnings
+  const allIssues = gateResult.review.issues ?? [];
+  const errors = allIssues.filter((iss) => iss.severity === "error");
+  const warnings = allIssues.filter((iss) => iss.severity === "warning");
+
+  // Take all errors + up to 2 warnings (prioritize player-agency, knowledge-leak, continuity)
+  const priorityOrder = [
+    "player-agency",
+    "knowledge-leak",
+    "continuity",
+    "character-inconsistency",
+    "worldbook-conflict",
+    "format",
+    "repetition",
+    "style",
+    "other",
+  ];
+
+  const sortedWarnings = [...warnings].sort((a, b) => {
+    const ai = priorityOrder.indexOf(a.code);
+    const bi = priorityOrder.indexOf(b.code);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
+
+  const prioritizedIssues = [...errors, ...sortedWarnings.slice(0, 2)];
+
+  const issues = prioritizedIssues.map((iss) => ({
     code: iss.code,
     severity: iss.severity,
     message: iss.message.slice(0, 500),

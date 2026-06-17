@@ -91,6 +91,38 @@ function makeServiceContext(
       failWorkflow: failWorkflowNode,
       agentSessionLoadV1: agentSessionLoadV1Definition,
       agentSessionCommitV1: agentSessionCommitV1Definition,
+      criticInstructionBuilder: {
+        type: "criticInstructionBuilder",
+        label: "Critic Instruction Builder",
+        category: "core",
+        description: "P-15.1 prompt trim",
+        color: "#a855f7",
+        panelLayout: "generic" as const,
+        defaultConfig: {},
+        configFields: [],
+        ports: [
+          {
+            id: "rubric",
+            label: "Rubric",
+            direction: "input" as const,
+            wireType: "markdown" as const,
+            required: true,
+          },
+          {
+            id: "gateResult",
+            label: "Gate Result",
+            direction: "input" as const,
+            wireType: "json" as const,
+            required: true,
+          },
+          {
+            id: "instruction",
+            label: "Instruction",
+            direction: "output" as const,
+            wireType: "markdown" as const,
+          },
+        ],
+      },
     };
   }
 

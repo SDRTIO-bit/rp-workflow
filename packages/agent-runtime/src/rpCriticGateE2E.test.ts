@@ -257,15 +257,28 @@ describe("Quality Gate", () => {
     expect(r.failedChecks).toContain("has-error-issue");
   });
 
-  it("respects critic decision to revise", () => {
+  it("respects critic decision to revise when justified by hard issue", () => {
+    // P-15.1: revise on soft warning without evidence is overridden to accept.
+    // Critic-decision: revise is only honored when backed by a hard error issue
+    // or an evidenced warning. Use an error-severity issue for this test.
     const review: RpCriticReviewV1 = {
       ...VALID_REVIEW,
       decision: "revise",
       revisionInstruction: "Fix the agency issue",
+      issues: [
+        {
+          code: "player-agency",
+          severity: "error",
+          message: "Controls player",
+          evidence: '"You decide to leave the station."',
+          suggestion: "Remove decision",
+        },
+      ],
     };
     const r = applyGate(review);
     expect(r.accepted).toBe(false);
     expect(r.failedChecks).toContain("critic-decision: revise");
+    expect(r.failedChecks).toContain("has-error-issue");
   });
 
   it("failedChecks order is deterministic", () => {

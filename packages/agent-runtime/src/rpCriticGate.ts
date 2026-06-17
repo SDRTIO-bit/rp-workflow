@@ -54,7 +54,7 @@ export const DEFAULT_GATE_CONFIG: RpCriticQualityGateConfig = {
   minCharacterConsistency: 0.7,
   minPlayerAgency: 0.8,
   minKnowledgeBoundary: 0.8,
-  minStyleAndFormat: 0.65,
+  minStyleAndFormat: 0.5,
   rejectOnErrorIssue: true,
 };
 
@@ -171,6 +171,29 @@ export function validateReviewSchema(
   };
 }
 
+// ============ Evidence Check ============
+
+/**
+ * Determines whether a Critic's revise decision has hard justification.
+ *
+ * Hard justification = at least one of:
+ *  - An error-severity issue (hard gate)
+ *  - A warning-severity issue WITH evidence (verifiable)
+ *
+ * Without hard justification, the gate ignores the critic's "revise" decision
+ * and only applies score thresholds and error-issue checks.
+ */
+function hasHardReviseJustification(review: RpCriticReviewV1): boolean {
+  const issues = review.issues ?? [];
+  if (issues.length === 0) return false;
+
+  // Any error-severity issue is always hard justification
+  if (issues.some((i) => i.severity === "error")) return true;
+
+  // Warning-severity issues need evidence to be hard justification
+  return issues.some((i) => i.severity === "warning" && i.evidence && i.evidence.trim().length > 0);
+}
+
 // ============ Quality Gate Logic ============
 
 export function applyGate(
@@ -218,9 +241,12 @@ export function applyGate(
     failedChecks.push("has-error-issue");
   }
 
-  // Critic decision
+  // Critic decision — but override if revise has no hard justification
   if (review.decision === "revise") {
-    failedChecks.push("critic-decision: revise");
+    const hasHardJustification = hasHardReviseJustification(review);
+    if (hasHardJustification) {
+      failedChecks.push("critic-decision: revise");
+    }
   }
 
   const accepted = failedChecks.length === 0;

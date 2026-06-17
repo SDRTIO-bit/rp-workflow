@@ -30,6 +30,20 @@ describe("resolveEnv", () => {
     expect(env.deepseekApiKey).toBe("test-key");
   });
 
+  it("falls back to OPENCODE_GO_API_KEY when OPENCODE_API_KEY absent", () => {
+    delete process.env.OPENCODE_API_KEY;
+    process.env.OPENCODE_GO_API_KEY = "go-key";
+    const env = resolveEnv();
+    expect(env.openCodeApiKey).toBe("go-key");
+  });
+
+  it("prefers OPENCODE_API_KEY over OPENCODE_GO_API_KEY when both present", () => {
+    process.env.OPENCODE_API_KEY = "primary";
+    process.env.OPENCODE_GO_API_KEY = "fallback";
+    const env = resolveEnv();
+    expect(env.openCodeApiKey).toBe("primary");
+  });
+
   // ── rpProviderId resolution ──────────────────────────────────────────────
 
   it("defaults rpProviderId to mock in development", () => {

@@ -153,7 +153,7 @@ export const resolveEnv = (): Env => {
     pluginsDir: process.env.PLUGINS_DIR ?? resolve(__dirname, "..", "..", "..", "plugins"),
     deepseekApiKey: process.env.DEEPSEEK_API_KEY,
     deepseekModel,
-    openCodeApiKey: process.env.OPENCODE_API_KEY,
+    openCodeApiKey: process.env.OPENCODE_API_KEY ?? process.env.OPENCODE_GO_API_KEY,
     openCodeModel: process.env.OPENCODE_MODEL ?? "deepseek-v4-flash",
     nodeEnv,
     rpProviderId,

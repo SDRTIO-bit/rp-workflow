@@ -99,5 +99,60 @@ export function createRpExecutors(
     rpCriticQualityGate: rpCriticQualityGateExecutor,
     rpSideEffectDecision: rpSideEffectDecisionExecutor,
     failWorkflow: failWorkflowExecutor,
+
+    // ── P-15.1: Critic 2 instruction builder ──
+    // Combines the static rubric with the gate1.revisionInstruction so that
+    // critic 2 sees what it must verify, not the full session/worldbook/memory.
+    criticInstructionBuilder: async ({ inputs }) => {
+      const rubric = String(inputs.rubric ?? "");
+      const gateResult = inputs.gateResult as
+        | {
+            revisionInstruction?: string;
+            review?: { issues?: Array<{ code: string; severity: string; message?: string }> };
+          }
+        | undefined;
+
+      const parts: string[] = [];
+      if (rubric.trim().length > 0) {
+        parts.push(rubric);
+      }
+
+      if (
+        gateResult &&
+        gateResult.revisionInstruction &&
+        gateResult.revisionInstruction.trim().length > 0
+      ) {
+        parts.push("## Revision Instruction (from Critic 1)");
+        parts.push(gateResult.revisionInstruction);
+
+        const issues = gateResult.review?.issues ?? [];
+        if (issues.length > 0) {
+          parts.push("## Issues to verify (from Critic 1)");
+          for (const issue of issues) {
+            const sev = issue.severity === "error" ? "[ERROR]" : "[WARNING]";
+            parts.push(`${sev} ${issue.code}: ${issue.message ?? ""}`);
+          }
+        }
+
+        parts.push("## Review focus (attempt 2)");
+        parts.push(
+          "- Focus on whether the original issues above are now fixed.",
+          "- Do NOT reject for new minor style or wording issues not present in the original review.",
+          "- If hard errors are fixed and no new hard errors introduced, ACCEPT.",
+        );
+      } else {
+        // No revision needed: pass through rubric only
+        parts.push("## Review focus");
+        parts.push("- Apply the rubric to the writer's draft as in attempt 1.");
+      }
+
+      return {
+        outputs: { instruction: parts.join("\n\n") },
+        metadata: {
+          hasRevision: Boolean(gateResult?.revisionInstruction),
+          issueCount: gateResult?.review?.issues?.length ?? 0,
+        },
+      };
+    },
   };
 }

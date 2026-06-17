@@ -396,6 +396,33 @@ export async function bootstrap(
     failWorkflow: failWorkflowNode,
     agentSessionLoadV1: agentSessionLoadV1Definition,
     agentSessionCommitV1: agentSessionCommitV1Definition,
+    criticInstructionBuilder: {
+      type: "criticInstructionBuilder",
+      label: "Critic Instruction Builder",
+      labelI18n: { zh: "Critic 指令构造", en: "Critic Instruction Builder" },
+      category: "core",
+      description:
+        "Builds critic 2 instruction: rubric + gate1.revisionInstruction + issues. P-15.1 prompt trim.",
+      descriptionI18n: {
+        zh: "构造 critic 2 指令：评分标准 + gate1 修订指令 + 问题列表。P-15.1 提示词裁剪。",
+        en: "Builds critic 2 instruction: rubric + gate1.revisionInstruction + issues. P-15.1 prompt trim.",
+      },
+      color: "#a855f7",
+      panelLayout: "generic",
+      defaultConfig: {},
+      configFields: [],
+      ports: [
+        { id: "rubric", label: "Rubric", direction: "input", wireType: "markdown", required: true },
+        {
+          id: "gateResult",
+          label: "Gate Result",
+          direction: "input",
+          wireType: "json",
+          required: true,
+        },
+        { id: "instruction", label: "Instruction", direction: "output", wireType: "markdown" },
+      ],
+    },
     ...rpRuntime.catalog,
     ...pluginCatalog,
   };

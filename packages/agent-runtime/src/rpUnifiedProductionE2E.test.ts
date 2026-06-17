@@ -74,6 +74,38 @@ function cat() {
     rpMemoryCommitPolicy: rpMemoryCommitPolicyNode,
     rpSideEffectDecision: rpSideEffectDecisionNode,
     failWorkflow: failWorkflowNode,
+    criticInstructionBuilder: {
+      type: "criticInstructionBuilder",
+      label: "Critic Instruction Builder",
+      category: "core",
+      description: "P-15.1 prompt trim",
+      color: "#a855f7",
+      panelLayout: "generic" as const,
+      defaultConfig: {},
+      configFields: [],
+      ports: [
+        {
+          id: "rubric",
+          label: "Rubric",
+          direction: "input" as const,
+          wireType: "markdown" as const,
+          required: true,
+        },
+        {
+          id: "gateResult",
+          label: "Gate Result",
+          direction: "input" as const,
+          wireType: "json" as const,
+          required: true,
+        },
+        {
+          id: "instruction",
+          label: "Instruction",
+          direction: "output" as const,
+          wireType: "markdown" as const,
+        },
+      ],
+    },
     agentSessionLoadV1: agentSessionLoadV1Definition,
     agentSessionCommitV1: agentSessionCommitV1Definition,
   };
@@ -146,6 +178,39 @@ function mk(
     rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,
     rpSideEffectDecision: rpSideEffectDecisionExecutor,
     failWorkflow: failWorkflowExecutor,
+    criticInstructionBuilder: async ({ inputs }) => {
+      const rubric = String(inputs.rubric ?? "");
+      const gateResult = inputs.gateResult as
+        | {
+            revisionInstruction?: string;
+            review?: { issues?: Array<{ code: string; severity: string; message?: string }> };
+          }
+        | undefined;
+      const parts: string[] = [];
+      if (rubric.trim().length > 0) parts.push(rubric);
+      if (gateResult?.revisionInstruction && gateResult.revisionInstruction.trim().length > 0) {
+        parts.push("## Revision Instruction (from Critic 1)");
+        parts.push(gateResult.revisionInstruction);
+        const issues = gateResult.review?.issues ?? [];
+        if (issues.length > 0) {
+          parts.push("## Issues to verify (from Critic 1)");
+          for (const issue of issues) {
+            const sev = issue.severity === "error" ? "[ERROR]" : "[WARNING]";
+            parts.push(`${sev} ${issue.code}: ${issue.message ?? ""}`);
+          }
+        }
+        parts.push("## Review focus (attempt 2)");
+        parts.push(
+          "- Focus on whether the original issues above are now fixed.",
+          "- Do NOT reject for new minor style or wording issues not present in the original review.",
+          "- If hard errors are fixed and no new hard errors introduced, ACCEPT.",
+        );
+      } else {
+        parts.push("## Review focus");
+        parts.push("- Apply the rubric to the writer's draft as in attempt 1.");
+      }
+      return { outputs: { instruction: parts.join("\n\n") } };
+    },
     agentSessionLoadV1: createAgentSessionLoadV1Executor({ store: ss }),
     agentSessionCommitV1: createAgentSessionCommitV1Executor({ store: ss }),
     sessionToMarkdown: async ({ inputs }) => {
