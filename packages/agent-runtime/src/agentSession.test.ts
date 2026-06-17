@@ -5,8 +5,11 @@
  * store error handling, and secret isolation. All tests use mock LLM.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { InMemoryAgentSessionStore } from "../src/agentSessionStore.js";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { FileAgentSessionStore, InMemoryAgentSessionStore } from "../src/agentSessionStore.js";
 import {
   createAgentSessionLoadV1Executor,
   createAgentSessionCommitV1Executor,
@@ -436,6 +439,107 @@ describe("Agent Session: secret isolation", () => {
     expect(serialized).not.toContain("Authorization");
     expect(serialized).not.toContain("Bearer");
     expect(serialized).not.toContain("sk-");
+  });
+});
+
+// ============ File Store Restart Tests ============
+
+describe("FileAgentSessionStore", () => {
+  let dir: string;
+  let filePath: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "awp-agent-session-"));
+    filePath = join(dir, "agent-sessions.json");
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("loads committed turns across store instances", async () => {
+    const key = makeKey();
+    const first = new FileAgentSessionStore(filePath);
+    await first.commitIdempotent(
+      key,
+      { sessionKey: key, newTurn: makeTurn(1, "before restart") },
+      { sessionId: key.conversationId, agentNodeId: key.agentNodeId, turnId: "turn-1" },
+      "hash-1",
+    );
+
+    const restarted = new FileAgentSessionStore(filePath);
+    const ctx = await restarted.load(key);
+
+    expect(ctx?.turns).toHaveLength(1);
+    expect(ctx?.turns[0]?.input).toBe("before restart");
+  });
+
+  it("deduplicates the same turn across store instances", async () => {
+    const key = makeKey();
+    const first = new FileAgentSessionStore(filePath);
+    await first.commitIdempotent(
+      key,
+      { sessionKey: key, newTurn: makeTurn(1, "same") },
+      { sessionId: key.conversationId, agentNodeId: key.agentNodeId, turnId: "turn-1" },
+      "same-hash",
+    );
+
+    const restarted = new FileAgentSessionStore(filePath);
+    const result = await restarted.commitIdempotent(
+      key,
+      { sessionKey: key, newTurn: makeTurn(1, "same") },
+      { sessionId: key.conversationId, agentNodeId: key.agentNodeId, turnId: "turn-1" },
+      "same-hash",
+    );
+
+    expect(result).toEqual({ committed: false, deduplicated: true });
+    expect((await restarted.load(key))?.turns).toHaveLength(1);
+  });
+
+  it("reports conflict for same turn with different content across store instances", async () => {
+    const key = makeKey();
+    const first = new FileAgentSessionStore(filePath);
+    await first.commitIdempotent(
+      key,
+      { sessionKey: key, newTurn: makeTurn(1, "original") },
+      { sessionId: key.conversationId, agentNodeId: key.agentNodeId, turnId: "turn-1" },
+      "hash-a",
+    );
+
+    const restarted = new FileAgentSessionStore(filePath);
+    const result = await restarted.commitIdempotent(
+      key,
+      { sessionKey: key, newTurn: makeTurn(1, "changed") },
+      { sessionId: key.conversationId, agentNodeId: key.agentNodeId, turnId: "turn-1" },
+      "hash-b",
+    );
+
+    expect(result).toEqual({
+      committed: false,
+      deduplicated: false,
+      conflict: true,
+      error: 'session commit conflict: turnId="turn-1" already committed with different content',
+    });
+  });
+
+  it("keeps agentNodeId and conversationId isolated on disk", async () => {
+    const store = new FileAgentSessionStore(filePath);
+    const keyA = makeKey({ conversationId: "conv-a", agentNodeId: "agent-a" });
+    const keyB = makeKey({ conversationId: "conv-b", agentNodeId: "agent-b" });
+    await store.append(keyA, { sessionKey: keyA, newTurn: makeTurn(1, "a") });
+    await store.append(keyB, { sessionKey: keyB, newTurn: makeTurn(1, "b") });
+
+    const restarted = new FileAgentSessionStore(filePath);
+
+    expect((await restarted.load(keyA))?.turns[0]?.input).toBe("a");
+    expect((await restarted.load(keyB))?.turns[0]?.input).toBe("b");
+  });
+
+  it("fails explicitly when the session file is corrupted", async () => {
+    writeFileSync(filePath, "not json", "utf-8");
+    const store = new FileAgentSessionStore(filePath);
+
+    await expect(store.load(makeKey())).rejects.toThrow("AgentSession file corrupted");
   });
 });
 
