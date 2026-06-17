@@ -50,7 +50,16 @@
       { "id": "inspDraft1", "type": "inspectOutput", "position": { "x": 1850, "y": 80 }, "config": { "displayMode": "text" } },
       { "id": "inspGate1", "type": "inspectOutput", "position": { "x": 2350, "y": 80 }, "config": { "displayMode": "json" } },
       { "id": "inspDraft2", "type": "inspectOutput", "position": { "x": 2850, "y": 80 }, "config": { "displayMode": "text" } },
-      { "id": "inspGate2", "type": "inspectOutput", "position": { "x": 3100, "y": 80 }, "config": { "displayMode": "json" } }
+      { "id": "inspGate2", "type": "inspectOutput", "position": { "x": 3100, "y": 80 }, "config": { "displayMode": "json" } },
+      { "id": "lastAssistantOutput", "type": "agentSessionLastAssistantOutput", "position": { "x": 600, "y": 380 }, "config": {} },
+      { "id": "novelty1", "type": "textNoveltyCheck", "position": { "x": 1850, "y": 380 }, "config": { "minNormalizedLength": 64 } },
+      { "id": "novelty2", "type": "textNoveltyCheck", "position": { "x": 2850, "y": 680 }, "config": { "minNormalizedLength": 64 } },
+      { "id": "merge1", "type": "rpQualityDecisionMerge", "position": { "x": 2200, "y": 350 }, "config": { "attempt": 1, "noveltyRevisionInstruction": "本轮正文与上一轮已提交正文重复。请根据玩家最新输入重新生成，并明确推进当前场景，不要复用上一轮正文。", "maxRevisionInstructionLength": 200 } },
+      { "id": "merge2", "type": "rpQualityDecisionMerge", "position": { "x": 3200, "y": 650 }, "config": { "attempt": 2, "noveltyRevisionInstruction": "本轮正文与上一轮已提交正文重复。请根据玩家最新输入重新生成，并明确推进当前场景，不要复用上一轮正文。", "maxRevisionInstructionLength": 200 } },
+      { "id": "inspNovelty1", "type": "inspectOutput", "position": { "x": 2050, "y": 80 }, "config": { "displayMode": "json" } },
+      { "id": "inspNovelty2", "type": "inspectOutput", "position": { "x": 3050, "y": 80 }, "config": { "displayMode": "json" } },
+      { "id": "inspMerge1", "type": "inspectOutput", "position": { "x": 2200, "y": 130 }, "config": { "displayMode": "json" } },
+      { "id": "inspMerge2", "type": "inspectOutput", "position": { "x": 3200, "y": 130 }, "config": { "displayMode": "json" } }
     ],
     "edges": [
       { "id": "e_sk_sl", "source": "sessionKey", "sourcePort": "json", "target": "sessionLoad", "targetPort": "sessionKey" },
@@ -77,7 +86,7 @@
       { "id": "e_c2i_c2", "source": "critic2Instruction", "sourcePort": "instruction", "target": "critic2", "targetPort": "instruction" },
       { "id": "e_c1_g1", "source": "critic1", "sourcePort": "result", "target": "gate1", "targetPort": "review" },
       { "id": "e_w1_sel", "source": "writer1", "sourcePort": "result", "target": "selector", "targetPort": "acceptDraft" },
-      { "id": "e_g1_route", "source": "gate1", "sourcePort": "result", "target": "route", "targetPort": "condition" },
+      { "id": "e_g1_route", "source": "merge1", "sourcePort": "decision", "target": "route", "targetPort": "condition" },
       { "id": "e_route_accept", "source": "route", "sourcePort": "acceptBranch", "target": "selector", "targetPort": "acceptRouting" },
       { "id": "e_route_revise", "source": "route", "sourcePort": "reviseBranch", "target": "writer2", "targetPort": "data" },
       { "id": "e_context_w2", "source": "ctxMerge2", "sourcePort": "result", "target": "writer2", "targetPort": "context" },
@@ -88,7 +97,7 @@
       { "id": "e_c2_g2", "source": "critic2", "sourcePort": "result", "target": "gate2", "targetPort": "review" },
       { "id": "e_w2_sel", "source": "writer2", "sourcePort": "result", "target": "selector", "targetPort": "reviseDraft" },
       { "id": "e_g1_sel", "source": "gate1", "sourcePort": "result", "target": "selector", "targetPort": "firstGateResult" },
-      { "id": "e_g2_sel", "source": "gate2", "sourcePort": "result", "target": "selector", "targetPort": "secondGateResult" },
+      { "id": "e_g2_sel", "source": "merge2", "sourcePort": "decision", "target": "selector", "targetPort": "secondGateResult" },
       { "id": "e_sel_dec", "source": "selector", "sourcePort": "loopResult", "target": "decision", "targetPort": "loopResult" },
       { "id": "e_dec_rse", "source": "decision", "sourcePort": "decision", "target": "routeSideEffect", "targetPort": "condition" },
       { "id": "e_dec_rm", "source": "decision", "sourcePort": "decision", "target": "routeMemory", "targetPort": "condition" },
@@ -114,7 +123,20 @@
       { "id": "e_insp_d1", "source": "writer1", "sourcePort": "result", "target": "inspDraft1", "targetPort": "textInput" },
       { "id": "e_insp_g1", "source": "gate1", "sourcePort": "result", "target": "inspGate1", "targetPort": "jsonInput" },
       { "id": "e_insp_d2", "source": "writer2", "sourcePort": "result", "target": "inspDraft2", "targetPort": "textInput" },
-      { "id": "e_insp_g2", "source": "gate2", "sourcePort": "result", "target": "inspGate2", "targetPort": "jsonInput" }
+      { "id": "e_insp_g2", "source": "gate2", "sourcePort": "result", "target": "inspGate2", "targetPort": "jsonInput" },
+      { "id": "e_sl_alao", "source": "sessionLoad", "sourcePort": "sessionContext", "target": "lastAssistantOutput", "targetPort": "sessionContext" },
+      { "id": "e_alao_n1", "source": "lastAssistantOutput", "sourcePort": "text", "target": "novelty1", "targetPort": "reference" },
+      { "id": "e_alao_n2", "source": "lastAssistantOutput", "sourcePort": "text", "target": "novelty2", "targetPort": "reference" },
+      { "id": "e_w1_n1", "source": "writer1", "sourcePort": "result", "target": "novelty1", "targetPort": "current" },
+      { "id": "e_w2_n2", "source": "writer2", "sourcePort": "result", "target": "novelty2", "targetPort": "current" },
+      { "id": "e_g1_m1", "source": "gate1", "sourcePort": "result", "target": "merge1", "targetPort": "gateResult" },
+      { "id": "e_n1_m1", "source": "novelty1", "sourcePort": "report", "target": "merge1", "targetPort": "noveltyReport" },
+      { "id": "e_g2_m2", "source": "gate2", "sourcePort": "result", "target": "merge2", "targetPort": "gateResult" },
+      { "id": "e_n2_m2", "source": "novelty2", "sourcePort": "report", "target": "merge2", "targetPort": "noveltyReport" },
+      { "id": "e_insp_n1", "source": "novelty1", "sourcePort": "report", "target": "inspNovelty1", "targetPort": "jsonInput" },
+      { "id": "e_insp_n2", "source": "novelty2", "sourcePort": "report", "target": "inspNovelty2", "targetPort": "jsonInput" },
+      { "id": "e_insp_m1", "source": "merge1", "sourcePort": "diagnostics", "target": "inspMerge1", "targetPort": "jsonInput" },
+      { "id": "e_insp_m2", "source": "merge2", "sourcePort": "diagnostics", "target": "inspMerge2", "targetPort": "jsonInput" }
     ]
   }
 }

@@ -13,9 +13,12 @@ import {
   rpMemoryCommitPolicyExecutor,
   rpCriticQualityGateExecutor,
   rpSideEffectDecisionExecutor,
+  rpQualityDecisionMergeExecutor,
+  agentSessionLastAssistantOutputExecutor,
   failWorkflowExecutor,
   sessionContextToMarkdown,
 } from "@awp/agent-runtime";
+import { textNoveltyCheckExecutor } from "@awp/workflow-stdlib";
 import { createDynamicWorldbookExecutor } from "@awp/workflow-worldbook";
 import {
   genericRetrieverExecutor,
@@ -98,6 +101,9 @@ export function createRpExecutors(
     rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,
     rpCriticQualityGate: rpCriticQualityGateExecutor,
     rpSideEffectDecision: rpSideEffectDecisionExecutor,
+    rpQualityDecisionMerge: rpQualityDecisionMergeExecutor,
+    agentSessionLastAssistantOutput: agentSessionLastAssistantOutputExecutor,
+    textNoveltyCheck: textNoveltyCheckExecutor,
     failWorkflow: failWorkflowExecutor,
 
     // ── P-15.1: Critic 2 instruction builder ──
