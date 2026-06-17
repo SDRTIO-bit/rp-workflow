@@ -30,6 +30,7 @@ import type {
   OfficialRpResponseV1,
   OfficialRpServiceContext,
 } from "./officialRpTypes.js";
+import { readEntries } from "../services/jsonStore.js";
 import { OfficialWorkflowRegistry } from "./officialWorkflowRegistry.js";
 import { adaptRpInput } from "./officialRpInputAdapter.js";
 import { adaptRpOutput } from "./officialRpOutputAdapter.js";
@@ -86,6 +87,7 @@ export class OfficialRpService {
 
     // Adapt input
     const { workflow: adaptedWf, context } = adaptRpInput(request, workflow);
+    await seedSessionWorldbookIfEmpty(this.ctx, request);
     const localSink = new InMemoryWorkflowTelemetrySink();
     const telemetryWarnings: string[] = [];
     const sink = this.ctx.telemetrySink
@@ -206,6 +208,32 @@ export class OfficialRpService {
   getRegistry(): OfficialWorkflowRegistry {
     return this.registry;
   }
+}
+
+async function seedSessionWorldbookIfEmpty(
+  ctx: OfficialRpServiceContext,
+  request: OfficialRpRequestV1,
+): Promise<void> {
+  const resourceRef = request.worldbook.resourceRef;
+  const scopeKey = `session:${request.sessionId}:${resourceRef}`;
+  const existing = await ctx.worldbookStore.load(scopeKey, resourceRef);
+  if (existing.entries.length > 0) return;
+
+  const entries = await readEntries(`${ctx.dataDir}/worldbook.json`);
+  if (entries.length === 0) return;
+
+  await ctx.worldbookStore.save(scopeKey, resourceRef, {
+    version: 1,
+    entries: entries.map((entry) => ({
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags,
+      type: "world",
+      priority: 50,
+      updatedAt: entry.updatedAt,
+    })),
+  });
 }
 
 function createTraceId(): string {
