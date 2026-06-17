@@ -1,6 +1,7 @@
 import {
   areTypesCompatible,
   areWireTypesCompatible,
+  checkSchemaCompatibility,
   findPortInCatalog,
   isLegacyPort,
   isWirePort,
@@ -46,9 +47,22 @@ export const evaluateConnection = (
   // Determine compatibility based on port types
   let compatible: boolean;
   if (isLegacyPort(sourcePort) && isLegacyPort(targetPort)) {
-    compatible = areTypesCompatible(sourcePort.dataType, targetPort.dataType);
+    compatible = areTypesCompatible(
+      sourcePort.dataType,
+      targetPort.dataType,
+      sourcePort.schemaId,
+      targetPort.schemaId,
+    );
   } else if (isWirePort(sourcePort) && isWirePort(targetPort)) {
     compatible = areWireTypesCompatible(sourcePort.wireType, targetPort.wireType);
+    if (
+      compatible &&
+      sourcePort.wireType === "json" &&
+      targetPort.wireType === "json" &&
+      checkSchemaCompatibility(sourcePort.schemaId, targetPort.schemaId) === "incompatible"
+    ) {
+      compatible = false;
+    }
   } else {
     // Mixed legacy/wire — cannot connect directly in the UI
     compatible = false;

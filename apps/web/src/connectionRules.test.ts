@@ -126,4 +126,99 @@ describe("connectionRules", () => {
       ),
     ).toEqual({ ok: true });
   });
+
+  test("blocks JSON schema mismatches for legacy and wire-native ports", () => {
+    const catalog: NodeCatalog = {
+      legacySource: {
+        type: "legacySource",
+        label: "Legacy Source",
+        ports: [
+          {
+            id: "json",
+            label: "JSON",
+            direction: "output",
+            dataType: "json",
+            schemaId: "schema:a",
+          },
+        ],
+      },
+      legacyTarget: {
+        type: "legacyTarget",
+        label: "Legacy Target",
+        ports: [
+          {
+            id: "json",
+            label: "JSON",
+            direction: "input",
+            dataType: "json",
+            schemaId: "schema:b",
+          },
+        ],
+      },
+      wireSource: {
+        type: "wireSource",
+        label: "Wire Source",
+        ports: [
+          {
+            id: "json",
+            label: "JSON",
+            direction: "output",
+            wireType: "json",
+            schemaId: "schema:a",
+          },
+        ],
+      },
+      wireTarget: {
+        type: "wireTarget",
+        label: "Wire Target",
+        ports: [
+          {
+            id: "json",
+            label: "JSON",
+            direction: "input",
+            wireType: "json",
+            schemaId: "schema:b",
+          },
+        ],
+      },
+    };
+    const schemaWorkflow: WorkflowDefinition = {
+      id: "schema-rules",
+      name: "Schema rules",
+      version: 1,
+      nodes: [
+        { id: "legacySource", type: "legacySource", position: { x: 0, y: 0 }, config: {} },
+        { id: "legacyTarget", type: "legacyTarget", position: { x: 280, y: 0 }, config: {} },
+        { id: "wireSource", type: "wireSource", position: { x: 0, y: 220 }, config: {} },
+        { id: "wireTarget", type: "wireTarget", position: { x: 280, y: 220 }, config: {} },
+      ],
+      edges: [],
+    };
+
+    expect(
+      evaluateConnection(
+        schemaWorkflow,
+        {
+          source: "legacySource",
+          sourcePort: "json",
+          target: "legacyTarget",
+          targetPort: "json",
+        },
+        catalog,
+      ),
+    ).toEqual({ ok: false, reason: "端口类型不兼容：JSON 不能连接到 JSON。" });
+
+    expect(
+      evaluateConnection(
+        schemaWorkflow,
+        {
+          source: "wireSource",
+          sourcePort: "json",
+          target: "wireTarget",
+          targetPort: "json",
+        },
+        catalog,
+      ),
+    ).toEqual({ ok: false, reason: "端口类型不兼容：JSON (Wire) 不能连接到 JSON (Wire)。" });
+  });
 });

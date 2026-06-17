@@ -20,7 +20,9 @@
  */
 import { Hono } from "hono";
 import { serveStatic } from "@hono/node-server/serve-static";
-import { resolve, join } from "node:path";
+import { readFile } from "node:fs/promises";
+import { dirname, resolve, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Env } from "./env.js";
 import { MOCK_MODEL } from "./env.js";
 import { createMemoriesRoutes } from "./routes/memories.js";
@@ -396,7 +398,14 @@ export async function bootstrap(
   app.route("/", createLlmRoutes(getLlmConfig));
 
   if (env.nodeEnv === "production") {
-    app.use("/*", serveStatic({ root: "../web/dist" }));
+    const webDistRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../web/dist");
+    app.use("/*", serveStatic({ root: webDistRoot }));
+    app.get("*", async (c) => {
+      if (c.req.path.startsWith("/api/")) {
+        return c.notFound();
+      }
+      return c.html(await readFile(join(webDistRoot, "index.html"), "utf8"));
+    });
   }
 
   const registeredProviders = [
