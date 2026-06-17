@@ -55,6 +55,10 @@ import {
   rpMemoryCommitPolicyExecutor,
   rpSideEffectDecisionNode,
   rpSideEffectDecisionExecutor,
+  rpQualityDecisionMergeNode,
+  rpQualityDecisionMergeExecutor,
+  agentSessionLastAssistantOutputNode,
+  agentSessionLastAssistantOutputExecutor,
   failWorkflowNode,
   failWorkflowExecutor,
   InMemoryAgentSessionStore,
@@ -76,6 +80,8 @@ function cat() {
     rpCriticQualityGate: rpCriticQualityGateNode,
     rpMemoryCommitPolicy: rpMemoryCommitPolicyNode,
     rpSideEffectDecision: rpSideEffectDecisionNode,
+    rpQualityDecisionMerge: rpQualityDecisionMergeNode,
+    agentSessionLastAssistantOutput: agentSessionLastAssistantOutputNode,
     failWorkflow: failWorkflowNode,
     criticInstructionBuilder: {
       type: "criticInstructionBuilder",
@@ -179,6 +185,8 @@ function mk(
     rpCriticQualityGate: rpCriticQualityGateExecutor,
     rpMemoryCommitPolicy: rpMemoryCommitPolicyExecutor,
     rpSideEffectDecision: rpSideEffectDecisionExecutor,
+    rpQualityDecisionMerge: rpQualityDecisionMergeExecutor,
+    agentSessionLastAssistantOutput: agentSessionLastAssistantOutputExecutor,
     failWorkflow: failWorkflowExecutor,
     criticInstructionBuilder: async ({ inputs }) => {
       const rubric = String(inputs.rubric ?? "");

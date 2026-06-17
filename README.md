@@ -19,8 +19,10 @@ Other documentation:
 - `docs/reports/` — per-phase reports.
 - `docs/research/`, `docs/superpowers/` — research and design notes.
 
-The frozen state of the project is `master` @ `09d53ac`, tag
-`phase-rp-playable-mvp-v1-stable`. Do not move the frozen tag; new work
+The frozen code baseline is commit `09d53ac`, tagged
+`phase-rp-playable-mvp-v1-stable` (annotated, dereferences to
+`09d53ac`). The current `master` HEAD is `1dd6608`, a documentation-
+only commit on top of the freeze. Do not move the frozen tag; new work
 gets a new phase, a new tag, and a new report under `docs/reports/`.
 
 ## License
