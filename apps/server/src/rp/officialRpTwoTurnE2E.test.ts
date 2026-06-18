@@ -62,6 +62,11 @@ function makeTestEnv(overrides: Partial<Env> = {}): Env {
     agentSessionStore: "in-memory",
     agentSessionDir: "",
     rpWorkflowVersion: "unified-v1",
+    cardsDir: resolve(dataDir, "cards"),
+    maxCardBytes: 5_242_880,
+    maxCardJsonDepth: 64,
+    maxCardWorldbookEntries: 2_000,
+    maxCardGreetings: 100,
     ...overrides,
   };
 }

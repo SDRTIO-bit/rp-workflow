@@ -21,6 +21,32 @@ export type BuiltinProviderId = "mock" | "deepseek" | "opencode";
  */
 export const MOCK_MODEL = "mock-model";
 
+/**
+ * Parse a strictly positive integer from a string env value.
+ * Throws on:
+ *  - missing/undefined values
+ *  - non-integer strings
+ *  - non-finite numbers
+ *  - non-positive integers (0 or negative)
+ */
+function parsePositiveIntEnv(name: string, raw: string | undefined): number {
+  if (raw === undefined || raw === "") {
+    throw new Error(`${name} is required and must be a positive integer (got undefined/empty)`);
+  }
+  const trimmed = raw.trim();
+  if (!/^-?\d+$/.test(trimmed)) {
+    throw new Error(`${name} must be an integer (got "${raw}")`);
+  }
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || !Number.isInteger(n)) {
+    throw new Error(`${name} must be a finite integer (got "${raw}")`);
+  }
+  if (n <= 0) {
+    throw new Error(`${name} must be a positive integer > 0 (got ${n})`);
+  }
+  return n;
+}
+
 export type Env = {
   port: number;
   dataDir: string;
@@ -46,6 +72,16 @@ export type Env = {
   agentSessionDir: string;
   /** Official RP workflow version: "unified-v1" (default) or "legacy". */
   rpWorkflowVersion: "unified-v1" | "legacy";
+  /** Cards storage root directory (resolved to an absolute path). */
+  cardsDir: string;
+  /** Maximum allowed card file size in bytes. */
+  maxCardBytes: number;
+  /** Maximum allowed JSON depth for card parsing. */
+  maxCardJsonDepth: number;
+  /** Maximum allowed worldbook entries per card. */
+  maxCardWorldbookEntries: number;
+  /** Maximum allowed alternate greetings per card. */
+  maxCardGreetings: number;
 };
 
 /**
@@ -165,5 +201,21 @@ export const resolveEnv = (): Env => {
     agentSessionDir: process.env.AGENT_SESSION_DIR ?? "",
     rpWorkflowVersion:
       (process.env.RP_WORKFLOW_VERSION as "unified-v1" | "legacy" | undefined) ?? "unified-v1",
+    cardsDir: resolve(
+      process.env.CARDS_DIR ?? resolve(__dirname, "..", "..", "..", "data", "cards"),
+    ),
+    maxCardBytes: parsePositiveIntEnv("MAX_CARD_BYTES", process.env.MAX_CARD_BYTES ?? "5242880"),
+    maxCardJsonDepth: parsePositiveIntEnv(
+      "MAX_CARD_JSON_DEPTH",
+      process.env.MAX_CARD_JSON_DEPTH ?? "64",
+    ),
+    maxCardWorldbookEntries: parsePositiveIntEnv(
+      "MAX_CARD_WORLDBOOK_ENTRIES",
+      process.env.MAX_CARD_WORLDBOOK_ENTRIES ?? "2000",
+    ),
+    maxCardGreetings: parsePositiveIntEnv(
+      "MAX_CARD_GREETINGS",
+      process.env.MAX_CARD_GREETINGS ?? "100",
+    ),
   };
 };

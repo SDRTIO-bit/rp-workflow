@@ -216,9 +216,20 @@ async function seedSessionWorldbookIfEmpty(
 ): Promise<void> {
   const resourceRef = request.worldbook.resourceRef;
   const scopeKey = `session:${request.sessionId}:${resourceRef}`;
+
+  // Idempotent: never re-seed a scope that already has content.
   const existing = await ctx.worldbookStore.load(scopeKey, resourceRef);
   if (existing.entries.length > 0) return;
 
+  // Card-aware path: resourceRef starts with "card:" → seed from the Card's
+  // on-disk worldbook.json (P-15.3A-2). Falls back to global default if the
+  // card is unavailable, but ONLY for non-card resourceRefs.
+  if (resourceRef.startsWith("card:")) {
+    await seedCardWorldbook(ctx, resourceRef, scopeKey);
+    return;
+  }
+
+  // Default path: read the global data/worldbook.json. Unchanged from P-12.
   const entries = await readEntries(`${ctx.dataDir}/worldbook.json`);
   if (entries.length === 0) return;
 
@@ -232,6 +243,79 @@ async function seedSessionWorldbookIfEmpty(
       type: "world",
       priority: 50,
       updatedAt: entry.updatedAt,
+    })),
+  });
+}
+
+/**
+ * Seed the session's DynamicWorldbookStore from a Card's on-disk
+ * worldbook.json (P-15.3A-2).
+ *
+ * Steps:
+ *  1. Strictly extract the 64-hex cardId from the resourceRef.
+ *  2. Verify FileCardStore is available; refuse if not.
+ *  3. Verify the Card exists and its source.json hash is intact.
+ *  4. Read the Card's `worldbook.json` (already partitioned by the
+ *     A-1 worldbook mapper into active entries only; deferred-variable
+ *     and blocked-script entries are stored in `deferred-worldbook.json`
+ *     and are NOT loaded here).
+ *  5. Verify source integrity (sha256 of source.json matches cardId).
+ *  6. Persist active entries to the session scope.
+ *
+ * Behavior:
+ *  - Already populated: no-op (checked by caller).
+ *  - Card not found / corrupt: throw, refusing to fall back to the global
+ *    worldbook. The spec explicitly forbids silent fallback to
+ *    `data/worldbook.json` for `card:` resourceRefs.
+ *  - Two sessions or two cards never share seeded state: scopeKey includes
+ *    both sessionId and resourceRef.
+ *  - Restart recovery: if the InMemory store is empty but the Card file
+ *    still exists, re-seeding is automatic on the next /api/rp call.
+ */
+async function seedCardWorldbook(
+  ctx: OfficialRpServiceContext,
+  resourceRef: string,
+  scopeKey: string,
+): Promise<void> {
+  const cardId = resourceRef.slice("card:".length);
+  if (!/^[0-9a-f]{64}$/.test(cardId)) {
+    throw new Error(
+      `Invalid card resourceRef: "${resourceRef}" (expected 64-hex cardId after "card:")`,
+    );
+  }
+
+  if (!ctx.cardStore) {
+    throw new Error(`card resourceRef "${resourceRef}" requires a configured FileCardStore`);
+  }
+
+  // Verify the Card exists AND its source.json hash is intact.
+  const exists = await ctx.cardStore.hasCard(cardId);
+  if (!exists) {
+    throw new Error(`Card not found for resourceRef "${resourceRef}" (cardId=${cardId})`);
+  }
+  const sourceIntact = await ctx.cardStore.verifySourceIntegrity(cardId);
+  if (!sourceIntact) {
+    throw new Error(
+      `Card source.json integrity check failed for cardId=${cardId} (refusing to seed)`,
+    );
+  }
+
+  // Read the Card's partitioned worldbook. The A-1 mapper already
+  // excludes disabled / deferred-variable / blocked-script entries; those
+  // live in `deferred-worldbook.json` and are NOT loaded here.
+  const cardEntry = await ctx.cardStore.readCard(cardId);
+  if (cardEntry.worldbook.length === 0) return;
+
+  await ctx.worldbookStore.save(scopeKey, resourceRef, {
+    version: 1,
+    entries: cardEntry.worldbook.map((entry) => ({
+      id: entry.id,
+      title: entry.title,
+      content: entry.content,
+      tags: entry.tags ?? [],
+      type: entry.type ?? "world",
+      priority: entry.priority ?? 50,
+      metadata: entry.metadata ?? null,
     })),
   });
 }

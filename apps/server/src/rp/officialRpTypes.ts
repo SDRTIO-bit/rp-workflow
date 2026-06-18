@@ -138,6 +138,18 @@ export type OfficialRpServiceContext = {
 
   /** Legacy RP path executor (for legacy fallback) */
   legacyRpExecutor?: LegacyRpExecutor;
+
+  /**
+   * Card store for card-aware worldbook seeding (P-15.3A-2).
+   *
+   * When `worldbook.resourceRef` starts with "card:", the official RP
+   * service seeds the session's DynamicWorldbookStore from the card's
+   * on-disk `worldbook.json` instead of the global `data/worldbook.json`.
+   *
+   * Required when card resourceRefs are used. May be undefined in legacy
+   * test setups that only exercise the non-card path.
+   */
+  cardStore?: import("@awp/card-import").FileCardStore;
 };
 
 export type LegacyRpExecutor = (request: OfficialRpRequestV1) => Promise<OfficialRpResponseV1>;

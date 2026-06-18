@@ -180,4 +180,64 @@ describe("resolveEnv", () => {
     expect(env.agentSessionStore).toBe("file");
     expect(env.agentSessionDir).toBe("/tmp/awp-agent-sessions");
   });
+
+  // ── Card import env vars (P-15.3A-2) ──────────────────────────────
+
+  it("defaults cardsDir under data/cards and resolves to absolute path", () => {
+    delete process.env.CARDS_DIR;
+    const env = resolveEnv();
+    expect(env.cardsDir).toContain("cards");
+    expect(env.cardsDir).toMatch(/^[a-zA-Z]:[\\/]|^\//); // absolute (Windows or POSIX)
+  });
+
+  it("resolves CARDS_DIR from environment variable to absolute path", () => {
+    process.env.CARDS_DIR = "./tmp/awp-test-cards";
+    const env = resolveEnv();
+    expect(env.cardsDir).toMatch(/[\\/]tmp[\\/]awp-test-cards$/);
+    expect(env.cardsDir).toMatch(/^[a-zA-Z]:[\\/]|^\//); // absolute after resolve()
+  });
+
+  it("defaults MAX_CARD_BYTES=5242880, MAX_CARD_JSON_DEPTH=64, MAX_CARD_WORLDBOOK_ENTRIES=2000, MAX_CARD_GREETINGS=100", () => {
+    delete process.env.MAX_CARD_BYTES;
+    delete process.env.MAX_CARD_JSON_DEPTH;
+    delete process.env.MAX_CARD_WORLDBOOK_ENTRIES;
+    delete process.env.MAX_CARD_GREETINGS;
+    const env = resolveEnv();
+    expect(env.maxCardBytes).toBe(5_242_880);
+    expect(env.maxCardJsonDepth).toBe(64);
+    expect(env.maxCardWorldbookEntries).toBe(2_000);
+    expect(env.maxCardGreetings).toBe(100);
+  });
+
+  it("reads MAX_CARD_* env overrides", () => {
+    process.env.MAX_CARD_BYTES = "1024";
+    process.env.MAX_CARD_JSON_DEPTH = "16";
+    process.env.MAX_CARD_WORLDBOOK_ENTRIES = "32";
+    process.env.MAX_CARD_GREETINGS = "4";
+    const env = resolveEnv();
+    expect(env.maxCardBytes).toBe(1024);
+    expect(env.maxCardJsonDepth).toBe(16);
+    expect(env.maxCardWorldbookEntries).toBe(32);
+    expect(env.maxCardGreetings).toBe(4);
+  });
+
+  it("throws when MAX_CARD_BYTES is 0 or negative", () => {
+    process.env.MAX_CARD_BYTES = "0";
+    expect(() => resolveEnv()).toThrow(/MAX_CARD_BYTES must be a positive integer/);
+    process.env.MAX_CARD_BYTES = "-1";
+    expect(() => resolveEnv()).toThrow(/MAX_CARD_BYTES must be a positive integer/);
+  });
+
+  it("throws when MAX_CARD_* is non-integer", () => {
+    process.env.MAX_CARD_BYTES = "1.5";
+    expect(() => resolveEnv()).toThrow(/MAX_CARD_BYTES must be an integer/);
+    process.env.MAX_CARD_BYTES = "1024";
+    process.env.MAX_CARD_JSON_DEPTH = "abc";
+    expect(() => resolveEnv()).toThrow(/MAX_CARD_JSON_DEPTH must be an integer/);
+  });
+
+  it("throws when MAX_CARD_GREETINGS is empty string", () => {
+    process.env.MAX_CARD_GREETINGS = "";
+    expect(() => resolveEnv()).toThrow(/MAX_CARD_GREETINGS is required/);
+  });
 });

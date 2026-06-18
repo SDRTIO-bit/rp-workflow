@@ -66,6 +66,9 @@ import {
   type WorkflowMemoryStore,
 } from "@awp/workflow-memory";
 import { createRpLlmBridge } from "./services/rpLlmBridge.js";
+import { CardImportService } from "./services/cardImportService.js";
+import { GreetingSessionService } from "./rp/greetingSessionService.js";
+import { FileCardStore } from "@awp/card-import";
 import {
   registerRpRuntime,
   InMemoryTimelineStore,
@@ -95,6 +98,7 @@ import {
   type AgentSessionStore,
 } from "@awp/agent-runtime";
 import type { OfficialRpServiceContext } from "./rp/officialRpTypes.js";
+import { createCardsRoutes } from "./routes/cards.js";
 
 /** Optional hooks used only by tests to swap the in-process mock adapter. */
 export type CompositionAdapters = {
@@ -124,6 +128,12 @@ export type ServerComposition = {
   getSkillsRuntime: () => { skillCatalog: SkillItem[] };
   /** Accessor for the nodes routes context (used by /api/nodes). */
   getNodesRuntime: () => { runtimeNodeCatalog: NodeCatalog; plugins: NodePlugin[] };
+  /** Accessor for the cards routes context (used by /api/cards). */
+  getCardsDeps: () => {
+    cardImportService: CardImportService;
+    greetingSessionService: GreetingSessionService;
+    maxCardBytes: number;
+  };
 };
 
 /**
@@ -188,6 +198,23 @@ export async function bootstrap(
     llmRouter: llmRouter!,
     defaultModelConfig: undefined as NodeModelConfig | undefined,
   });
+  // ── Card store (P-15.3A-2) ──────────────────────────────────────────
+  // Cards live under CARDS_DIR, which is already resolved to an absolute
+  // path by resolveEnv(). Sweep orphaned temp dirs at startup; logs only
+  // the count and the absolute directory — never card content.
+  const cardStore = new FileCardStore(env.cardsDir);
+  const sweptTempDirs = await cardStore.sweepOrphanedTempDirs();
+  console.log(`Card Store: ${env.cardsDir} (swept ${sweptTempDirs} orphaned temp dir(s))`);
+  const cardImportService = new CardImportService(cardStore, {
+    maxBytes: env.maxCardBytes,
+    maxJsonDepth: env.maxCardJsonDepth,
+    maxWorldbookEntries: env.maxCardWorldbookEntries,
+    maxGreetings: env.maxCardGreetings,
+  });
+  // The greeting session service is constructed once sessionStore and
+  // worldbookStore are bound. Built at the bottom of the function after
+  // all stores exist (see the post-init hook below).
+
   const getRpServiceContext = (): OfficialRpServiceContext => ({
     serverWorkflowVersion: env.rpWorkflowVersion,
     llmRouter: llmRouter!,
@@ -197,6 +224,7 @@ export async function bootstrap(
     worldbookStore,
     runtimeNodeCatalog,
     dataDir: env.dataDir,
+    cardStore,
   });
 
   // ── Initialize plugins and RP runtime ────────────────────────────────
@@ -308,6 +336,19 @@ export async function bootstrap(
       `Unknown AGENT_SESSION_STORE: "${env.agentSessionStore}". Supported: in-memory, file`,
     );
   }
+
+  // ── Greeting session service (depends on session + worldbook + card stores) ──
+  const greetingSessionService = new GreetingSessionService(
+    cardStore,
+    sessionStore,
+    worldbookStore,
+  );
+
+  const getCardsDeps = () => ({
+    cardImportService,
+    greetingSessionService,
+    maxCardBytes: env.maxCardBytes,
+  });
 
   if (env.rpProviderId === "mock") {
     registry.register({
@@ -446,6 +487,7 @@ export async function bootstrap(
   app.route("/", createWorkflowRoutes(getWorkflowRuntime));
   app.route("/", createRpRoutes(getRpServiceContext));
   app.route("/", createLlmRoutes(getLlmConfig));
+  app.route("/", createCardsRoutes(getCardsDeps()));
 
   if (env.nodeEnv === "production") {
     const webDistRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../web/dist");
@@ -478,6 +520,7 @@ export async function bootstrap(
     getPluginRuntime,
     getSkillsRuntime,
     getNodesRuntime,
+    getCardsDeps,
   };
 }
 

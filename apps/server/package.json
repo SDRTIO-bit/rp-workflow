@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@awp/agent-runtime": "*",
+    "@awp/card-import": "*",
     "@awp/memory-core": "*",
     "@awp/plugin-sdk": "*",
     "@awp/rp-runtime": "*",
