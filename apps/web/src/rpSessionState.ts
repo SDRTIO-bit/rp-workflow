@@ -6,6 +6,7 @@ export type RpChatMessageV1 = {
   text: string;
   turnId: string;
   createdAt: string;
+  source?: "greeting";
 };
 
 export type RpChatSessionV1 = {
@@ -211,6 +212,86 @@ export const restoreRpSession = (
     status: "idle",
   };
 };
+
+// === Card Session Bridge ===
+
+export type PendingCardSessionV1 = {
+  sessionId: string;
+  cardId: string;
+  greetingId: string;
+  greetingContent: string;
+  worldbookResourceRef: string;
+  memoryNamespace: string;
+};
+
+const pendingCardSessionKey = "awp:pending-card-session:v1";
+
+type MinimalStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
+
+const getSessionStorage = (): MinimalStorage | null => {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return null;
+  }
+};
+
+export const setPendingCardSession = (
+  session: PendingCardSessionV1,
+  storage: MinimalStorage = getSessionStorage()!,
+): void => {
+  storage.setItem(pendingCardSessionKey, JSON.stringify(session));
+};
+
+export const getPendingCardSession = (
+  storage: MinimalStorage = getSessionStorage()!,
+): PendingCardSessionV1 | null => {
+  if (!storage) return null;
+  try {
+    const stored = storage.getItem(pendingCardSessionKey);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as Partial<PendingCardSessionV1>;
+    if (
+      typeof parsed.sessionId !== "string" ||
+      typeof parsed.cardId !== "string" ||
+      typeof parsed.greetingId !== "string" ||
+      typeof parsed.greetingContent !== "string" ||
+      typeof parsed.worldbookResourceRef !== "string" ||
+      typeof parsed.memoryNamespace !== "string"
+    ) {
+      return null;
+    }
+    return parsed as PendingCardSessionV1;
+  } catch {
+    return null;
+  }
+};
+
+export const clearPendingCardSession = (storage: MinimalStorage = getSessionStorage()!): void => {
+  if (!storage) return;
+  storage.removeItem(pendingCardSessionKey);
+};
+
+export const initializeCardRpSession = (
+  pending: PendingCardSessionV1,
+  options: { now?: Clock } = {},
+): RpChatSessionV1 => ({
+  sessionId: pending.sessionId,
+  nextTurnNumber: 1,
+  messages: [
+    {
+      id: "assistant-greeting",
+      role: "assistant",
+      text: pending.greetingContent,
+      turnId: "greeting",
+      createdAt: now(options.now),
+      source: "greeting",
+    },
+  ],
+  worldbookResourceRef: pending.worldbookResourceRef,
+  memoryNamespace: pending.memoryNamespace,
+  status: "idle",
+});
 
 export const formatTurnId = (turnNumber: number): string =>
   `turn-${String(Math.max(1, turnNumber)).padStart(4, "0")}`;

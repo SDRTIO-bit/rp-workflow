@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { runOfficialRpTurn } from "../../../officialRpClient";
 import {
   buildOfficialRpRequest,
+  clearPendingCardSession,
   createInitialRpSession,
+  getPendingCardSession,
+  initializeCardRpSession,
   markRpTurnCanceled,
   markRpTurnFailed,
   markRpTurnSucceeded,
@@ -17,6 +20,13 @@ const rpSessionStorageKey = "awp:official-rp-session:v1";
 const continueText = "继续";
 
 const loadRpSession = (): RpChatSessionV1 => {
+  // Check for pending card session first (from Cards page initialization)
+  const pendingCard = getPendingCardSession();
+  if (pendingCard) {
+    clearPendingCardSession();
+    return initializeCardRpSession(pendingCard);
+  }
+
   try {
     const stored = window.sessionStorage.getItem(rpSessionStorageKey);
     return restoreRpSession(stored ? JSON.parse(stored) : undefined);
