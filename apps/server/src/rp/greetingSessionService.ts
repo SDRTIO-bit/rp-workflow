@@ -1,10 +1,10 @@
 /**
- * P-15.3A-2: Greeting Session Service.
+ * P-15.3A-2.1: Greeting Session Service.
  *
  * Initializes an Agent Session with a Card Greeting as the first persisted
  * turn. Used by POST /api/cards/sessions.
  *
- * Design contract (per P-15.3A-2 spec):
+ * Design contract (per P-15.3A-2.1 spec):
  *
  *  1. Idempotent on (sessionId, cardId, greetingId, contentHash).
  *  2. Conflicts with:
@@ -12,27 +12,35 @@
  *     - existing greeting of different greetingId
  *     - existing non-greeting turns (real conversation in progress)
  *  3. Persists greeting content directly as `assistantOutput` of turnIndex=1
- *     on a dedicated agentNodeId (`greeting-seed`), keeping it isolated from
- *     the writer's `writer-main` turnIndex sequence.
+ *     on the SAME `agentNodeId` that the official RP Writer uses
+ *     (`writer-main`). This ensures the Writer's first `/api/rp` call
+ *     loads the greeting as session history and includes it in the prompt.
+ *     The first real Writer response then gets `turnIndex = 2` (per
+ *     `agentV2.ts` formula: `turns.length + 1`).
  *  4. Does NOT call any LLM.
  *  5. Does NOT apply JSON Patch, EJS/getvar, status bar, or remote content.
  *  6. Uses `modelConfig.{provider,model}` as a prompt-invisible seed marker.
- *     The AgentTurnV1 modelConfig is NEVER rendered into the player-visible
- *     prompt (verified: formatTurn in agentV2 + sessionContextToMarkdown both
- *     render only `input` and `assistantOutput`).
- *  7. Never writes cardId, greetingId, or any internal marker into the
+ *     Verified: `sessionContextToMarkdown` and `formatTurn` both render
+ *     only `input` and `assistantOutput` — `modelConfig` never reaches
+ *     the player-visible prompt.
+ *  7. `input` is `""` (empty string), NOT `null`. In
+ *     `sessionContextToMarkdown`, `if (input)` is falsy for `""`, so the
+ *     greeting seed produces NO "Player:" line (no fake user input in
+ *     the prompt).
+ *  8. Never writes cardId, greetingId, or any internal marker into the
  *     player-visible history text (assistantOutput contains only the
  *     cleaned greeting content).
- *  8. After successful greeting commit, seeds the card worldbook into the
+ *  9. After successful greeting commit, seeds the card worldbook into the
  *     DynamicWorldbookStore via the caller's worldbookStore. The greeting
  *     init step is independent of the worldbook seed step; both are idempotent.
  *
- * Why a separate agentNodeId? The greeting seed is structurally different
- * from a real conversation turn (no player input, no LLM call). Sharing
- * agentNodeId with `writer-main` would create a turnIndex collision in
- * stateful session loading. Isolation keeps the AgentSessionStore's
- * turnIndex semantics clean (next turnIndex = turns.length + 1) for both
- * the greeting seed and the eventual real conversation.
+ * Why `writer-main` (not a separate agentNodeId)? The official RP
+ * workflow's Writer reads from `agentNodeId: "writer-main"` (set in
+ * `officialRpInputAdapter.ts`). A greeting written to any other
+ * `agentNodeId` would be invisible to the Writer — the Writer would
+ * never see the greeting in its session history. The seed is
+ * distinguished from real Writer turns by `modelConfig.provider ===
+ * "card-import"`, which is prompt-invisible.
  */
 import { FileCardStore, type ImportedGreetingV1 } from "@awp/card-import";
 import type { AgentSessionStore } from "@awp/agent-runtime";
@@ -44,11 +52,17 @@ import type {
 } from "@awp/agent-runtime";
 import type { DynamicWorldbookStore } from "@awp/workflow-worldbook";
 
-export const GREETING_SEED_AGENT_NODE_ID = "greeting-seed";
+/**
+ * The agentNodeId used by the official RP Writer session. The greeting
+ * seed is written to the SAME session key so the Writer loads it as
+ * history on the first `/api/rp` call.
+ */
+export const WRITER_AGENT_NODE_ID = "writer-main";
 
 /**
  * Greeting Seed marker fields. Visible to dedup logic, invisible to the
- * player prompt.
+ * player prompt (modelConfig is not rendered by sessionContextToMarkdown
+ * or formatTurn).
  */
 export const GREETING_SEED_PROVIDER = "card-import";
 export const GREETING_SEED_MODEL_PREFIX = "greeting-seed-v1";
@@ -158,12 +172,15 @@ export class GreetingSessionService {
       );
     }
 
-    // 4. Build session key (greeting-seed agent, isolated from writer-main)
+    // 4. Build session key — same agentNodeId as the official RP Writer
+    //    (writer-main). The greeting seed lives in the same session the
+    //    Writer reads from, so it appears in the Writer's session history
+    //    on the first /api/rp call.
     const sessionKey: AgentSessionKeyV1 = {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: request.sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     };
 
     // 5. Check existing session
@@ -219,12 +236,14 @@ export class GreetingSessionService {
     const contentHash = computeContentHash(greeting.content);
     const dedupKey = {
       sessionId: request.sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
       turnId,
     };
     const newTurn: AgentTurnV1 = {
-      turnIndex: 1, // First turn in the isolated greeting-seed session
-      input: null, // No user input for greeting
+      turnIndex: 1, // First turn in the writer-main session
+      // input: "" (NOT null) so sessionContextToMarkdown's `if (input)` check
+      // skips this turn entirely — no fake "Player: null" line in the prompt.
+      input: "",
       assistantOutput: greeting.content, // Cleaned content only — no cardId/greetingId
       modelConfig: {
         provider: GREETING_SEED_PROVIDER,

@@ -36,6 +36,26 @@ import { adaptRpInput } from "./officialRpInputAdapter.js";
 import { adaptRpOutput } from "./officialRpOutputAdapter.js";
 import { createRpExecutors } from "./officialRpExecutorFactory.js";
 
+/**
+ * Error thrown by the card-aware worldbook seeding path. Carries an
+ * explicit HTTP status code so the RP route can map it without
+ * fragile string matching. P-15.3A-2.1.
+ */
+export class CardWorldbookError extends Error {
+  constructor(
+    message: string,
+    public readonly status: 400 | 404 | 422 | 500,
+    public readonly code:
+      | "invalid-card-resource"
+      | "card-not-found"
+      | "card-corrupt"
+      | "card-store-missing",
+  ) {
+    super(message);
+    this.name = "CardWorldbookError";
+  }
+}
+
 export class OfficialRpService {
   private registry: OfficialWorkflowRegistry;
   private ctx: OfficialRpServiceContext;
@@ -279,31 +299,53 @@ async function seedCardWorldbook(
 ): Promise<void> {
   const cardId = resourceRef.slice("card:".length);
   if (!/^[0-9a-f]{64}$/.test(cardId)) {
-    throw new Error(
+    throw new CardWorldbookError(
       `Invalid card resourceRef: "${resourceRef}" (expected 64-hex cardId after "card:")`,
+      400,
+      "invalid-card-resource",
     );
   }
 
   if (!ctx.cardStore) {
-    throw new Error(`card resourceRef "${resourceRef}" requires a configured FileCardStore`);
+    throw new CardWorldbookError(
+      `card resourceRef "${resourceRef}" requires a configured FileCardStore`,
+      500,
+      "card-store-missing",
+    );
   }
 
   // Verify the Card exists AND its source.json hash is intact.
   const exists = await ctx.cardStore.hasCard(cardId);
   if (!exists) {
-    throw new Error(`Card not found for resourceRef "${resourceRef}" (cardId=${cardId})`);
+    throw new CardWorldbookError(
+      `Card not found for resourceRef "${resourceRef}" (cardId=${cardId})`,
+      404,
+      "card-not-found",
+    );
   }
   const sourceIntact = await ctx.cardStore.verifySourceIntegrity(cardId);
   if (!sourceIntact) {
-    throw new Error(
+    throw new CardWorldbookError(
       `Card source.json integrity check failed for cardId=${cardId} (refusing to seed)`,
+      422,
+      "card-corrupt",
     );
   }
 
   // Read the Card's partitioned worldbook. The A-1 mapper already
   // excludes disabled / deferred-variable / blocked-script entries; those
   // live in `deferred-worldbook.json` and are NOT loaded here.
-  const cardEntry = await ctx.cardStore.readCard(cardId);
+  let cardEntry;
+  try {
+    cardEntry = await ctx.cardStore.readCard(cardId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new CardWorldbookError(
+      `Card read failed for cardId=${cardId}: ${message}`,
+      422,
+      "card-corrupt",
+    );
+  }
   if (cardEntry.worldbook.length === 0) return;
 
   await ctx.worldbookStore.save(scopeKey, resourceRef, {

@@ -6,7 +6,7 @@
  */
 import { Hono } from "hono";
 import type { OfficialRpRequestV1, OfficialRpServiceContext } from "../rp/officialRpTypes.js";
-import { OfficialRpService } from "../rp/officialRpService.js";
+import { OfficialRpService, CardWorldbookError } from "../rp/officialRpService.js";
 
 export const createRpRoutes = (getContext: () => OfficialRpServiceContext) => {
   const app = new Hono();
@@ -40,6 +40,12 @@ export const createRpRoutes = (getContext: () => OfficialRpServiceContext) => {
       return c.json(response, 200);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+
+      // P-15.3A-2.1: Card-aware worldbook errors carry explicit status codes.
+      // Checked before string-matching so the explicit code wins.
+      if (error instanceof CardWorldbookError) {
+        return c.json({ error: message }, error.status);
+      }
 
       // Map error types to HTTP status codes
       if (error instanceof Error && error.name === "ValidationError") {

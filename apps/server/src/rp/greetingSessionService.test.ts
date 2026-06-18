@@ -24,7 +24,7 @@ import { InMemoryDynamicWorldbookStore } from "@awp/workflow-worldbook";
 import { InMemoryAgentSessionStore } from "@awp/agent-runtime";
 import {
   GreetingSessionService,
-  GREETING_SEED_AGENT_NODE_ID,
+  WRITER_AGENT_NODE_ID,
   isGreetingSeedTurn,
 } from "./greetingSessionService.js";
 import { CardImportService } from "../services/cardImportService.js";
@@ -110,7 +110,7 @@ describe("GreetingSessionService (P-15.3A-2)", () => {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     });
     expect(before).toBeNull();
 
@@ -130,11 +130,14 @@ describe("GreetingSessionService (P-15.3A-2)", () => {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     });
     expect(after).not.toBeNull();
     expect(after!.turns).toHaveLength(1);
-    expect(after!.turns[0]!.input).toBeNull();
+    // input is "" (empty string), NOT null. sessionContextToMarkdown's
+    // `if (input)` check is falsy for "" → the greeting seed produces
+    // NO "Player:" line in the prompt (no "User: null" pollution).
+    expect(after!.turns[0]!.input).toBe("");
     expect(typeof after!.turns[0]!.assistantOutput).toBe("string");
     expect((after!.turns[0]!.assistantOutput as string).length).toBeGreaterThan(0);
   });
@@ -160,7 +163,7 @@ describe("GreetingSessionService (P-15.3A-2)", () => {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     });
     expect(session!.turns).toHaveLength(1);
   });
@@ -194,7 +197,7 @@ describe("GreetingSessionService (P-15.3A-2)", () => {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     });
     expect(session!.turns).toHaveLength(1);
   });
@@ -231,7 +234,7 @@ describe("GreetingSessionService (P-15.3A-2)", () => {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     };
     await h.sessionStore.append(sessionKey, {
       sessionKey,
@@ -274,7 +277,7 @@ describe("GreetingSessionService (P-15.3A-2)", () => {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     });
     expect(session!.turns).toHaveLength(1);
   });
@@ -321,7 +324,7 @@ describe("GreetingSessionService (P-15.3A-2)", () => {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     });
     expect(session).not.toBeNull();
     const assistantOutput = session!.turns[0]!.assistantOutput as string;
@@ -349,7 +352,7 @@ describe("GreetingSessionService (P-15.3A-2)", () => {
       tenantId: "default",
       workflowInstanceId: "rp-prod-1",
       conversationId: sessionId,
-      agentNodeId: GREETING_SEED_AGENT_NODE_ID,
+      agentNodeId: WRITER_AGENT_NODE_ID,
     });
     expect(session).not.toBeNull();
     const turn = session!.turns[0]!;
