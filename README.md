@@ -5,7 +5,8 @@ the first product template shipped on this platform.
 
 ```text
 Project state (default entry point for new sessions):
-  docs/project-state-through-p15.1.md
+  docs/project-state-through-p15.2.md
+  (previous: docs/project-state-through-p15.1.md)
 
 Source-of-truth policy (priority order for resolving conflicts):
   docs/source-of-truth.md
@@ -19,11 +20,14 @@ Other documentation:
 - `docs/reports/` — per-phase reports.
 - `docs/research/`, `docs/superpowers/` — research and design notes.
 
-The frozen code baseline is commit `09d53ac`, tagged
-`phase-rp-playable-mvp-v1-stable` (annotated, dereferences to
-`09d53ac`). The current `master` HEAD is `1dd6608`, a documentation-
-only commit on top of the freeze. Do not move the frozen tag; new work
-gets a new phase, a new tag, and a new report under `docs/reports/`.
+The frozen code baselines are:
+
+- `phase-rp-narrative-novelty-guard-v1-stable` → `9394493` (P-15.2, current).
+- `phase-rp-playable-mvp-v1-stable` → `09d53ac` (P-15.1, prior freeze, not moved).
+
+The current `master` HEAD is `9394493`. Do not move the frozen tags;
+new work gets a new phase, a new tag, and a new report under
+`docs/reports/`.
 
 ## License
 
