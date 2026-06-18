@@ -1,0 +1,16 @@
+{
+  "spec": "chara_card_v3",
+  "spec_version": "3.0",
+  "data": {
+    "name": "No Worldbook Character",
+    "description": "A character with no worldbook entries.",
+    "first_mes": "Hello, I have no lore.",
+    "alternate_greetings": [
+      {
+        "greeting": "Just a simple greeting with no worldbook.",
+        "name": "Simple"
+      }
+    ],
+    "extensions": {}
+  }
+}

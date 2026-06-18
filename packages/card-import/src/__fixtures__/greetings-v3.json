@@ -1,0 +1,18 @@
+{
+  "spec": "chara_card_v3",
+  "spec_version": "3.0",
+  "data": {
+    "name": "Multi Greeting Character",
+    "description": "A character with 6 alternate greetings.",
+    "first_mes": "Remote placeholder: <iframe src=\"https://example.com/opening\"></iframe>",
+    "alternate_greetings": [
+      { "greeting": "First alternate greeting text.", "name": "Greeting 0" },
+      { "greeting": "Second alternate greeting text.", "name": "Greeting 1" },
+      { "greeting": "Third alternate greeting text.", "name": "Greeting 2" },
+      { "greeting": "Fourth alternate greeting text.", "name": "Greeting 3" },
+      { "greeting": "Fifth alternate greeting text.", "name": "Greeting 4" },
+      { "greeting": "Sixth alternate greeting text.", "name": "Greeting 5" }
+    ],
+    "extensions": {}
+  }
+}

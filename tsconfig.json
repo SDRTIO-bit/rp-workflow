@@ -1,18 +1,47 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/plugin-sdk" },
-    { "path": "./packages/memory-core" },
-    { "path": "./packages/workflow-core" },
-    { "path": "./packages/workflow-stdlib" },
-    { "path": "./packages/workflow-worldbook" },
-    { "path": "./packages/workflow-retrieval" },
-    { "path": "./packages/workflow-memory" },
-    { "path": "./packages/agent-runtime" },
-    { "path": "./packages/workflow-persistence" },
-    { "path": "./packages/db" },
-    { "path": "./packages/rp-runtime" },
-    { "path": "./apps/web" },
-    { "path": "./apps/server" }
+    {
+      "path": "./packages/plugin-sdk"
+    },
+    {
+      "path": "./packages/memory-core"
+    },
+    {
+      "path": "./packages/workflow-core"
+    },
+    {
+      "path": "./packages/workflow-stdlib"
+    },
+    {
+      "path": "./packages/workflow-worldbook"
+    },
+    {
+      "path": "./packages/workflow-retrieval"
+    },
+    {
+      "path": "./packages/workflow-memory"
+    },
+    {
+      "path": "./packages/agent-runtime"
+    },
+    {
+      "path": "./packages/workflow-persistence"
+    },
+    {
+      "path": "./packages/db"
+    },
+    {
+      "path": "./packages/rp-runtime"
+    },
+    {
+      "path": "./apps/web"
+    },
+    {
+      "path": "./apps/server"
+    },
+    {
+      "path": "./packages/card-import"
+    }
   ]
 }

@@ -1,0 +1,44 @@
+{
+  "spec": "chara_card_v3",
+  "spec_version": "3.0",
+  "data": {
+    "name": "Remote Scripts Character",
+    "description": "A card with blocked script patterns for testing detection.",
+    "first_mes": "Hello from a test card.",
+    "alternate_greetings": [
+      {
+        "greeting": "Welcome. <script src='https://evil.example.com/payload.js'></script>",
+        "name": "Script Greeting"
+      }
+    ],
+    "character_book": {
+      "entries": [
+        {
+          "uid": 1,
+          "comment": "Eval Entry",
+          "content": "This entry contains eval(someVariable) which should be blocked.",
+          "keys": "eval,test",
+          "disable": false
+        },
+        {
+          "uid": 2,
+          "comment": "Remote Entry",
+          "content": "Fetches data from https://remote.example.com/api/data via fetch().",
+          "keys": "remote,fetch",
+          "disable": false
+        },
+        {
+          "uid": 3,
+          "comment": "Function Constructor",
+          "content": "Uses new Function('return 1') to create code dynamically.",
+          "keys": "function,test",
+          "disable": false
+        }
+      ]
+    },
+    "extensions": {
+      "regex_script": "function process(text) { return text.replace(/foo/g, 'bar'); }",
+      "helper_script": "function helper() { return document.cookie; }"
+    }
+  }
+}

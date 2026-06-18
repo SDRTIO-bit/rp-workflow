@@ -10,3 +10,4 @@ apps/data
 plugins/codex-budget-router
 *.tsbuildinfo
 superpowers
+packages/card-import/src/__fixtures__/corrupt.json

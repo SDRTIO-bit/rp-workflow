@@ -1,0 +1,39 @@
+{
+  "spec": "chara_card_v3",
+  "spec_version": "3.0",
+  "data": {
+    "name": "Test Character Alpha",
+    "description": "A fictional test character for unit testing.",
+    "first_mes": "Hello, I am a test character.",
+    "alternate_greetings": [
+      {
+        "greeting": "Welcome to the testing lab. Everything here is fictional.",
+        "name": "Lab Welcome"
+      }
+    ],
+    "character_book": {
+      "name": "Test Lore",
+      "entries": [
+        {
+          "uid": 1,
+          "comment": "Test Location",
+          "content": "The Testing Lab is a fictional place where all tests pass.",
+          "keys": "lab,testing",
+          "secondary_keys": "test",
+          "constant": false,
+          "selective": false,
+          "insertion_order": 0,
+          "position": "before_char",
+          "depth": 4,
+          "probability": 100,
+          "group": null,
+          "prevent_recursion": true,
+          "use_probability": true,
+          "disable": false,
+          "enabled": true
+        }
+      ]
+    },
+    "extensions": {}
+  }
+}

@@ -8,3 +8,10 @@ data
 apps/data
 .omo/run-continuation/
 .claude/
+# Local-only directories for personal / experimental assets.
+# Anything dropped under these paths must NOT enter git.
+# (P-15.3A-1 acceptance: refuse to track real role cards or
+# local experiment data in the main source tree.)
+/local-cards/
+/data/cards/
+/artifacts/card-import/

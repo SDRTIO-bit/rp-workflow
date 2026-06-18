@@ -10,14 +10,35 @@
   },
   "include": ["src"],
   "references": [
-    { "path": "../../packages/workflow-core" },
-    { "path": "../../packages/agent-runtime" },
-    { "path": "../../packages/memory-core" },
-    { "path": "../../packages/plugin-sdk" },
-    { "path": "../../packages/rp-runtime" },
-    { "path": "../../packages/workflow-stdlib" },
-    { "path": "../../packages/workflow-worldbook" },
-    { "path": "../../packages/workflow-retrieval" },
-    { "path": "../../packages/workflow-memory" }
+    {
+      "path": "../../packages/workflow-core"
+    },
+    {
+      "path": "../../packages/agent-runtime"
+    },
+    {
+      "path": "../../packages/memory-core"
+    },
+    {
+      "path": "../../packages/plugin-sdk"
+    },
+    {
+      "path": "../../packages/rp-runtime"
+    },
+    {
+      "path": "../../packages/workflow-stdlib"
+    },
+    {
+      "path": "../../packages/workflow-worldbook"
+    },
+    {
+      "path": "../../packages/workflow-retrieval"
+    },
+    {
+      "path": "../../packages/workflow-memory"
+    },
+    {
+      "path": "../../packages/card-import"
+    }
   ]
 }

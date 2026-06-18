@@ -1,0 +1,61 @@
+{
+  "spec": "chara_card_v3",
+  "spec_version": "3.0",
+  "data": {
+    "name": "Variable Conditions Character",
+    "description": "A card with variable conditions for testing deferred entries.",
+    "first_mes": "Hello.",
+    "alternate_greetings": [
+      {
+        "greeting": "Welcome to the variable test. {{setvar:mood:happy}}",
+        "name": "Var Greeting"
+      }
+    ],
+    "character_book": {
+      "entries": [
+        {
+          "uid": 1,
+          "comment": "EJS Entry",
+          "content": "The mood is <% if (mood === 'happy') { %>great<% } %> today.",
+          "keys": "mood,ejs",
+          "disable": false
+        },
+        {
+          "uid": 2,
+          "comment": "Getvar Entry",
+          "content": "Current value: {{getvar:score}}. Set with {{setvar:score:100}}.",
+          "keys": "score,variable",
+          "disable": false
+        },
+        {
+          "uid": 3,
+          "comment": "MVU Entry",
+          "content": "MVU variable: {{var::set:counter:5}}. Read: {{var::get:counter}}.",
+          "keys": "mvu,counter",
+          "disable": false
+        },
+        {
+          "uid": 4,
+          "comment": "Clean Entry",
+          "content": "This entry has no variable conditions and should be active.",
+          "keys": "clean,active",
+          "disable": false
+        },
+        {
+          "uid": 5,
+          "comment": "Disabled Entry",
+          "content": "This entry is disabled and should be skipped.",
+          "keys": "disabled",
+          "disable": true
+        }
+      ]
+    },
+    "extensions": {
+      "variables": {
+        "mood": "happy",
+        "score": 0,
+        "counter": 0
+      }
+    }
+  }
+}
