@@ -255,8 +255,8 @@ export interface SillyTavernCharacterBookEntry {
   comment?: string;
   name?: string;
   content?: string;
-  keys?: string;
-  secondary_keys?: string;
+  keys?: string | string[];
+  secondary_keys?: string | string[];
   constant?: boolean;
   selective?: boolean;
   insertion_order?: number;

@@ -197,4 +197,41 @@ describe("mapWorldbookEntries", () => {
     expect(result.entries).toHaveLength(0);
     expect(result.deferred).toHaveLength(0);
   });
+
+  it("handles array-typed keys and secondary_keys (SillyTavern V3 variant)", () => {
+    // Real-world V3 cards may store keys/secondary_keys as string[] instead of comma-separated string.
+    const book = {
+      entries: [
+        {
+          uid: 1,
+          content: "Array keys entry",
+          keys: ["alpha", "beta"],
+          secondary_keys: ["gamma", "delta"],
+          constant: false,
+        },
+        {
+          uid: 2,
+          content: "String keys entry",
+          keys: "one, two, three",
+          secondary_keys: "four",
+          constant: false,
+        },
+      ],
+    };
+    const result = mapWorldbookEntries(book, TEST_CARD_ID);
+
+    expect(result.entries).toHaveLength(2);
+
+    // Array-typed keys entry
+    const e1 = result.entries.find((e) => e.id.includes(":e1"))!;
+    expect(e1.tags).toEqual(["alpha", "beta", "delta", "gamma"]);
+    expect(e1.metadata.sourceKeys).toEqual(["alpha", "beta"]);
+    expect(e1.metadata.sourceSecondaryKeys).toEqual(["gamma", "delta"]);
+
+    // String-typed keys entry (regression: comma-split still works)
+    const e2 = result.entries.find((e) => e.id.includes(":e2"))!;
+    expect(e2.tags).toEqual(["four", "one", "three", "two"]);
+    expect(e2.metadata.sourceKeys).toEqual(["one", "two", "three"]);
+    expect(e2.metadata.sourceSecondaryKeys).toEqual(["four"]);
+  });
 });

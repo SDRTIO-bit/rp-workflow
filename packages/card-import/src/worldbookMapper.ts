@@ -20,8 +20,11 @@ const CHUNK_SIZE = 9_000;
 // Helpers
 // ---------------------------------------------------------------------------
 
-function splitKeys(raw: string | undefined): string[] {
+function splitKeys(raw: string | string[] | undefined): string[] {
   if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.map((k) => k.trim()).filter((k) => k.length > 0);
+  }
   return raw
     .split(",")
     .map((k) => k.trim())
